@@ -6,6 +6,7 @@ import { ActionsModule } from './actions/actions.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { ConversationsModule } from './conversations/conversations.module';
+import { ContactExchangesModule } from './contact-exchanges/contact-exchanges.module';
 import { AllExceptionsFilter } from './common/exceptions/all-exceptions.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { LoggerModule } from './common/logger/logger.module';
@@ -35,6 +36,7 @@ import { VerificationModule } from './verification/verification.module';
     VerificationModule,
     RecommendationsModule,
     ConversationsModule,
+    ContactExchangesModule,
     ActionsModule,
   ],
   providers: [

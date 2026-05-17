@@ -15,13 +15,16 @@ import {
 } from 'react-native';
 import { ApiError, api, type ConversationDetail, type MessageView } from '../../lib/api';
 import { authStorage } from '../../lib/auth-storage';
+import { decodeUserId, supabase } from '../../lib/supabase';
 
 /**
  * G02 — 대화방
  *
- * MVP: 폴링 (5초). L2 에서 Supabase Realtime 구독으로 교체.
+ * 메시지 INSERT 는 NestJS API 경유 (검증).
+ * 메시지 수신은 Supabase Realtime 직접 구독 (CLAUDE.md 패턴 3).
+ *
+ * 백업: 화면 진입 시 초기 로드 한 번 (Realtime 끊김 대비).
  */
-const POLL_INTERVAL = 5_000;
 
 export default function ConversationDetailScreen() {
   const router = useRouter();
@@ -33,47 +36,91 @@ export default function ConversationDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const tokenRef = useRef<string | null>(null);
+  const userIdRef = useRef<string | null>(null);
 
   const notify = (title: string, message: string) => {
     if (Platform.OS === 'web') window.alert(`${title}\n\n${message}`);
     else Alert.alert(title, message);
   };
 
-  const load = useCallback(
-    async (silent = false) => {
-      const token = tokenRef.current ?? (await authStorage.getAccessToken());
-      tokenRef.current = token;
-      if (!token) {
+  const load = useCallback(async () => {
+    const token = tokenRef.current ?? (await authStorage.getAccessToken());
+    tokenRef.current = token;
+    if (!token) {
+      router.replace('/a03-login');
+      return;
+    }
+    userIdRef.current = decodeUserId(token);
+    try {
+      const detail = await api.getConversation(token, id);
+      setData(detail);
+      setMessages(detail.messages);
+      setError(null);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) {
+        await authStorage.clear();
         router.replace('/a03-login');
         return;
       }
-      try {
-        const detail = await api.getConversation(token, id);
-        setData(detail);
-        setMessages(detail.messages);
-        setError(null);
-      } catch (e) {
-        if (e instanceof ApiError && e.status === 401) {
-          await authStorage.clear();
-          router.replace('/a03-login');
-          return;
-        }
-        if (!silent) setError(e instanceof Error ? e.message : String(e));
-      } finally {
-        setLoading(false);
-      }
-    },
-    [id, router],
-  );
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  }, [id, router]);
 
-  // 초기 로드 + 폴링
+  // 초기 로드
   useEffect(() => {
     void load();
-    const timer = setInterval(() => {
-      void load(true);
-    }, POLL_INTERVAL);
-    return () => clearInterval(timer);
   }, [load]);
+
+  // Supabase Realtime 구독 — messages 테이블 INSERT (이 대화방만)
+  useEffect(() => {
+    const token = tokenRef.current;
+    if (!token) return;
+    supabase.realtime.setAuth(token);
+
+    const myId = userIdRef.current;
+    const channel = supabase
+      .channel(`conv:${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${id}`,
+        },
+        (payload) => {
+          const row = payload.new as {
+            id: string;
+            sender_id: string | null;
+            message_type: MessageView['messageType'];
+            content: string;
+            created_at: string;
+            deleted_at: string | null;
+          };
+          if (row.deleted_at) return;
+          const isMine = !!myId && row.sender_id === myId;
+          const msg: MessageView = {
+            id: row.id,
+            senderId: row.sender_id,
+            messageType: row.message_type,
+            content: row.content,
+            isMine,
+            createdAt: row.created_at,
+          };
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === msg.id)) return prev;
+            return [...prev, msg];
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [id, data]);
 
   async function onSend() {
     const content = input.trim();
@@ -83,7 +130,11 @@ export default function ConversationDetailScreen() {
     setSending(true);
     try {
       const msg = await api.sendMessage(token, id, content);
-      setMessages((prev) => [...prev, msg]);
+      // Realtime 구독이 같은 메시지를 다시 받을 수 있으므로 dedupe by id 처리됨
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
       setInput('');
     } catch (e) {
       if (e instanceof ApiError) notify(`오류 (${e.code})`, e.message);
