@@ -2,6 +2,8 @@ import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/commo
 
 interface IdentitySession {
   startedAt: number;
+  /** 카카오 OAuth 로 진입한 경우 kakaoId 보관 (complete 시 User.kakaoId 로 저장) */
+  kakaoId?: string;
 }
 
 /**
@@ -32,8 +34,8 @@ export class SessionStoreService implements OnModuleInit, OnModuleDestroy {
     this.store.clear();
   }
 
-  start(sessionId: string): void {
-    this.store.set(sessionId, { startedAt: Date.now() });
+  start(sessionId: string, kakaoId?: string): void {
+    this.store.set(sessionId, { startedAt: Date.now(), kakaoId });
   }
 
   has(sessionId: string): boolean {
@@ -44,6 +46,16 @@ export class SessionStoreService implements OnModuleInit, OnModuleDestroy {
       return false;
     }
     return true;
+  }
+
+  get(sessionId: string): IdentitySession | undefined {
+    const s = this.store.get(sessionId);
+    if (!s) return undefined;
+    if (Date.now() - s.startedAt > this.TTL_MS) {
+      this.store.delete(sessionId);
+      return undefined;
+    }
+    return s;
   }
 
   delete(sessionId: string): void {

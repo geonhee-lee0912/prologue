@@ -56,6 +56,8 @@ model User {
   // 휴대폰 번호는 평문 저장 금지. SHA-256(서버 pepper) 만 저장.
   phoneHash      String         @unique @map("phone_hash")
   email          String?        @unique
+  // 카카오 로그인 사용자의 kakao user id. UNIQUE — 한 카카오 계정 = 한 User
+  kakaoId        String?        @unique @map("kakao_id")
   loginProvider  LoginProvider  @map("login_provider")
   gender         Gender
   birthYear      Int            @map("birth_year")

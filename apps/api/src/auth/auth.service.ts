@@ -12,9 +12,12 @@ import { randomInt, randomUUID } from 'node:crypto';
 import { AppException } from '../common/exceptions/app.exception';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CompleteIdentityDto, ConsentItemDto } from './dto/complete-identity.dto';
+import type { LoginKakaoDto } from './dto/login-kakao.dto';
 import type { SendOtpDto } from './dto/send-otp.dto';
+import type { StartIdentityDto } from './dto/start-identity.dto';
 import type { VerifyOtpDto } from './dto/verify-otp.dto';
 import { JwtIssuerService } from './jwt-issuer.service';
+import { KakaoUserInfoService } from './kakao-user-info.service';
 import { OtpStoreService } from './otp-store.service';
 import { hashPhone } from './phone-hash.util';
 import { SessionStoreService } from './session-store.service';
@@ -44,6 +47,7 @@ export class AuthService {
     private readonly otpStore: OtpStoreService,
     private readonly prisma: PrismaService,
     private readonly jwtIssuer: JwtIssuerService,
+    private readonly kakao: KakaoUserInfoService,
     private readonly config: ConfigService,
   ) {}
 
@@ -160,6 +164,34 @@ export class AuthService {
     return { accessToken: newAccessToken, refreshToken: newRefreshToken };
   }
 
+  // ============================================================
+  // 카카오 로그인 (FR-A02)
+  // ============================================================
+
+  async loginKakao(dto: LoginKakaoDto): Promise<AuthResponse> {
+    const info = await this.kakao.getUserInfo(dto.kakaoAccessToken);
+    const user = await this.prisma.user.findUnique({ where: { kakaoId: info.kakaoId } });
+    if (!user) {
+      throw new AppException(
+        ErrorCode.KAKAO_NOT_REGISTERED,
+        '카카오로 가입한 적이 없는 계정입니다. 가입을 먼저 진행해 주세요.',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+    this.checkAccountStatus(user.status);
+
+    const accessToken = this.jwtIssuer.issueAccessToken({ sub: user.id });
+    const refreshToken = await this.jwtIssuer.issueRefreshToken(user.id);
+
+    return {
+      accessToken,
+      refreshToken,
+      isNewUser: false,
+      identityVerified: true,
+      nextStep: this.determineNextStep(user.status),
+    };
+  }
+
   /**
    * 로그아웃: 해당 사용자의 모든 활성 refresh token 을 revoke.
    * (단일 디바이스만 로그아웃하려면 특정 refresh token 만 revoke 하도록 확장 가능)
@@ -172,21 +204,41 @@ export class AuthService {
     return { revokedCount: result.count };
   }
 
-  async startIdentity(): Promise<IdentityVerificationStartResult> {
+  async startIdentity(dto?: StartIdentityDto): Promise<IdentityVerificationStartResult> {
+    let kakaoId: string | undefined;
+
+    if (dto?.kakaoAccessToken) {
+      const info = await this.kakao.getUserInfo(dto.kakaoAccessToken);
+      // 이미 카카오로 가입한 사용자는 로그인 경로 안내
+      const exists = await this.prisma.user.findUnique({ where: { kakaoId: info.kakaoId } });
+      if (exists) {
+        throw new AppException(
+          ErrorCode.KAKAO_ALREADY_REGISTERED,
+          '이미 가입된 카카오 계정입니다. 로그인을 이용해 주세요.',
+          HttpStatus.CONFLICT,
+        );
+      }
+      kakaoId = info.kakaoId;
+    }
+
     const result = await this.identity.startVerification();
-    this.sessionStore.start(result.sessionId);
-    this.logger.log(`identity session started: ${result.sessionId}`);
+    this.sessionStore.start(result.sessionId, kakaoId);
+    this.logger.log(
+      `identity session started: ${result.sessionId}${kakaoId ? ' (kakao)' : ' (phone)'}`,
+    );
     return result;
   }
 
   async completeIdentity(dto: CompleteIdentityDto): Promise<AuthResponse> {
-    if (!this.sessionStore.has(dto.sessionId)) {
+    const session = this.sessionStore.get(dto.sessionId);
+    if (!session) {
       throw new AppException(
         ErrorCode.OTP_INVALID,
         '본인 인증 세션이 만료되었거나 유효하지 않습니다. 다시 시작해 주세요.',
         HttpStatus.UNAUTHORIZED,
       );
     }
+    const sessionKakaoId = session.kakaoId;
 
     const result = await this.identity.completeVerification(dto.sessionId, dto.callbackToken);
 
@@ -203,6 +255,14 @@ export class AuthService {
       // 기존 사용자: 로그인 흐름
       user = existing.user;
       this.checkAccountStatus(user.status);
+      // 기존 사용자가 카카오로 본인 인증 재시도한 경우 → kakaoId 가 없으면 연결
+      if (sessionKakaoId && !user.kakaoId) {
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { kakaoId: sessionKakaoId },
+        });
+        this.logger.log(`linked kakaoId to existing user: ${user.id}`);
+      }
     } else {
       // 신규 사용자: 가입 흐름
       this.requireConsents(dto.consents);
@@ -227,7 +287,8 @@ export class AuthService {
           data: {
             id: userId,
             phoneHash,
-            loginProvider: 'phone',
+            kakaoId: sessionKakaoId,
+            loginProvider: sessionKakaoId ? 'kakao' : 'phone',
             gender: result.gender,
             birthYear: result.birthYear,
             // 목표 성별 / 지역은 프로필 단계 (FR-C) 에서 갱신됨. 기본값 설정.

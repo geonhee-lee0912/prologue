@@ -5,8 +5,10 @@ import { AuthService, type AuthResponse } from './auth.service';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
 import { CompleteIdentityDto } from './dto/complete-identity.dto';
+import { LoginKakaoDto } from './dto/login-kakao.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SendOtpDto } from './dto/send-otp.dto';
+import { StartIdentityDto } from './dto/start-identity.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import type { CurrentUserData } from './types/jwt-payload';
 
@@ -25,11 +27,11 @@ export class AuthController {
   @ApiOperation({
     summary: '본인 인증 세션 시작',
     description:
-      '본인 인증 흐름을 시작한다. 응답의 sessionId 를 보관하고, 사용자가 인증을 완료하면 ' +
-      '`/auth/identity/complete` 호출 시 callbackToken 과 함께 전달한다.',
+      '본인 인증 흐름을 시작한다. 카카오 OAuth 로 진입한 경우 kakaoAccessToken 을 함께 전달하면 ' +
+      '백엔드가 카카오 user 정보를 조회해 세션에 kakaoId 를 보관한다 (가입 완료 시 User.kakaoId 로 저장).',
   })
-  async startIdentity(): Promise<IdentityVerificationStartResult> {
-    return this.authService.startIdentity();
+  async startIdentity(@Body() dto: StartIdentityDto): Promise<IdentityVerificationStartResult> {
+    return this.authService.startIdentity(dto);
   }
 
   @Public()
@@ -71,6 +73,23 @@ export class AuthController {
   })
   async verifyLoginOtp(@Body() dto: VerifyOtpDto): Promise<AuthResponse> {
     return this.authService.verifyLoginOtp(dto);
+  }
+
+  // ============================================================
+  // FR-A02 로그인 (카카오 OAuth)
+  // ============================================================
+
+  @Public()
+  @Post('login/kakao')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '카카오 OAuth 로 로그인',
+    description:
+      '모바일이 카카오 OAuth 로 받은 access_token 을 검증해 (User.kakaoId 로 조회) 로그인 처리. ' +
+      '미가입자는 KAKAO_NOT_REGISTERED 401 응답.',
+  })
+  async loginKakao(@Body() dto: LoginKakaoDto): Promise<AuthResponse> {
+    return this.authService.loginKakao(dto);
   }
 
   // ============================================================
