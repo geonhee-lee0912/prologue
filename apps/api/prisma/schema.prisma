@@ -154,8 +154,9 @@ model UserAuth {
   identityVerified   Boolean   @default(false) @map("identity_verified")
   identityVerifiedAt DateTime? @map("identity_verified_at")
   // 본인 인증 응답에서 CI 만 해시 저장. 이름/생년월일은 저장하지 않는다.
-  identityCiHash     String?   @map("identity_ci_hash")
-  identityProvider   String?   @map("identity_provider") // pass, nice 등
+  // UNIQUE: 동일 CI 로 중복 가입 방지 (FR-B01 요구사항 7).
+  identityCiHash     String?   @unique @map("identity_ci_hash")
+  identityProvider   String?   @map("identity_provider") // pass, nice, mock
 
   // 얼굴 인증 (FR-B02)
   faceMatchStatus FaceMatchStatus @default(not_submitted) @map("face_match_status")
