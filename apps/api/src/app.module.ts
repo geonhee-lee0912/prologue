@@ -14,6 +14,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ProfileModule } from './profile/profile.module';
 import { SupabaseModule } from './supabase/supabase.module';
 import { UsersModule } from './users/users.module';
+import { VerificationModule } from './verification/verification.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     ProfileModule,
     PhotosModule,
+    VerificationModule,
   ],
   providers: [
     // 순서 중요: ThrottlerGuard 가 먼저 → 인증 가드가 나중

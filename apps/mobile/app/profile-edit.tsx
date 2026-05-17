@@ -21,6 +21,7 @@ import {
   type PreferenceData,
   type ProfilePatch,
   type ProfileResponse,
+  type VerificationStatus,
 } from '../lib/api';
 import { authStorage } from '../lib/auth-storage';
 
@@ -63,9 +64,11 @@ export default function ProfileEdit() {
   const [token, setToken] = useState<string | null>(null);
   const [data, setData] = useState<ProfileResponse | null>(null);
   const [photos, setPhotos] = useState<PhotoView[]>([]);
+  const [verification, setVerification] = useState<VerificationStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [verifyingFace, setVerifyingFace] = useState(false);
 
   // 폼 상태
   const [region1, setRegion1] = useState('');
@@ -98,9 +101,14 @@ export default function ProfileEdit() {
     }
     setToken(t);
     try {
-      const [profile, photoList] = await Promise.all([api.getMyProfile(t), api.listPhotos(t)]);
+      const [profile, photoList, ver] = await Promise.all([
+        api.getMyProfile(t),
+        api.listPhotos(t),
+        api.getVerification(t),
+      ]);
       setData(profile);
       setPhotos(photoList);
+      setVerification(ver);
       // 폼 상태 초기화
       setRegion1(profile.user.region1 === '미설정' ? '' : profile.user.region1);
       setRegion2(profile.user.region2 ?? '');
@@ -234,6 +242,49 @@ export default function ProfileEdit() {
     }
   }
 
+  async function onVerifyFace() {
+    if (!token) return;
+    if (!photos.find((p) => p.isMain)) {
+      notify('대표 사진 필요', '먼저 대표 사진을 등록해 주세요.');
+      return;
+    }
+    if (Platform.OS !== 'web') {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        notify('권한 필요', '사진 라이브러리 접근을 허용해 주세요.');
+        return;
+      }
+    }
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+      allowsMultipleSelection: false,
+    });
+    if (res.canceled || !res.assets?.[0]) return;
+    const asset = res.assets[0];
+    setVerifyingFace(true);
+    try {
+      const result = await api.verifyFace(token, {
+        uri: asset.uri,
+        mimeType: asset.mimeType,
+        fileName: asset.fileName ?? undefined,
+        file: (asset as unknown as { file?: File }).file,
+      });
+      const ver = await api.getVerification(token);
+      setVerification(ver);
+      notify(
+        result.matched ? '인증 완료' : '인증 실패',
+        result.matched
+          ? `얼굴 인증이 완료되었습니다. (신뢰도 ${result.confidence}%)`
+          : '얼굴 매칭에 실패했습니다. 다시 시도해 주세요.',
+      );
+    } catch (e) {
+      handleError(e);
+    } finally {
+      setVerifyingFace(false);
+    }
+  }
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -295,6 +346,48 @@ export default function ProfileEdit() {
           )}
         </View>
       </View>
+
+      {/* 얼굴 인증 */}
+      <Section title="얼굴 인증 (FR-B02)">
+        <View style={styles.verificationRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>본인 인증</Text>
+            <Text style={styles.value}>
+              {verification?.identityVerified ? '✓ 완료' : '미완료'}
+            </Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>얼굴 인증</Text>
+            <Text style={styles.value}>
+              {verification?.faceMatchStatus === 'verified'
+                ? `✓ 완료 (${verification.faceConfidence ?? '-'}%)`
+                : verification?.faceMatchStatus === 'rejected'
+                  ? '✗ 반려'
+                  : verification?.faceMatchStatus === 'pending'
+                    ? '검수 중'
+                    : '미제출'}
+            </Text>
+          </View>
+        </View>
+        {verification?.faceMatchStatus !== 'verified' && (
+          <Pressable
+            style={[styles.secondaryButton, verifyingFace && styles.disabled]}
+            disabled={verifyingFace || !photos.find((p) => p.isMain)}
+            onPress={onVerifyFace}
+          >
+            {verifyingFace ? (
+              <ActivityIndicator color="#1A1A1A" />
+            ) : (
+              <Text style={styles.secondaryButtonText}>
+                {photos.find((p) => p.isMain) ? '셀피 업로드 → 얼굴 인증' : '대표 사진 먼저 등록'}
+              </Text>
+            )}
+          </Pressable>
+        )}
+        <Text style={styles.hint}>
+          MVP: mock 얼굴 매칭 (항상 성공). 실 연동 시 AWS Rekognition / Clova 사용.
+        </Text>
+      </Section>
 
       {/* 기본 정보 */}
       <Section title="기본 정보 (FR-C02)">
@@ -545,5 +638,15 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   saveButtonText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
+  secondaryButton: {
+    backgroundColor: '#F0F0F0',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  secondaryButtonText: { color: '#1A1A1A', fontSize: 14, fontWeight: '600' },
+  verificationRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
+  value: { fontSize: 14, color: '#1A1A1A', fontWeight: '600', marginTop: 2 },
   disabled: { opacity: 0.5 },
 });

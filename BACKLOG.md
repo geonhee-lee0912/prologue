@@ -71,34 +71,15 @@
 
 ---
 
-## 3. 얼굴 인증 (FR-B02) — 보류
+## 3. 얼굴 인증 (FR-B02) — ✅ 구현 완료 (24h TTL cron 만 남음)
 
-**보류 이유**: 사용자 결정 — "완성도가 어느 정도 나오면 그때 진행".
-사진 업로드는 별도로 먼저 구현됨 — 얼굴 매칭 단계만 보류.
+**완료**: 백엔드(POST /me/verification/face) + 모바일(profile-edit 얼굴 인증 섹션).
+mock provider 기반으로 추천 자격 조건 충족 가능.
 
-**필요한 작업** (재개 시):
-
-### 백엔드
-- [ ] Supabase Storage `face-auth` 보안 버킷 생성
-  - 운영자도 직접 SELECT 불가, 24시간 TTL 자동 삭제
-- [ ] `POST /api/v1/verification/face` 엔드포인트
-  - 라이브 셀피 업로드 + 대표 사진과 얼굴 매칭 호출
-  - `MockFaceVerificationProvider` 결과로 `UserAuth.faceMatchStatus` 갱신
-  - 매칭 성공 시 사용자의 대표 `Photo.faceMatchStatus = 'verified'` 일관 처리
-- [ ] 24시간 TTL 자동 삭제 cron (`face-auth` 버킷)
-
-### 모바일
-- [ ] B02 얼굴 인증 화면 (셀피 촬영, expo-camera 통합)
-
-### 추천 자격 조건 영향
-- 매칭 추천 노출에는 `identityVerified=true` (충족) + `faceMatchStatus='verified'` (미구현) 둘 다 필요
-- 얼굴 인증 미구현 동안 추천 시스템에서 임시로 faceMatchStatus 조건을 빼거나
-  mock 인증 자동 통과로 처리할지 결정 필요
-
-**현재 상태**:
-- `UserAuth.faceMatchStatus` 스키마 존재
-- `MockFaceVerificationService` 이미 작성됨 (`apps/api/src/infra/`)
-- 사진 업로드 기능은 별도 구현 완료 (FR-C01 사진 등록)
+**남은 작업** (P2):
+- [ ] **24시간 TTL cron** — 매칭 실패 시 24시간 보관된 `face-auth` 버킷 객체 자동 삭제
+  - 현재는 매칭 성공 시 즉시 폐기. 실패 시는 보관 (운영자 검수용)
+  - Phase 6 cron + BullMQ 도입 시 함께 처리
 
 ---
 

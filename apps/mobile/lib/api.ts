@@ -172,6 +172,44 @@ export const api = {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
   },
+
+  // === 얼굴 인증 (FR-B02) ===
+  getVerification(accessToken: string) {
+    return request<VerificationStatus>('/me/verification', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
+  async verifyFace(
+    accessToken: string,
+    asset: { uri: string; mimeType?: string; fileName?: string; file?: File },
+  ): Promise<FaceVerificationResult> {
+    const formData = new FormData();
+    if (asset.file) {
+      formData.append('selfie', asset.file);
+    } else {
+      formData.append('selfie', {
+        uri: asset.uri,
+        type: asset.mimeType ?? 'image/jpeg',
+        name: asset.fileName ?? `selfie-${Date.now()}.jpg`,
+      } as unknown as Blob);
+    }
+    const res = await fetch(`${BASE_URL}/me/verification/face`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: formData,
+    });
+    const body = (await res.json().catch(() => null)) as
+      | { data?: FaceVerificationResult; error?: { code: string; message: string } }
+      | null;
+    if (!res.ok) {
+      throw new ApiError(
+        body?.error?.code ?? 'UNKNOWN',
+        body?.error?.message ?? `HTTP ${res.status}`,
+        res.status,
+      );
+    }
+    return body!.data!;
+  },
 };
 
 // ============== 프로필 타입 ==============
@@ -231,4 +269,17 @@ export interface PhotoView {
   moderationFlags: string[];
   signedUrl: string | null;
   createdAt: string;
+}
+
+export interface VerificationStatus {
+  identityVerified: boolean;
+  faceMatchStatus: 'not_submitted' | 'pending' | 'verified' | 'rejected';
+  faceVerifiedAt: string | null;
+  faceConfidence: number | null;
+}
+
+export interface FaceVerificationResult {
+  matched: boolean;
+  confidence: number;
+  faceMatchStatus: 'verified' | 'rejected' | 'pending';
 }
