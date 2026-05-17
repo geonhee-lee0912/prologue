@@ -2,15 +2,32 @@
   "name": "@prologue/shared",
   "version": "0.0.1",
   "private": true,
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./policy": "./src/policy.ts",
-    "./recommendation-reasons": "./src/recommendation-reasons.ts",
-    "./errors": "./src/errors.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./policy": {
+      "types": "./dist/policy.d.ts",
+      "default": "./dist/policy.js"
+    },
+    "./errors": {
+      "types": "./dist/errors.d.ts",
+      "default": "./dist/errors.js"
+    },
+    "./recommendation-reasons": {
+      "types": "./dist/recommendation-reasons.d.ts",
+      "default": "./dist/recommendation-reasons.js"
+    },
+    "./integrations": {
+      "types": "./dist/integrations/index.d.ts",
+      "default": "./dist/integrations/index.js"
+    }
   },
   "scripts": {
+    "build": "tsc",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit"
   },
