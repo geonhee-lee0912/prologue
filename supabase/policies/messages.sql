@@ -24,7 +24,7 @@ CREATE POLICY "select_messages_in_my_conversations" ON messages
     EXISTS (
       SELECT 1 FROM conversations c
       WHERE c.id = messages.conversation_id
-        AND (c.user_a_id = auth.uid()::text OR c.user_b_id = auth.uid()::text)
+        AND (c.user_a_id = auth.uid() OR c.user_b_id = auth.uid())
     )
     -- soft deleted 메시지는 모바일에 보이지 않음
     AND messages.deleted_at IS NULL

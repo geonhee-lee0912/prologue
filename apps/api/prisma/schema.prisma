@@ -52,7 +52,7 @@ enum LoginProvider {
 }
 
 model User {
-  id             String         @id @default(cuid())
+  id             String         @id @db.Uuid
   // 휴대폰 번호는 평문 저장 금지. SHA-256(서버 pepper) 만 저장.
   phoneHash      String         @unique @map("phone_hash")
   email          String?        @unique
@@ -100,7 +100,7 @@ model User {
 
 model RefreshToken {
   id           String    @id @default(cuid())
-  userId       String    @map("user_id")
+  userId       String    @map("user_id") @db.Uuid
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   tokenHash    String    @unique @map("token_hash")
   // 회전 추적용
@@ -115,7 +115,7 @@ model RefreshToken {
 
 model UserConsent {
   id          String   @id @default(cuid())
-  userId      String   @map("user_id")
+  userId      String   @map("user_id") @db.Uuid
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   consentType String   @map("consent_type") // terms_of_service, privacy, marketing, location, ...
   required    Boolean
@@ -147,7 +147,7 @@ enum EmploymentVerificationStatus {
 
 model UserAuth {
   id     String @id @default(cuid())
-  userId String @unique @map("user_id")
+  userId String @unique @map("user_id") @db.Uuid
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // 본인 인증 (FR-B01)
@@ -189,7 +189,7 @@ model UserAuth {
 
 model Profile {
   id     String @id @default(cuid())
-  userId String @unique @map("user_id")
+  userId String @unique @map("user_id") @db.Uuid
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   jobCategory   String?  @map("job_category") // 직업군 (회사명 아님)
@@ -224,7 +224,7 @@ enum ProfileAnswerCategory {
 
 model ProfileAnswer {
   id          String                @id @default(cuid())
-  userId      String                @map("user_id")
+  userId      String                @map("user_id") @db.Uuid
   user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   category    ProfileAnswerCategory
   questionKey String                @map("question_key") // 'work_career', 'weekend_rest', 'contact_frequency' 등 정책 상수
@@ -261,7 +261,7 @@ enum ContactFrequency {
 
 model RelationshipPreference {
   id     String @id @default(cuid())
-  userId String @unique @map("user_id")
+  userId String @unique @map("user_id") @db.Uuid
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   intent           RelationshipIntent
@@ -284,7 +284,7 @@ enum PhotoType {
 
 model Photo {
   id              String          @id @default(cuid())
-  userId          String          @map("user_id")
+  userId          String          @map("user_id") @db.Uuid
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   photoType       PhotoType       @map("photo_type")
   storageKey      String          @map("storage_key") // S3 object key (전체 URL 아님)
@@ -323,10 +323,10 @@ enum RecommendationGeneratedBy {
 model Recommendation {
   id           String @id @default(cuid())
   // 추천을 받는 사용자
-  userId       String @map("user_id")
+  userId       String @map("user_id") @db.Uuid
   user         User   @relation("RecommendationReceiver", fields: [userId], references: [id], onDelete: Cascade)
   // 추천 대상 사용자
-  targetUserId String @map("target_user_id")
+  targetUserId String @map("target_user_id") @db.Uuid
   targetUser   User   @relation("RecommendationTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
 
   recommendationDate DateTime @map("recommendation_date") @db.Date
@@ -400,9 +400,9 @@ enum SkipReason {
 
 model UserAction {
   id               String  @id @default(cuid())
-  userId           String  @map("user_id")
+  userId           String  @map("user_id") @db.Uuid
   user             User    @relation("ActionByUser", fields: [userId], references: [id], onDelete: Cascade)
-  targetUserId     String  @map("target_user_id")
+  targetUserId     String  @map("target_user_id") @db.Uuid
   targetUser       User    @relation("ActionTowardUser", fields: [targetUserId], references: [id], onDelete: Cascade)
   recommendationId String? @map("recommendation_id")
 
@@ -433,9 +433,9 @@ enum MatchStatus {
 model Match {
   id      String @id @default(cuid())
   // 정렬 일관성을 위해 항상 userAId < userBId 로 저장한다 (애플리케이션에서 정렬).
-  userAId String @map("user_a_id")
+  userAId String @map("user_a_id") @db.Uuid
   userA   User   @relation("MatchUserA", fields: [userAId], references: [id], onDelete: Cascade)
-  userBId String @map("user_b_id")
+  userBId String @map("user_b_id") @db.Uuid
   userB   User   @relation("MatchUserB", fields: [userBId], references: [id], onDelete: Cascade)
 
   matchedAt DateTime    @default(now()) @map("matched_at")
@@ -467,9 +467,9 @@ model Conversation {
   match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
 
   // 편의를 위해 매치 양측 사용자 ID 사본
-  userAId String @map("user_a_id")
+  userAId String @map("user_a_id") @db.Uuid
   userA   User   @relation("ConvUserA", fields: [userAId], references: [id], onDelete: Cascade)
-  userBId String @map("user_b_id")
+  userBId String @map("user_b_id") @db.Uuid
   userB   User   @relation("ConvUserB", fields: [userBId], references: [id], onDelete: Cascade)
 
   status         ConversationStatus @default(active)
@@ -501,7 +501,7 @@ model Message {
   id             String       @id @default(cuid())
   conversationId String       @map("conversation_id")
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  senderId       String?      @map("sender_id") // system 메시지는 null
+  senderId       String?      @map("sender_id") @db.Uuid // system 메시지는 null
   sender         User?        @relation(fields: [senderId], references: [id], onDelete: SetNull)
 
   messageType MessageType @default(text) @map("message_type")
@@ -535,9 +535,9 @@ model ContactExchange {
   conversationId String       @map("conversation_id")
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
-  requesterId String @map("requester_id")
+  requesterId String @map("requester_id") @db.Uuid
   requester   User   @relation("ContactRequester", fields: [requesterId], references: [id], onDelete: Cascade)
-  responderId String @map("responder_id")
+  responderId String @map("responder_id") @db.Uuid
   responder   User   @relation("ContactResponder", fields: [responderId], references: [id], onDelete: Cascade)
 
   contactType ContactType           @map("contact_type")
@@ -579,9 +579,9 @@ enum ReportStatus {
 
 model Report {
   id             String  @id @default(cuid())
-  reporterId     String  @map("reporter_id")
+  reporterId     String  @map("reporter_id") @db.Uuid
   reporter       User    @relation("ReportFiler", fields: [reporterId], references: [id], onDelete: Cascade)
-  targetUserId   String  @map("target_user_id")
+  targetUserId   String  @map("target_user_id") @db.Uuid
   targetUser     User    @relation("ReportTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
   // 신고 대상이 메시지/대화일 수 있음
   conversationId String? @map("conversation_id")
@@ -604,9 +604,9 @@ model Report {
 
 model Block {
   id        String @id @default(cuid())
-  blockerId String @map("blocker_id")
+  blockerId String @map("blocker_id") @db.Uuid
   blocker   User   @relation("BlockerUser", fields: [blockerId], references: [id], onDelete: Cascade)
-  blockedId String @map("blocked_id")
+  blockedId String @map("blocked_id") @db.Uuid
   blocked   User   @relation("BlockedUser", fields: [blockedId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -635,7 +635,7 @@ enum PaymentStatus {
 
 model Payment {
   id     String @id @default(cuid())
-  userId String @map("user_id")
+  userId String @map("user_id") @db.Uuid
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   productType  PaymentProductType @map("product_type")

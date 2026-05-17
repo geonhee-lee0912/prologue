@@ -19,7 +19,7 @@ ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 -- 자신의 프로필
 CREATE POLICY "select_own_profile" ON profiles
   FOR SELECT
-  USING (auth.uid()::text = user_id);
+  USING (auth.uid() = user_id);
 
 -- 자신이 받은 추천의 대상 프로필
 CREATE POLICY "select_recommended_profile" ON profiles
@@ -27,7 +27,7 @@ CREATE POLICY "select_recommended_profile" ON profiles
   USING (
     EXISTS (
       SELECT 1 FROM recommendations r
-      WHERE r.user_id = auth.uid()::text
+      WHERE r.user_id = auth.uid()
         AND r.target_user_id = profiles.user_id
         AND r.status IN ('created', 'shown', 'interested', 'skipped')
     )
@@ -41,8 +41,8 @@ CREATE POLICY "select_matched_profile" ON profiles
       SELECT 1 FROM matches m
       WHERE m.status = 'active'
         AND (
-          (m.user_a_id = auth.uid()::text AND m.user_b_id = profiles.user_id)
-          OR (m.user_b_id = auth.uid()::text AND m.user_a_id = profiles.user_id)
+          (m.user_a_id = auth.uid() AND m.user_b_id = profiles.user_id)
+          OR (m.user_b_id = auth.uid() AND m.user_a_id = profiles.user_id)
         )
     )
   );
@@ -54,8 +54,8 @@ CREATE POLICY "select_matched_profile" ON profiles
 -- 자신의 프로필만 UPDATE 가능
 CREATE POLICY "update_own_profile" ON profiles
   FOR UPDATE
-  USING (auth.uid()::text = user_id)
-  WITH CHECK (auth.uid()::text = user_id);
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
 -- =====================================================================
 -- INSERT/DELETE 는 정책 없음 (service role 만 가능)

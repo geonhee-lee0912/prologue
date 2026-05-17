@@ -87,7 +87,7 @@ CREATE TYPE "AdminReviewStatus" AS ENUM ('pending', 'approved', 'rejected');
 
 -- CreateTable
 CREATE TABLE "users" (
-    "id" TEXT NOT NULL,
+    "id" UUID NOT NULL,
     "phone_hash" TEXT NOT NULL,
     "email" TEXT,
     "login_provider" "LoginProvider" NOT NULL,
@@ -108,7 +108,7 @@ CREATE TABLE "users" (
 -- CreateTable
 CREATE TABLE "refresh_tokens" (
     "id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
+    "user_id" UUID NOT NULL,
     "token_hash" TEXT NOT NULL,
     "replaced_by_id" TEXT,
     "expires_at" TIMESTAMP(3) NOT NULL,
@@ -121,7 +121,7 @@ CREATE TABLE "refresh_tokens" (
 -- CreateTable
 CREATE TABLE "user_consents" (
     "id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
+    "user_id" UUID NOT NULL,
     "consent_type" TEXT NOT NULL,
     "required" BOOLEAN NOT NULL,
     "agreed" BOOLEAN NOT NULL,
@@ -134,7 +134,7 @@ CREATE TABLE "user_consents" (
 -- CreateTable
 CREATE TABLE "user_auths" (
     "id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
+    "user_id" UUID NOT NULL,
     "identity_verified" BOOLEAN NOT NULL DEFAULT false,
     "identity_verified_at" TIMESTAMP(3),
     "identity_ci_hash" TEXT,
@@ -158,7 +158,7 @@ CREATE TABLE "user_auths" (
 -- CreateTable
 CREATE TABLE "profiles" (
     "id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
+    "user_id" UUID NOT NULL,
     "job_category" TEXT,
     "intro" TEXT,
     "lifestyle_tags" TEXT[],
@@ -174,7 +174,7 @@ CREATE TABLE "profiles" (
 -- CreateTable
 CREATE TABLE "profile_answers" (
     "id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
+    "user_id" UUID NOT NULL,
     "category" "ProfileAnswerCategory" NOT NULL,
     "question_key" TEXT NOT NULL,
     "answer" TEXT NOT NULL,
@@ -187,7 +187,7 @@ CREATE TABLE "profile_answers" (
 -- CreateTable
 CREATE TABLE "relationship_preferences" (
     "id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
+    "user_id" UUID NOT NULL,
     "intent" "RelationshipIntent" NOT NULL,
     "pace" "RelationshipPace" NOT NULL,
     "contact_frequency" "ContactFrequency" NOT NULL,
@@ -201,7 +201,7 @@ CREATE TABLE "relationship_preferences" (
 -- CreateTable
 CREATE TABLE "photos" (
     "id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
+    "user_id" UUID NOT NULL,
     "photo_type" "PhotoType" NOT NULL,
     "storage_key" TEXT NOT NULL,
     "is_main" BOOLEAN NOT NULL DEFAULT false,
@@ -218,8 +218,8 @@ CREATE TABLE "photos" (
 -- CreateTable
 CREATE TABLE "recommendations" (
     "id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
-    "target_user_id" TEXT NOT NULL,
+    "user_id" UUID NOT NULL,
+    "target_user_id" UUID NOT NULL,
     "recommendation_date" DATE NOT NULL,
     "batch_id" TEXT,
     "rank" INTEGER NOT NULL,
@@ -256,8 +256,8 @@ CREATE TABLE "recommendation_reasons" (
 -- CreateTable
 CREATE TABLE "user_actions" (
     "id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
-    "target_user_id" TEXT NOT NULL,
+    "user_id" UUID NOT NULL,
+    "target_user_id" UUID NOT NULL,
     "recommendation_id" TEXT,
     "action_type" "UserActionType" NOT NULL,
     "skip_reason" "SkipReason",
@@ -270,8 +270,8 @@ CREATE TABLE "user_actions" (
 -- CreateTable
 CREATE TABLE "matches" (
     "id" TEXT NOT NULL,
-    "user_a_id" TEXT NOT NULL,
-    "user_b_id" TEXT NOT NULL,
+    "user_a_id" UUID NOT NULL,
+    "user_b_id" UUID NOT NULL,
     "matched_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "status" "MatchStatus" NOT NULL DEFAULT 'active',
     "ended_at" TIMESTAMP(3),
@@ -284,8 +284,8 @@ CREATE TABLE "matches" (
 CREATE TABLE "conversations" (
     "id" TEXT NOT NULL,
     "match_id" TEXT NOT NULL,
-    "user_a_id" TEXT NOT NULL,
-    "user_b_id" TEXT NOT NULL,
+    "user_a_id" UUID NOT NULL,
+    "user_b_id" UUID NOT NULL,
     "status" "ConversationStatus" NOT NULL DEFAULT 'active',
     "started_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "expires_at" TIMESTAMP(3) NOT NULL,
@@ -300,7 +300,7 @@ CREATE TABLE "conversations" (
 CREATE TABLE "messages" (
     "id" TEXT NOT NULL,
     "conversation_id" TEXT NOT NULL,
-    "sender_id" TEXT,
+    "sender_id" UUID,
     "message_type" "MessageType" NOT NULL DEFAULT 'text',
     "content" TEXT NOT NULL,
     "deleted_at" TIMESTAMP(3),
@@ -314,8 +314,8 @@ CREATE TABLE "messages" (
 CREATE TABLE "contact_exchanges" (
     "id" TEXT NOT NULL,
     "conversation_id" TEXT NOT NULL,
-    "requester_id" TEXT NOT NULL,
-    "responder_id" TEXT NOT NULL,
+    "requester_id" UUID NOT NULL,
+    "responder_id" UUID NOT NULL,
     "contact_type" "ContactType" NOT NULL,
     "status" "ContactExchangeStatus" NOT NULL DEFAULT 'requested',
     "requester_contact_masked" TEXT,
@@ -329,8 +329,8 @@ CREATE TABLE "contact_exchanges" (
 -- CreateTable
 CREATE TABLE "reports" (
     "id" TEXT NOT NULL,
-    "reporter_id" TEXT NOT NULL,
-    "target_user_id" TEXT NOT NULL,
+    "reporter_id" UUID NOT NULL,
+    "target_user_id" UUID NOT NULL,
     "conversation_id" TEXT,
     "message_id" TEXT,
     "report_type" "ReportType" NOT NULL,
@@ -347,8 +347,8 @@ CREATE TABLE "reports" (
 -- CreateTable
 CREATE TABLE "blocks" (
     "id" TEXT NOT NULL,
-    "blocker_id" TEXT NOT NULL,
-    "blocked_id" TEXT NOT NULL,
+    "blocker_id" UUID NOT NULL,
+    "blocked_id" UUID NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "blocks_pkey" PRIMARY KEY ("id")
@@ -357,7 +357,7 @@ CREATE TABLE "blocks" (
 -- CreateTable
 CREATE TABLE "payments" (
     "id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
+    "user_id" UUID NOT NULL,
     "product_type" "PaymentProductType" NOT NULL,
     "amount" INTEGER NOT NULL,
     "currency" TEXT NOT NULL DEFAULT 'KRW',

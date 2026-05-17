@@ -36,7 +36,7 @@ SELECT
   ua.action_type,
   ua.created_at
 FROM user_actions ua
-WHERE ua.user_id = auth.uid()::text
+WHERE ua.user_id = auth.uid()
   AND ua.action_type = 'send_interest';
 
 -- view 에 SELECT 권한 부여 (skip_reason 은 view 에 포함되지 않음)
