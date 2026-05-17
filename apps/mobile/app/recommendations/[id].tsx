@@ -86,6 +86,33 @@ export default function RecommendationDetail() {
     }
   }
 
+  function onReport() {
+    if (!card) return;
+    router.push({ pathname: '/report', params: { targetUserId: card.target.userId } });
+  }
+
+  async function onBlock() {
+    if (!card) return;
+    const ok = await confirm(
+      '차단',
+      '이 사용자를 차단할까요?\n차단하면 추천에서 제외되고 다시 노출되지 않아요.',
+    );
+    if (!ok) return;
+    setBusy(true);
+    try {
+      const token = await authStorage.getAccessToken();
+      if (!token) return;
+      await api.createBlock(token, card.target.userId);
+      notify('차단됨', '추천에서 제외됐어요.');
+      router.replace('/home');
+    } catch (e) {
+      if (e instanceof ApiError) notify(`오류 (${e.code})`, e.message);
+      else notify('오류', e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const load = useCallback(async () => {
     const token = await authStorage.getAccessToken();
     if (!token) {
@@ -259,6 +286,17 @@ export default function RecommendationDetail() {
           ※ 이미 {card.status === 'interested' ? '관심 보낸' : '넘긴'} 추천이에요.
         </Text>
       )}
+
+      {/* 신고/차단 (작은 텍스트 링크) */}
+      <View style={styles.safetyRow}>
+        <Pressable onPress={onReport} disabled={busy}>
+          <Text style={styles.safetyLink}>신고</Text>
+        </Pressable>
+        <Text style={styles.safetyDivider}>·</Text>
+        <Pressable onPress={onBlock} disabled={busy}>
+          <Text style={[styles.safetyLink, { color: '#C00' }]}>차단</Text>
+        </Pressable>
+      </View>
     </ScrollView>
   );
 }
@@ -328,4 +366,13 @@ const styles = StyleSheet.create({
   interestText: { color: '#FFF', fontSize: 14, fontWeight: '600' },
   placeholder: { fontSize: 11, color: '#999', textAlign: 'center', marginTop: 8 },
   disabled: { opacity: 0.5 },
+  safetyRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 24,
+    gap: 8,
+  },
+  safetyLink: { fontSize: 12, color: '#888', textDecorationLine: 'underline' },
+  safetyDivider: { fontSize: 12, color: '#CCC' },
 });

@@ -267,6 +267,68 @@ export const api = {
       body: JSON.stringify({ content }),
     });
   },
+
+  // === 연락처 교환 (FR-G05/G06) ===
+  listContactExchanges(accessToken: string, conversationId: string) {
+    return request<ContactExchangeView[]>(
+      `/conversations/${conversationId}/contact-exchanges`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    );
+  },
+  requestContactExchange(
+    accessToken: string,
+    conversationId: string,
+    contactType: 'phone' | 'kakao',
+    myContact: string,
+  ) {
+    return request<ContactExchangeView>(
+      `/conversations/${conversationId}/contact-exchange`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ contactType, myContact }),
+      },
+    );
+  },
+  respondContactExchange(
+    accessToken: string,
+    exchangeId: string,
+    accepted: boolean,
+    myContact?: string,
+  ) {
+    return request<ContactExchangeView>(`/contact-exchanges/${exchangeId}/respond`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify(accepted ? { accepted, myContact } : { accepted: false }),
+    });
+  },
+
+  // === 안전 (FR-H) ===
+  createReport(
+    accessToken: string,
+    payload: {
+      targetUserId: string;
+      reportType: string;
+      description?: string;
+      conversationId?: string;
+      messageId?: string;
+    },
+  ) {
+    return request<{ id: string }>('/reports', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify(payload),
+    });
+  },
+  createBlock(accessToken: string, blockedId: string) {
+    return request<{ id: string }>('/blocks', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ blockedId }),
+    });
+  },
 };
 
 // ============== 프로필 타입 ==============
@@ -409,6 +471,17 @@ export interface ConversationDetail {
   daysLeft: number;
   peer: ConversationPeer;
   messages: MessageView[];
+}
+
+export interface ContactExchangeView {
+  id: string;
+  status: 'requested' | 'accepted' | 'declined' | 'cancelled' | 'expired';
+  contactType: 'phone' | 'kakao';
+  requesterId: string;
+  responderId: string;
+  isRequester: boolean;
+  requestedAt: string;
+  respondedAt: string | null;
 }
 
 export interface RecommendationCard {

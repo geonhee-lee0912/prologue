@@ -16,6 +16,7 @@ import { PhotosModule } from './photos/photos.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProfileModule } from './profile/profile.module';
 import { RecommendationsModule } from './recommendations/recommendations.module';
+import { SafetyModule } from './safety/safety.module';
 import { SupabaseModule } from './supabase/supabase.module';
 import { UsersModule } from './users/users.module';
 import { VerificationModule } from './verification/verification.module';
@@ -38,6 +39,7 @@ import { VerificationModule } from './verification/verification.module';
     ConversationsModule,
     ContactExchangesModule,
     ActionsModule,
+    SafetyModule,
   ],
   providers: [
     // 순서 중요: ThrottlerGuard 가 먼저 → 인증 가드가 나중
