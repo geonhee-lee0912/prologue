@@ -19,6 +19,7 @@ ALTER TABLE recommendations ENABLE ROW LEVEL SECURITY;
 -- =====================================================================
 
 -- 사용자는 자신이 받은 추천만 SELECT 가능
+DROP POLICY IF EXISTS "select_own_recommendations" ON recommendations;
 CREATE POLICY "select_own_recommendations" ON recommendations
   FOR SELECT
   USING (auth.uid() = user_id);

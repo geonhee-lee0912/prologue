@@ -17,11 +17,13 @@ ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 -- =====================================================================
 
 -- 자신의 프로필
+DROP POLICY IF EXISTS "select_own_profile" ON profiles;
 CREATE POLICY "select_own_profile" ON profiles
   FOR SELECT
   USING (auth.uid() = user_id);
 
 -- 자신이 받은 추천의 대상 프로필
+DROP POLICY IF EXISTS "select_recommended_profile" ON profiles;
 CREATE POLICY "select_recommended_profile" ON profiles
   FOR SELECT
   USING (
@@ -34,6 +36,7 @@ CREATE POLICY "select_recommended_profile" ON profiles
   );
 
 -- 자신이 매칭된 상대의 프로필
+DROP POLICY IF EXISTS "select_matched_profile" ON profiles;
 CREATE POLICY "select_matched_profile" ON profiles
   FOR SELECT
   USING (
@@ -52,6 +55,7 @@ CREATE POLICY "select_matched_profile" ON profiles
 -- =====================================================================
 
 -- 자신의 프로필만 UPDATE 가능
+DROP POLICY IF EXISTS "update_own_profile" ON profiles;
 CREATE POLICY "update_own_profile" ON profiles
   FOR UPDATE
   USING (auth.uid() = user_id)

@@ -18,6 +18,7 @@ ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 -- =====================================================================
 
 -- 사용자는 자신이 참여한 대화방의 메시지만 SELECT 가능
+DROP POLICY IF EXISTS "select_messages_in_my_conversations" ON messages;
 CREATE POLICY "select_messages_in_my_conversations" ON messages
   FOR SELECT
   USING (

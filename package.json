@@ -15,6 +15,7 @@
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean && rm -rf node_modules",
+    "db:rls": "node supabase/apply-policies.js",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prepare": "husky"
