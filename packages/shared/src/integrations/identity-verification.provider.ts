@@ -15,8 +15,10 @@ export interface IdentityVerificationStartResult {
 }
 
 export interface IdentityVerificationResult {
-  /** 본인 식별값을 해시한 결과 (CI hash) */
+  /** 본인 식별값을 해시한 결과 (CI hash). 동일인 중복 가입 방지용 */
   ciHash: string;
+  /** E.164 형식 휴대폰 번호 (예: +821012345678). 평문은 즉시 해시 후 폐기 */
+  phoneNumber: string;
   birthYear: number;
   gender: 'male' | 'female';
   verifiedAt: Date;
