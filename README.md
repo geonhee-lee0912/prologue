@@ -21,9 +21,13 @@
   - 본인 인증으로 가입 (`/auth/identity/start` + `/auth/identity/complete`) — PASS/NICE mock
   - SMS OTP 로그인 (`/auth/login/otp/send` + `/auth/login/otp/verify`)
   - 카카오 OAuth 로그인 / 가입 (`/auth/login/kakao`, identity start with kakaoAccessToken)
+  - **카카오 real 모드 백엔드 동작 확인** (`KAKAO_USER_INFO_PROVIDER=real`, code 교환 엔드포인트)
   - Refresh token 회전 + Logout (`/auth/refresh`, `/auth/logout`)
   - User.kakaoId, UserAuth.identityCiHash 유니크 제약
-  - 모바일 A03 화면 (Expo Web/Native) + 토큰 secure storage
+  - 모바일 A03 화면 (Expo Web/Native) + 토큰 secure storage (카카오는 mock 유지)
+- 🟡 **보류된 작업** — [`BACKLOG.md`](./BACKLOG.md) 참고
+  - 카카오 real 사용자 end-to-end 검증 (카카오 콘솔 redirect URI 등록 필요)
+  - 모바일 real OAuth (expo-auth-session, 카카오 로그인 버튼 실 연동)
 - ⏳ **Phase 4 — FR-B 이후** 얼굴 인증, 프로필 작성, 추천, 매칭, 대화, 신고/차단
 
 ---
