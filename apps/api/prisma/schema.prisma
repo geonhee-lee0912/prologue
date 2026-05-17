@@ -27,22 +27,22 @@ datasource db {
 // =====================================================================
 
 enum UserStatus {
-  pending      // 가입했지만 필수 인증/프로필 미완료
-  active       // 서비스 이용 가능
-  suspended    // 제재 또는 운영 제한
-  withdrawn    // 탈퇴
+  pending // 가입했지만 필수 인증/프로필 미완료
+  active // 서비스 이용 가능
+  suspended // 제재 또는 운영 제한
+  withdrawn // 탈퇴
 }
 
 enum MembershipType {
   free
   plus
-  trust_plus   // MVP 후순위
+  trust_plus // MVP 후순위
 }
 
 enum Gender {
   male
   female
-  other        // 미공개 또는 별도 정책 결정 시 사용
+  other // 미공개 또는 별도 정책 결정 시 사용
 }
 
 enum LoginProvider {
@@ -52,62 +52,62 @@ enum LoginProvider {
 }
 
 model User {
-  id              String         @id @default(cuid())
+  id             String         @id @default(cuid())
   // 휴대폰 번호는 평문 저장 금지. SHA-256(서버 pepper) 만 저장.
-  phoneHash       String         @unique
-  email           String?        @unique
-  loginProvider   LoginProvider
-  gender          Gender
-  birthYear       Int
-  targetGender    Gender
-  region1         String         // 시/도
-  region2         String?        // 시/군/구
-  status          UserStatus     @default(pending)
-  membershipType  MembershipType @default(free)
+  phoneHash      String         @unique @map("phone_hash")
+  email          String?        @unique
+  loginProvider  LoginProvider  @map("login_provider")
+  gender         Gender
+  birthYear      Int            @map("birth_year")
+  targetGender   Gender         @map("target_gender")
+  region1        String // 시/도
+  region2        String? // 시/군/구
+  status         UserStatus     @default(pending)
+  membershipType MembershipType @default(free) @map("membership_type")
 
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  withdrawnAt     DateTime?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  withdrawnAt DateTime? @map("withdrawn_at")
 
   // 관계
-  consents              UserConsent[]
-  auth                  UserAuth?
-  profile               Profile?
-  profileAnswers        ProfileAnswer[]
-  relationshipPreference RelationshipPreference?
-  photos                Photo[]
-  recommendationsReceived Recommendation[] @relation("RecommendationReceiver")
-  recommendationsAsTarget Recommendation[] @relation("RecommendationTarget")
-  actionsByUser         UserAction[]      @relation("ActionByUser")
-  actionsTowardUser     UserAction[]      @relation("ActionTowardUser")
-  matchesAsUserA        Match[]           @relation("MatchUserA")
-  matchesAsUserB        Match[]           @relation("MatchUserB")
-  conversationsAsUserA  Conversation[]    @relation("ConvUserA")
-  conversationsAsUserB  Conversation[]    @relation("ConvUserB")
-  messagesSent          Message[]
-  contactExchangesAsRequester ContactExchange[] @relation("ContactRequester")
-  contactExchangesAsResponder ContactExchange[] @relation("ContactResponder")
-  reportsFiled          Report[] @relation("ReportFiler")
-  reportsReceived       Report[] @relation("ReportTarget")
-  blocksMade            Block[]  @relation("BlockerUser")
-  blocksReceived        Block[]  @relation("BlockedUser")
-  payments              Payment[]
-  refreshTokens         RefreshToken[]
+  consents                    UserConsent[]
+  auth                        UserAuth?
+  profile                     Profile?
+  profileAnswers              ProfileAnswer[]
+  relationshipPreference      RelationshipPreference?
+  photos                      Photo[]
+  recommendationsReceived     Recommendation[]        @relation("RecommendationReceiver")
+  recommendationsAsTarget     Recommendation[]        @relation("RecommendationTarget")
+  actionsByUser               UserAction[]            @relation("ActionByUser")
+  actionsTowardUser           UserAction[]            @relation("ActionTowardUser")
+  matchesAsUserA              Match[]                 @relation("MatchUserA")
+  matchesAsUserB              Match[]                 @relation("MatchUserB")
+  conversationsAsUserA        Conversation[]          @relation("ConvUserA")
+  conversationsAsUserB        Conversation[]          @relation("ConvUserB")
+  messagesSent                Message[]
+  contactExchangesAsRequester ContactExchange[]       @relation("ContactRequester")
+  contactExchangesAsResponder ContactExchange[]       @relation("ContactResponder")
+  reportsFiled                Report[]                @relation("ReportFiler")
+  reportsReceived             Report[]                @relation("ReportTarget")
+  blocksMade                  Block[]                 @relation("BlockerUser")
+  blocksReceived              Block[]                 @relation("BlockedUser")
+  payments                    Payment[]
+  refreshTokens               RefreshToken[]
 
   @@index([status, gender, targetGender])
   @@map("users")
 }
 
 model RefreshToken {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash   String   @unique
+  id           String    @id @default(cuid())
+  userId       String    @map("user_id")
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash    String    @unique @map("token_hash")
   // 회전 추적용
-  replacedById String?
-  expiresAt   DateTime
-  createdAt   DateTime @default(now())
-  revokedAt   DateTime?
+  replacedById String?   @map("replaced_by_id")
+  expiresAt    DateTime  @map("expires_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  revokedAt    DateTime? @map("revoked_at")
 
   @@index([userId])
   @@map("refresh_tokens")
@@ -115,13 +115,13 @@ model RefreshToken {
 
 model UserConsent {
   id          String   @id @default(cuid())
-  userId      String
+  userId      String   @map("user_id")
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  consentType String   // terms_of_service, privacy, marketing, location, ...
+  consentType String   @map("consent_type") // terms_of_service, privacy, marketing, location, ...
   required    Boolean
   agreed      Boolean
   version     String
-  agreedAt    DateTime @default(now())
+  agreedAt    DateTime @default(now()) @map("agreed_at")
 
   @@index([userId, consentType])
   @@map("user_consents")
@@ -146,39 +146,39 @@ enum EmploymentVerificationStatus {
 }
 
 model UserAuth {
-  id                          String                       @id @default(cuid())
-  userId                      String                       @unique
-  user                        User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // 본인 인증 (FR-B01)
-  identityVerified            Boolean                      @default(false)
-  identityVerifiedAt          DateTime?
+  identityVerified   Boolean   @default(false) @map("identity_verified")
+  identityVerifiedAt DateTime? @map("identity_verified_at")
   // 본인 인증 응답에서 CI 만 해시 저장. 이름/생년월일은 저장하지 않는다.
-  identityCiHash              String?
-  identityProvider            String?                      // pass, nice 등
+  identityCiHash     String?   @map("identity_ci_hash")
+  identityProvider   String?   @map("identity_provider") // pass, nice 등
 
   // 얼굴 인증 (FR-B02)
-  faceMatchStatus             FaceMatchStatus              @default(not_submitted)
-  faceVerifiedAt              DateTime?
-  faceConfidence              Float?
+  faceMatchStatus FaceMatchStatus @default(not_submitted) @map("face_match_status")
+  faceVerifiedAt  DateTime?       @map("face_verified_at")
+  faceConfidence  Float?          @map("face_confidence")
 
   // 나이 확인 (FR-B03)
-  ageVerified                 Boolean                      @default(false)
+  ageVerified Boolean @default(false) @map("age_verified")
 
   // 매너 서약 (FR-B05)
-  mannerPledgeAgreed          Boolean                      @default(false)
-  mannerPledgeAgreedAt        DateTime?
+  mannerPledgeAgreed   Boolean   @default(false) @map("manner_pledge_agreed")
+  mannerPledgeAgreedAt DateTime? @map("manner_pledge_agreed_at")
 
   // 싱글 상태 서약 (FR-B06)
-  singlePledgeAgreed          Boolean                      @default(false)
-  singlePledgeAgreedAt        DateTime?
+  singlePledgeAgreed   Boolean   @default(false) @map("single_pledge_agreed")
+  singlePledgeAgreedAt DateTime? @map("single_pledge_agreed_at")
 
   // 직업/재직 인증 (FR-B07, MVP 부분 포함)
-  employmentVerificationStatus EmploymentVerificationStatus @default(not_submitted)
-  employmentVerifiedAt        DateTime?
+  employmentVerificationStatus EmploymentVerificationStatus @default(not_submitted) @map("employment_verification_status")
+  employmentVerifiedAt         DateTime?                    @map("employment_verified_at")
 
-  createdAt                   DateTime                     @default(now())
-  updatedAt                   DateTime                     @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("user_auths")
 }
@@ -188,24 +188,24 @@ model UserAuth {
 // =====================================================================
 
 model Profile {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  jobCategory     String?  // 직업군 (회사명 아님)
+  jobCategory   String?  @map("job_category") // 직업군 (회사명 아님)
   // 나의 프롤로그 (자기소개)
-  intro           String?  @db.Text
+  intro         String?  @db.Text
   // 라이프스타일 키워드 (배열)
-  lifestyleTags   String[]
+  lifestyleTags String[] @map("lifestyle_tags")
 
   // 운영 검수
-  reviewStatus    ReviewStatus @default(pending)
-  reviewedAt      DateTime?
+  reviewStatus ReviewStatus @default(pending) @map("review_status")
+  reviewedAt   DateTime?    @map("reviewed_at")
 
-  completionScore Int      @default(0)  // 0~100
+  completionScore Int @default(0) @map("completion_score") // 0~100
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("profiles")
 }
@@ -218,20 +218,20 @@ enum ReviewStatus {
 
 // 이야기형 프로필 문답 (이야기의 목차 + 관계의 문체)
 enum ProfileAnswerCategory {
-  story         // 이야기의 목차: 일과 커리어, 주말과 휴식, 친구와 가족, 취향과 관심사
-  relationship  // 관계의 문체: 연락 빈도, 대화 스타일, 관계 시작 속도, 갈등 해결, 애정 표현
+  story // 이야기의 목차: 일과 커리어, 주말과 휴식, 친구와 가족, 취향과 관심사
+  relationship // 관계의 문체: 연락 빈도, 대화 스타일, 관계 시작 속도, 갈등 해결, 애정 표현
 }
 
 model ProfileAnswer {
-  id        String                @id @default(cuid())
-  userId    String
-  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category  ProfileAnswerCategory
-  questionKey String              // 'work_career', 'weekend_rest', 'contact_frequency' 등 정책 상수
-  answer    String                @db.Text
+  id          String                @id @default(cuid())
+  userId      String                @map("user_id")
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    ProfileAnswerCategory
+  questionKey String                @map("question_key") // 'work_career', 'weekend_rest', 'contact_frequency' 등 정책 상수
+  answer      String                @db.Text
 
-  createdAt DateTime              @default(now())
-  updatedAt DateTime              @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([userId, questionKey])
   @@index([userId])
@@ -240,11 +240,11 @@ model ProfileAnswer {
 
 // 관계 목적/성향 데이터
 enum RelationshipIntent {
-  serious_long_term     // 진지한 장기 관계
-  natural_dating        // 자연스럽게 시작하는 연애
-  open_to_marriage      // 좋은 사람을 만나면 결혼도 가능
-  casual_meeting        // 가벼운 만남 (MVP에서는 권장 풀 외)
-  friendship_first      // 친구처럼 시작
+  serious_long_term // 진지한 장기 관계
+  natural_dating // 자연스럽게 시작하는 연애
+  open_to_marriage // 좋은 사람을 만나면 결혼도 가능
+  casual_meeting // 가벼운 만남 (MVP에서는 권장 풀 외)
+  friendship_first // 친구처럼 시작
 }
 
 enum RelationshipPace {
@@ -254,24 +254,24 @@ enum RelationshipPace {
 }
 
 enum ContactFrequency {
-  low      // 가끔 연락
-  medium   // 적당히
-  high     // 자주
+  low // 가끔 연락
+  medium // 적당히
+  high // 자주
 }
 
 model RelationshipPreference {
-  id                String              @id @default(cuid())
-  userId            String              @unique
-  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  intent            RelationshipIntent
-  pace              RelationshipPace
-  contactFrequency  ContactFrequency
+  intent           RelationshipIntent
+  pace             RelationshipPace
+  contactFrequency ContactFrequency   @map("contact_frequency")
   // 기타 응답은 구조화된 jsonb로
-  extra             Json?
+  extra            Json?
 
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("relationship_preferences")
 }
@@ -284,19 +284,19 @@ enum PhotoType {
 
 model Photo {
   id              String          @id @default(cuid())
-  userId          String
+  userId          String          @map("user_id")
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  photoType       PhotoType
-  storageKey      String          // S3 object key (전체 URL 아님)
-  isMain          Boolean         @default(false)
-  reviewStatus    ReviewStatus    @default(pending)
-  faceMatchStatus FaceMatchStatus @default(not_submitted)
+  photoType       PhotoType       @map("photo_type")
+  storageKey      String          @map("storage_key") // S3 object key (전체 URL 아님)
+  isMain          Boolean         @default(false) @map("is_main")
+  reviewStatus    ReviewStatus    @default(pending) @map("review_status")
+  faceMatchStatus FaceMatchStatus @default(not_submitted) @map("face_match_status")
   // 자동 검수(NSFW 등) 결과
-  moderationFlags String[]        @default([])
+  moderationFlags String[]        @default([]) @map("moderation_flags")
 
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  deletedAt       DateTime?
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
 
   @@index([userId])
   @@map("photos")
@@ -321,34 +321,34 @@ enum RecommendationGeneratedBy {
 }
 
 model Recommendation {
-  id                  String                @id @default(cuid())
+  id           String @id @default(cuid())
   // 추천을 받는 사용자
-  userId              String
-  user                User                  @relation("RecommendationReceiver", fields: [userId], references: [id], onDelete: Cascade)
+  userId       String @map("user_id")
+  user         User   @relation("RecommendationReceiver", fields: [userId], references: [id], onDelete: Cascade)
   // 추천 대상 사용자
-  targetUserId        String
-  targetUser          User                  @relation("RecommendationTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  targetUserId String @map("target_user_id")
+  targetUser   User   @relation("RecommendationTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
 
-  recommendationDate  DateTime              @db.Date
-  batchId             String?
-  rank                Int
+  recommendationDate DateTime @map("recommendation_date") @db.Date
+  batchId            String?  @map("batch_id")
+  rank               Int
 
   // 점수 (사용자 응답에 절대 노출 금지)
-  totalScore          Float
-  trustScore          Float?
-  relationshipScore   Float?
-  lifestyleScore      Float?
-  conversationScore   Float?
-  distanceScore       Float?
-  profileQualityScore Float?
+  totalScore          Float  @map("total_score")
+  trustScore          Float? @map("trust_score")
+  relationshipScore   Float? @map("relationship_score")
+  lifestyleScore      Float? @map("lifestyle_score")
+  conversationScore   Float? @map("conversation_score")
+  distanceScore       Float? @map("distance_score")
+  profileQualityScore Float? @map("profile_quality_score")
 
-  status              RecommendationStatus  @default(created)
-  shownAt             DateTime?
+  status  RecommendationStatus @default(created)
+  shownAt DateTime?            @map("shown_at")
 
-  reason              RecommendationReason?
+  reason RecommendationReason?
 
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([userId, targetUserId, recommendationDate])
   @@index([userId, status, recommendationDate])
@@ -357,21 +357,21 @@ model Recommendation {
 }
 
 model RecommendationReason {
-  id                 String                    @id @default(cuid())
-  recommendationId   String                    @unique
-  recommendation     Recommendation            @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  id               String         @id @default(cuid())
+  recommendationId String         @unique @map("recommendation_id")
+  recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
 
   // 사용자에게 공개되는 텍스트 (정책 상수에서 생성된 결과)
-  summaryText        String                    @db.Text
-  matchedPoints      String[]
-  differencePoints   String[]
-  conversationTopics String[]
-  curatorMemo        String                    @db.Text
+  summaryText        String   @map("summary_text") @db.Text
+  matchedPoints      String[] @map("matched_points")
+  differencePoints   String[] @map("difference_points")
+  conversationTopics String[] @map("conversation_topics")
+  curatorMemo        String   @map("curator_memo") @db.Text
 
   // 생성 출처 (사용자에게 노출 금지)
-  generatedBy        RecommendationGeneratedBy
+  generatedBy RecommendationGeneratedBy @map("generated_by")
 
-  createdAt          DateTime                  @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@map("recommendation_reasons")
 }
@@ -399,20 +399,20 @@ enum SkipReason {
 }
 
 model UserAction {
-  id              String          @id @default(cuid())
-  userId          String
-  user            User            @relation("ActionByUser", fields: [userId], references: [id], onDelete: Cascade)
-  targetUserId    String
-  targetUser      User            @relation("ActionTowardUser", fields: [targetUserId], references: [id], onDelete: Cascade)
-  recommendationId String?
+  id               String  @id @default(cuid())
+  userId           String  @map("user_id")
+  user             User    @relation("ActionByUser", fields: [userId], references: [id], onDelete: Cascade)
+  targetUserId     String  @map("target_user_id")
+  targetUser       User    @relation("ActionTowardUser", fields: [targetUserId], references: [id], onDelete: Cascade)
+  recommendationId String? @map("recommendation_id")
 
-  actionType      UserActionType
+  actionType UserActionType @map("action_type")
 
   // 거절 사유는 SkipReason enum 또는 자유텍스트 (상대 비공개)
-  skipReason      SkipReason?
-  skipReasonNote  String?         @db.Text
+  skipReason     SkipReason? @map("skip_reason")
+  skipReasonNote String?     @map("skip_reason_note") @db.Text
 
-  createdAt       DateTime        @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([userId, actionType, createdAt])
   @@index([targetUserId, actionType])
@@ -431,19 +431,19 @@ enum MatchStatus {
 }
 
 model Match {
-  id              String         @id @default(cuid())
+  id      String @id @default(cuid())
   // 정렬 일관성을 위해 항상 userAId < userBId 로 저장한다 (애플리케이션에서 정렬).
-  userAId         String
-  userA           User           @relation("MatchUserA", fields: [userAId], references: [id], onDelete: Cascade)
-  userBId         String
-  userB           User           @relation("MatchUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  userAId String @map("user_a_id")
+  userA   User   @relation("MatchUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userBId String @map("user_b_id")
+  userB   User   @relation("MatchUserB", fields: [userBId], references: [id], onDelete: Cascade)
 
-  matchedAt       DateTime       @default(now())
-  status          MatchStatus    @default(active)
-  endedAt         DateTime?
-  endReason       String?
+  matchedAt DateTime    @default(now()) @map("matched_at")
+  status    MatchStatus @default(active)
+  endedAt   DateTime?   @map("ended_at")
+  endReason String?     @map("end_reason")
 
-  conversation    Conversation?
+  conversation Conversation?
 
   @@unique([userAId, userBId])
   @@index([status])
@@ -462,24 +462,24 @@ enum ConversationStatus {
 }
 
 model Conversation {
-  id            String              @id @default(cuid())
-  matchId       String              @unique
-  match         Match               @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  matchId String @unique @map("match_id")
+  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
 
   // 편의를 위해 매치 양측 사용자 ID 사본
-  userAId       String
-  userA         User                @relation("ConvUserA", fields: [userAId], references: [id], onDelete: Cascade)
-  userBId       String
-  userB         User                @relation("ConvUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  userAId String @map("user_a_id")
+  userA   User   @relation("ConvUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userBId String @map("user_b_id")
+  userB   User   @relation("ConvUserB", fields: [userBId], references: [id], onDelete: Cascade)
 
-  status        ConversationStatus  @default(active)
-  startedAt     DateTime            @default(now())
-  expiresAt     DateTime            // 기본 7일 + 연장
-  extensionsUsed Int                @default(0)
-  endedAt       DateTime?
-  endReason     String?
+  status         ConversationStatus @default(active)
+  startedAt      DateTime           @default(now()) @map("started_at")
+  expiresAt      DateTime           @map("expires_at") // 기본 7일 + 연장
+  extensionsUsed Int                @default(0) @map("extensions_used")
+  endedAt        DateTime?          @map("ended_at")
+  endReason      String?            @map("end_reason")
 
-  messages      Message[]
+  messages         Message[]
   contactExchanges ContactExchange[]
 
   @@index([userAId, status])
@@ -490,28 +490,28 @@ model Conversation {
 
 enum MessageType {
   text
-  system_topic        // 첫 대화 주제
-  system_extension    // 대화 연장 알림
-  system_contact      // 연락처 교환 시스템 메시지
-  system_safety       // 안전 안내
-  system_expiry       // 종료 안내
+  system_topic // 첫 대화 주제
+  system_extension // 대화 연장 알림
+  system_contact // 연락처 교환 시스템 메시지
+  system_safety // 안전 안내
+  system_expiry // 종료 안내
 }
 
 model Message {
-  id              String       @id @default(cuid())
-  conversationId  String
-  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  senderId        String?      // system 메시지는 null
-  sender          User?        @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  id             String       @id @default(cuid())
+  conversationId String       @map("conversation_id")
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String?      @map("sender_id") // system 메시지는 null
+  sender         User?        @relation(fields: [senderId], references: [id], onDelete: SetNull)
 
-  messageType     MessageType  @default(text)
-  content         String       @db.Text
+  messageType MessageType @default(text) @map("message_type")
+  content     String      @db.Text
 
   // 신고 보존을 위해 즉시 삭제하지 않음. soft delete 만 허용.
-  deletedAt       DateTime?
-  deletedBy       String?      // user, admin
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by") // user, admin
 
-  createdAt       DateTime     @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([conversationId, createdAt])
   @@map("messages")
@@ -531,25 +531,25 @@ enum ContactType {
 }
 
 model ContactExchange {
-  id              String                @id @default(cuid())
-  conversationId  String
-  conversation    Conversation          @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  id             String       @id @default(cuid())
+  conversationId String       @map("conversation_id")
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
-  requesterId     String
-  requester       User                  @relation("ContactRequester", fields: [requesterId], references: [id], onDelete: Cascade)
-  responderId     String
-  responder       User                  @relation("ContactResponder", fields: [responderId], references: [id], onDelete: Cascade)
+  requesterId String @map("requester_id")
+  requester   User   @relation("ContactRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  responderId String @map("responder_id")
+  responder   User   @relation("ContactResponder", fields: [responderId], references: [id], onDelete: Cascade)
 
-  contactType     ContactType
-  status          ContactExchangeStatus @default(requested)
+  contactType ContactType           @map("contact_type")
+  status      ContactExchangeStatus @default(requested)
 
   // 평문은 양쪽 동의 시점에 새로 입력받는다. 저장된 User 데이터로 자동 노출 금지.
   // 동의 후 시스템 메시지로 한 번만 노출하고, 여기에는 보관 정책에 따라 마스킹된 형태만 저장 검토.
-  requesterContactMasked String?
-  responderContactMasked String?
+  requesterContactMasked String? @map("requester_contact_masked")
+  responderContactMasked String? @map("responder_contact_masked")
 
-  requestedAt     DateTime              @default(now())
-  respondedAt     DateTime?
+  requestedAt DateTime  @default(now()) @map("requested_at")
+  respondedAt DateTime? @map("responded_at")
 
   @@index([conversationId])
   @@map("contact_exchanges")
@@ -578,24 +578,24 @@ enum ReportStatus {
 }
 
 model Report {
-  id              String        @id @default(cuid())
-  reporterId      String
-  reporter        User          @relation("ReportFiler", fields: [reporterId], references: [id], onDelete: Cascade)
-  targetUserId    String
-  targetUser      User          @relation("ReportTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  id             String  @id @default(cuid())
+  reporterId     String  @map("reporter_id")
+  reporter       User    @relation("ReportFiler", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetUserId   String  @map("target_user_id")
+  targetUser     User    @relation("ReportTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
   // 신고 대상이 메시지/대화일 수 있음
-  conversationId  String?
-  messageId       String?
+  conversationId String? @map("conversation_id")
+  messageId      String? @map("message_id")
 
-  reportType      ReportType
-  description     String?       @db.Text  // 사용자에게 절대 공개 금지
+  reportType  ReportType @map("report_type")
+  description String?    @db.Text // 사용자에게 절대 공개 금지
 
-  status          ReportStatus  @default(pending)
-  resolutionNote  String?       @db.Text  // 운영자 메모, 사용자에게 공개 금지
+  status         ReportStatus @default(pending)
+  resolutionNote String?      @map("resolution_note") @db.Text // 운영자 메모, 사용자에게 공개 금지
 
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  resolvedAt      DateTime?
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  resolvedAt DateTime? @map("resolved_at")
 
   @@index([targetUserId, status])
   @@index([status, createdAt])
@@ -603,13 +603,13 @@ model Report {
 }
 
 model Block {
-  id            String   @id @default(cuid())
-  blockerId     String
-  blocker       User     @relation("BlockerUser", fields: [blockerId], references: [id], onDelete: Cascade)
-  blockedId     String
-  blocked       User     @relation("BlockedUser", fields: [blockedId], references: [id], onDelete: Cascade)
+  id        String @id @default(cuid())
+  blockerId String @map("blocker_id")
+  blocker   User   @relation("BlockerUser", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String @map("blocked_id")
+  blocked   User   @relation("BlockedUser", fields: [blockedId], references: [id], onDelete: Cascade)
 
-  createdAt     DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@unique([blockerId, blockedId])
   @@index([blockedId])
@@ -634,21 +634,21 @@ enum PaymentStatus {
 }
 
 model Payment {
-  id              String              @id @default(cuid())
-  userId          String
-  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  productType     PaymentProductType
-  amount          Int                 // 원
-  currency        String              @default("KRW")
-  status          PaymentStatus       @default(pending)
-  provider        String              // toss, iamport, iap_apple, iap_google
-  providerTxId    String?             @unique
+  productType  PaymentProductType @map("product_type")
+  amount       Int // 원
+  currency     String             @default("KRW")
+  status       PaymentStatus      @default(pending)
+  provider     String // toss, iamport, iap_apple, iap_google
+  providerTxId String?            @unique @map("provider_tx_id")
 
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-  succeededAt     DateTime?
-  refundedAt      DateTime?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  succeededAt DateTime? @map("succeeded_at")
+  refundedAt  DateTime? @map("refunded_at")
 
   @@index([userId, status])
   @@map("payments")
@@ -670,18 +670,18 @@ enum AdminStatus {
 }
 
 model AdminUser {
-  id            String      @id @default(cuid())
-  email         String      @unique
-  passwordHash  String
-  role          AdminRole
-  status        AdminStatus @default(active)
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String      @map("password_hash")
+  role         AdminRole
+  status       AdminStatus @default(active)
 
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  lastLoginAt   DateTime?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  lastLoginAt DateTime? @map("last_login_at")
 
-  reviews       AdminReview[]
-  auditLogs     AdminAuditLog[]
+  reviews   AdminReview[]
+  auditLogs AdminAuditLog[]
 
   @@map("admin_users")
 }
@@ -701,16 +701,16 @@ enum AdminReviewStatus {
 }
 
 model AdminReview {
-  id              String                @id @default(cuid())
-  targetType      AdminReviewTargetType
-  targetId        String
-  reviewerId      String?
-  reviewer        AdminUser?            @relation(fields: [reviewerId], references: [id], onDelete: SetNull)
-  status          AdminReviewStatus     @default(pending)
-  memo            String?               @db.Text  // 내부용, 사용자에게 공개 금지
+  id         String                @id @default(cuid())
+  targetType AdminReviewTargetType @map("target_type")
+  targetId   String                @map("target_id")
+  reviewerId String?               @map("reviewer_id")
+  reviewer   AdminUser?            @relation(fields: [reviewerId], references: [id], onDelete: SetNull)
+  status     AdminReviewStatus     @default(pending)
+  memo       String?               @db.Text // 내부용, 사용자에게 공개 금지
 
-  createdAt       DateTime              @default(now())
-  reviewedAt      DateTime?
+  createdAt  DateTime  @default(now()) @map("created_at")
+  reviewedAt DateTime? @map("reviewed_at")
 
   @@index([targetType, status])
   @@map("admin_reviews")
@@ -718,17 +718,17 @@ model AdminReview {
 
 // 운영자 모든 액션을 추적 (보안/감사)
 model AdminAuditLog {
-  id          String     @id @default(cuid())
-  adminId     String
-  admin       AdminUser  @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  action      String     // suspend_user, approve_photo, view_face_image_url 등
-  targetType  String?
-  targetId    String?
-  metadata    Json?
-  ipAddress   String?
-  userAgent   String?
+  id         String    @id @default(cuid())
+  adminId    String    @map("admin_id")
+  admin      AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action     String // suspend_user, approve_photo, view_face_image_url 등
+  targetType String?   @map("target_type")
+  targetId   String?   @map("target_id")
+  metadata   Json?
+  ipAddress  String?   @map("ip_address")
+  userAgent  String?   @map("user_agent")
 
-  createdAt   DateTime   @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([adminId, createdAt])
   @@index([action, createdAt])
