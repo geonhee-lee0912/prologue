@@ -1,9 +1,11 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { IdentityVerificationStartResult } from '@prologue/shared';
 import { AuthService, type AuthResponse } from './auth.service';
 import { Public } from './decorators/public.decorator';
 import { CompleteIdentityDto } from './dto/complete-identity.dto';
+import { SendOtpDto } from './dto/send-otp.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
 
 /**
  * @fr FR-A01 회원가입 (본인 인증으로 통합)
@@ -38,5 +40,33 @@ export class AuthController {
   })
   async completeIdentity(@Body() dto: CompleteIdentityDto): Promise<AuthResponse> {
     return this.authService.completeIdentity(dto);
+  }
+
+  // ============================================================
+  // FR-A02 로그인 (SMS OTP)
+  // ============================================================
+
+  @Public()
+  @Post('login/otp/send')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '로그인 OTP 발송',
+    description:
+      '가입된 휴대폰 번호로 6자리 OTP 를 발송한다. 미가입 휴대폰에 대해서도 동일한 응답을 반환하여 ' +
+      '사용자 열거 공격을 방지한다. 실제 SMS 는 가입자에게만 보낸다.',
+  })
+  async sendLoginOtp(@Body() dto: SendOtpDto): Promise<{ sentAt: string }> {
+    return this.authService.sendLoginOtp(dto);
+  }
+
+  @Public()
+  @Post('login/otp/verify')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '로그인 OTP 검증 → JWT 발급',
+    description: '발송된 OTP 와 휴대폰 번호를 검증하고 성공 시 access/refresh token 을 반환.',
+  })
+  async verifyLoginOtp(@Body() dto: VerifyOtpDto): Promise<AuthResponse> {
+    return this.authService.verifyLoginOtp(dto);
   }
 }
