@@ -1,11 +1,14 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { IdentityVerificationStartResult } from '@prologue/shared';
 import { AuthService, type AuthResponse } from './auth.service';
+import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
 import { CompleteIdentityDto } from './dto/complete-identity.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SendOtpDto } from './dto/send-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import type { CurrentUserData } from './types/jwt-payload';
 
 /**
  * @fr FR-A01 회원가입 (본인 인증으로 통합)
@@ -68,5 +71,30 @@ export class AuthController {
   })
   async verifyLoginOtp(@Body() dto: VerifyOtpDto): Promise<AuthResponse> {
     return this.authService.verifyLoginOtp(dto);
+  }
+
+  // ============================================================
+  // Refresh / Logout
+  // ============================================================
+
+  @Public()
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Refresh token 으로 새 access token 발급 (회전 포함)',
+    description: '기존 refresh token 은 revoke 되고 새 token 이 발급된다.',
+  })
+  async refresh(@Body() dto: RefreshTokenDto): Promise<{ accessToken: string; refreshToken: string }> {
+    return this.authService.refresh(dto.refreshToken);
+  }
+
+  @ApiBearerAuth()
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '로그아웃 — 사용자의 모든 refresh token 무효화',
+  })
+  async logout(@CurrentUser() user: CurrentUserData): Promise<{ revokedCount: number }> {
+    return this.authService.logout(user.userId);
   }
 }

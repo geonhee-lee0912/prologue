@@ -60,4 +60,33 @@ export class JwtIssuerService {
     });
     return raw;
   }
+
+  /**
+   * 평문 refresh token 의 hash 를 반환 (DB 조회 용).
+   */
+  hashRefreshToken(raw: string): string {
+    return createHash('sha256').update(raw).digest('hex');
+  }
+
+  /**
+   * Refresh token 회전: 기존 토큰을 revoked 처리하고 새 token 발행.
+   */
+  async rotateRefreshToken(oldId: string, userId: string): Promise<string> {
+    const raw = randomBytes(32).toString('hex');
+    const tokenHash = createHash('sha256').update(raw).digest('hex');
+    await this.prisma.$transaction(async (tx) => {
+      const newToken = await tx.refreshToken.create({
+        data: {
+          userId,
+          tokenHash,
+          expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+        },
+      });
+      await tx.refreshToken.update({
+        where: { id: oldId },
+        data: { revokedAt: new Date(), replacedById: newToken.id },
+      });
+    });
+    return raw;
+  }
 }

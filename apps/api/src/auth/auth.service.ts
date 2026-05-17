@@ -124,6 +124,54 @@ export class AuthService {
     return pepper;
   }
 
+  // ============================================================
+  // Refresh / Logout
+  // ============================================================
+
+  async refresh(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+    const tokenHash = this.jwtIssuer.hashRefreshToken(refreshToken);
+    const stored = await this.prisma.refreshToken.findUnique({
+      where: { tokenHash },
+      include: { user: true },
+    });
+
+    if (!stored) {
+      throw new AppException(ErrorCode.UNAUTHORIZED, '유효하지 않은 토큰입니다.', HttpStatus.UNAUTHORIZED);
+    }
+    if (stored.revokedAt) {
+      throw new AppException(
+        ErrorCode.UNAUTHORIZED,
+        '이미 사용된 토큰입니다. 다시 로그인해 주세요.',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+    if (stored.expiresAt < new Date()) {
+      throw new AppException(
+        ErrorCode.UNAUTHORIZED,
+        '토큰이 만료되었습니다. 다시 로그인해 주세요.',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+    this.checkAccountStatus(stored.user.status);
+
+    const newRefreshToken = await this.jwtIssuer.rotateRefreshToken(stored.id, stored.userId);
+    const newAccessToken = this.jwtIssuer.issueAccessToken({ sub: stored.userId });
+
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+  }
+
+  /**
+   * 로그아웃: 해당 사용자의 모든 활성 refresh token 을 revoke.
+   * (단일 디바이스만 로그아웃하려면 특정 refresh token 만 revoke 하도록 확장 가능)
+   */
+  async logout(userId: string): Promise<{ revokedCount: number }> {
+    const result = await this.prisma.refreshToken.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    return { revokedCount: result.count };
+  }
+
   async startIdentity(): Promise<IdentityVerificationStartResult> {
     const result = await this.identity.startVerification();
     this.sessionStore.start(result.sessionId);
