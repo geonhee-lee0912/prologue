@@ -228,6 +228,26 @@ export const api = {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
   },
+
+  // === 액션 (FR-E) ===
+  sendInterest(accessToken: string, recommendationId: string) {
+    return request<InterestResult>(`/recommendations/${recommendationId}/interest`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
+  skip(accessToken: string, recommendationId: string, skipReason?: string) {
+    return request<{ skipped: true }>(`/recommendations/${recommendationId}/skip`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify(skipReason ? { skipReason } : {}),
+    });
+  },
+  listSentInterests(accessToken: string) {
+    return request<SentInterest[]>('/me/interests/sent', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
 };
 
 // ============== 프로필 타입 ==============
@@ -300,6 +320,27 @@ export interface FaceVerificationResult {
   matched: boolean;
   confidence: number;
   faceMatchStatus: 'verified' | 'rejected' | 'pending';
+}
+
+export interface InterestResult {
+  isMutualMatch: boolean;
+  matchId?: string;
+  status: 'interested' | 'matched';
+}
+
+export interface SentInterest {
+  id: string;
+  createdAt: string;
+  recommendationId: string | null;
+  target: {
+    userId: string;
+    region1: string;
+    region2: string | null;
+    jobCategory: string | null;
+    intro: string | null;
+    mainPhotoUrl: string | null;
+    isMatched: boolean;
+  };
 }
 
 export interface RecommendationCard {

@@ -2,7 +2,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -24,6 +26,65 @@ export default function RecommendationDetail() {
   const [card, setCard] = useState<RecommendationCard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const notify = (title: string, message: string) => {
+    if (Platform.OS === 'web') window.alert(`${title}\n\n${message}`);
+    else Alert.alert(title, message);
+  };
+
+  const confirm = (title: string, message: string): Promise<boolean> => {
+    if (Platform.OS === 'web') {
+      return Promise.resolve(window.confirm(`${title}\n\n${message}`));
+    }
+    return new Promise((resolve) => {
+      Alert.alert(title, message, [
+        { text: '취소', style: 'cancel', onPress: () => resolve(false) },
+        { text: '확인', onPress: () => resolve(true) },
+      ]);
+    });
+  };
+
+  async function onSendInterest() {
+    if (!card) return;
+    const ok = await confirm('관심 보내기', '관심을 표현하시겠어요?');
+    if (!ok) return;
+    setBusy(true);
+    try {
+      const token = await authStorage.getAccessToken();
+      if (!token) return;
+      const result = await api.sendInterest(token, card.id);
+      if (result.isMutualMatch) {
+        notify('첫문장이 이어졌어요', '두 분이 모두 관심을 표현했어요.');
+      } else {
+        notify('관심을 보냈어요', '상대도 관심을 보내면 첫 대화가 시작됩니다.');
+      }
+      router.replace('/home');
+    } catch (e) {
+      if (e instanceof ApiError) notify(`오류 (${e.code})`, e.message);
+      else notify('오류', e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onSkip() {
+    if (!card) return;
+    const ok = await confirm('넘기기', '이 추천을 넘기시겠어요?');
+    if (!ok) return;
+    setBusy(true);
+    try {
+      const token = await authStorage.getAccessToken();
+      if (!token) return;
+      await api.skip(token, card.id);
+      router.replace('/home');
+    } catch (e) {
+      if (e instanceof ApiError) notify(`오류 (${e.code})`, e.message);
+      else notify('오류', e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   const load = useCallback(async () => {
     const token = await authStorage.getAccessToken();
@@ -172,24 +233,32 @@ export default function RecommendationDetail() {
         </View>
       )}
 
-      {/* 액션 버튼 (placeholder) */}
+      {/* 액션 버튼 */}
       <View style={styles.actionRow}>
         <Pressable
-          style={[styles.actionButton, styles.skipButton]}
-          onPress={() => router.back()}
+          style={[styles.actionButton, styles.skipButton, busy && styles.disabled]}
+          disabled={busy || card.status !== 'created' && card.status !== 'shown'}
+          onPress={onSkip}
         >
           <Text style={styles.skipText}>넘기기</Text>
         </Pressable>
         <Pressable
-          style={[styles.actionButton, styles.interestButton]}
-          onPress={() => {
-            // TODO: FR-E 관심 보내기 연결
-          }}
+          style={[styles.actionButton, styles.interestButton, busy && styles.disabled]}
+          disabled={busy || card.status !== 'created' && card.status !== 'shown'}
+          onPress={onSendInterest}
         >
-          <Text style={styles.interestText}>관심 보내기</Text>
+          {busy ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <Text style={styles.interestText}>관심 보내기</Text>
+          )}
         </Pressable>
       </View>
-      <Text style={styles.placeholder}>※ 관심/넘기기는 FR-E 구현 시 활성화됩니다.</Text>
+      {(card.status === 'interested' || card.status === 'skipped') && (
+        <Text style={styles.placeholder}>
+          ※ 이미 {card.status === 'interested' ? '관심 보낸' : '넘긴'} 추천이에요.
+        </Text>
+      )}
     </ScrollView>
   );
 }
@@ -258,4 +327,5 @@ const styles = StyleSheet.create({
   interestButton: { backgroundColor: '#1A1A1A' },
   interestText: { color: '#FFF', fontSize: 14, fontWeight: '600' },
   placeholder: { fontSize: 11, color: '#999', textAlign: 'center', marginTop: 8 },
+  disabled: { opacity: 0.5 },
 });
