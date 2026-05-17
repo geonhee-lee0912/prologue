@@ -1,6 +1,7 @@
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ErrorCode } from '@prologue/shared';
 import { AppException } from '../common/exceptions/app.exception';
+import { ConversationsService } from '../conversations/conversations.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import type { SkipDto } from './dto/skip.dto';
@@ -37,6 +38,7 @@ export class ActionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly supabase: SupabaseService,
+    private readonly conversations: ConversationsService,
   ) {}
 
   /**
@@ -102,6 +104,9 @@ export class ActionsService {
           status: 'active',
         },
       });
+
+      // 매칭 직후 Conversation + 환영 시스템 메시지 자동 생성 (FR-G02, F03)
+      await this.conversations.createForMatch(tx, match.id, userAId, userBId);
 
       this.logger.log(`mutual match created: ${match.id} (${userAId} ↔ ${userBId})`);
 

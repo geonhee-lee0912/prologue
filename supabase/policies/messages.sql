@@ -39,11 +39,20 @@ CREATE POLICY "select_messages_in_my_conversations" ON messages
 -- (NestJS service role 만 수행)
 
 -- =====================================================================
--- Realtime 구독 활성화
---
--- Supabase 대시보드 또는 SQL 로 messages 테이블의 Realtime 활성화 필요:
--- ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+-- Realtime 구독 활성화 (idempotent)
 --
 -- 구독 시 RLS 가 자동 적용되므로, 위 SELECT 정책에 따라
 -- 자신이 참여한 대화방의 메시지만 broadcast 받는다.
 -- =====================================================================
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'messages'
+  ) THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE messages';
+  END IF;
+END$$;

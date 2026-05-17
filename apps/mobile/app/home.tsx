@@ -150,6 +150,9 @@ export default function Home() {
         <Pressable style={styles.bottomButton} onPress={() => router.push('/interests')}>
           <Text style={styles.bottomButtonText}>관심</Text>
         </Pressable>
+        <Pressable style={styles.bottomButton} onPress={() => router.push('/conversations')}>
+          <Text style={styles.bottomButtonText}>대화</Text>
+        </Pressable>
         <Pressable style={styles.bottomButton} onPress={onLogout}>
           <Text style={[styles.bottomButtonText, { color: '#999' }]}>로그아웃</Text>
         </Pressable>

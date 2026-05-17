@@ -5,6 +5,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ActionsModule } from './actions/actions.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { ConversationsModule } from './conversations/conversations.module';
 import { AllExceptionsFilter } from './common/exceptions/all-exceptions.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { LoggerModule } from './common/logger/logger.module';
@@ -33,6 +34,7 @@ import { VerificationModule } from './verification/verification.module';
     PhotosModule,
     VerificationModule,
     RecommendationsModule,
+    ConversationsModule,
     ActionsModule,
   ],
   providers: [

@@ -248,6 +248,25 @@ export const api = {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
   },
+
+  // === 대화방 (FR-G) ===
+  listMyConversations(accessToken: string) {
+    return request<ConversationListItem[]>('/me/conversations', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
+  getConversation(accessToken: string, id: string) {
+    return request<ConversationDetail>(`/conversations/${id}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
+  sendMessage(accessToken: string, conversationId: string, content: string) {
+    return request<MessageView>(`/conversations/${conversationId}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ content }),
+    });
+  },
 };
 
 // ============== 프로필 타입 ==============
@@ -341,6 +360,55 @@ export interface SentInterest {
     mainPhotoUrl: string | null;
     isMatched: boolean;
   };
+}
+
+export interface ConversationPeer {
+  userId: string;
+  region1: string;
+  region2: string | null;
+  jobCategory: string | null;
+  mainPhotoUrl: string | null;
+}
+
+export interface ConversationListItem {
+  id: string;
+  matchId: string;
+  status: 'active' | 'expired' | 'closed' | 'blocked';
+  startedAt: string;
+  expiresAt: string;
+  daysLeft: number;
+  peer: ConversationPeer;
+  lastMessage: {
+    content: string;
+    messageType: string;
+    createdAt: string;
+  } | null;
+}
+
+export interface MessageView {
+  id: string;
+  senderId: string | null;
+  messageType:
+    | 'text'
+    | 'system_topic'
+    | 'system_extension'
+    | 'system_contact'
+    | 'system_safety'
+    | 'system_expiry';
+  content: string;
+  isMine: boolean;
+  createdAt: string;
+}
+
+export interface ConversationDetail {
+  id: string;
+  matchId: string;
+  status: ConversationListItem['status'];
+  startedAt: string;
+  expiresAt: string;
+  daysLeft: number;
+  peer: ConversationPeer;
+  messages: MessageView[];
 }
 
 export interface RecommendationCard {
