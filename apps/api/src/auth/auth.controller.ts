@@ -5,11 +5,13 @@ import { AuthService, type AuthResponse } from './auth.service';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
 import { CompleteIdentityDto } from './dto/complete-identity.dto';
+import { KakaoExchangeCodeDto } from './dto/kakao-exchange-code.dto';
 import { LoginKakaoDto } from './dto/login-kakao.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SendOtpDto } from './dto/send-otp.dto';
 import { StartIdentityDto } from './dto/start-identity.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { KakaoUserInfoService } from './kakao-user-info.service';
 import type { CurrentUserData } from './types/jwt-payload';
 
 /**
@@ -20,7 +22,10 @@ import type { CurrentUserData } from './types/jwt-payload';
 @ApiTags('auth')
 @Controller('v1/auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly kakao: KakaoUserInfoService,
+  ) {}
 
   @Public()
   @Post('identity/start')
@@ -90,6 +95,23 @@ export class AuthController {
   })
   async loginKakao(@Body() dto: LoginKakaoDto): Promise<AuthResponse> {
     return this.authService.loginKakao(dto);
+  }
+
+  @Public()
+  @Post('kakao/exchange-code')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '카카오 OAuth code → access_token 교환',
+    description:
+      '모바일/웹이 카카오 로그인 페이지에서 받은 authorization code 를 백엔드가 ' +
+      '`KAKAO_REST_API_KEY` 로 access_token 으로 교환해서 돌려준다. ' +
+      '그 access_token 으로 `/auth/login/kakao` 또는 `/auth/identity/start` 호출하면 됨.',
+  })
+  async exchangeKakaoCode(
+    @Body() dto: KakaoExchangeCodeDto,
+  ): Promise<{ accessToken: string }> {
+    const accessToken = await this.kakao.exchangeCodeForToken(dto.code, dto.redirectUri);
+    return { accessToken };
   }
 
   // ============================================================

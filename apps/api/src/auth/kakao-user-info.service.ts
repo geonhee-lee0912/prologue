@@ -38,6 +38,68 @@ export class KakaoUserInfoService {
     return this.realGetUserInfo(accessToken);
   }
 
+  /**
+   * 카카오 OAuth authorization code 를 access_token 으로 교환한다.
+   * 모바일이 카카오 로그인 페이지에서 code 만 받고 백엔드로 전달했을 때 사용.
+   *
+   * - mock: 임의 access_token 반환 (개발 편의)
+   * - real: POST https://kauth.kakao.com/oauth/token
+   *   - grant_type=authorization_code
+   *   - client_id=KAKAO_REST_API_KEY
+   *   - redirect_uri=<프론트가 사용한 값과 동일해야 함>
+   *   - code=<authorization code>
+   */
+  async exchangeCodeForToken(code: string, redirectUri: string): Promise<string> {
+    if (this.mode === 'mock') {
+      return `mock_kakao_${code}`;
+    }
+
+    const restApiKey = this.config.get<string>('KAKAO_REST_API_KEY');
+    if (!restApiKey) {
+      throw new AppException(
+        ErrorCode.KAKAO_AUTH_FAILED,
+        'KAKAO_REST_API_KEY 환경변수가 설정되지 않았습니다.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    const body = new URLSearchParams({
+      grant_type: 'authorization_code',
+      client_id: restApiKey,
+      redirect_uri: redirectUri,
+      code,
+    });
+
+    let res: Response;
+    try {
+      res = await fetch('https://kauth.kakao.com/oauth/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
+        body: body.toString(),
+      });
+    } catch (err) {
+      this.logger.error(`kakao token 교환 실패: ${(err as Error).message}`);
+      throw new AppException(
+        ErrorCode.KAKAO_AUTH_FAILED,
+        '카카오 인증 서버에 연결할 수 없습니다.',
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
+    const data = (await res.json().catch(() => null)) as
+      | { access_token?: string; error?: string; error_description?: string }
+      | null;
+
+    if (!res.ok || !data?.access_token) {
+      this.logger.warn(`kakao token 교환 실패: ${data?.error_description ?? res.status}`);
+      throw new AppException(
+        ErrorCode.KAKAO_AUTH_FAILED,
+        '카카오 인증 코드가 유효하지 않습니다.',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+    return data.access_token;
+  }
+
   private mockGetUserInfo(accessToken: string): KakaoUserInfo {
     const hash = createHash('sha256').update(`mock-kakao:${accessToken}`).digest('hex').slice(0, 16);
     return {
