@@ -9,6 +9,7 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { LoggerModule } from './common/logger/logger.module';
 import { HealthModule } from './health/health.module';
 import { InfraModule } from './infra/infra.module';
+import { PhotosModule } from './photos/photos.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProfileModule } from './profile/profile.module';
 import { SupabaseModule } from './supabase/supabase.module';
@@ -26,6 +27,7 @@ import { UsersModule } from './users/users.module';
     HealthModule,
     UsersModule,
     ProfileModule,
+    PhotosModule,
   ],
   providers: [
     // 순서 중요: ThrottlerGuard 가 먼저 → 인증 가드가 나중
