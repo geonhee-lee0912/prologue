@@ -90,3 +90,8 @@ secrets/
 
 # Claude Code local-only settings
 .claude/settings.local.json
+
+# 테스트 잔재
+test-*.png
+test-*.jpg
+test-*.txt
