@@ -10,14 +10,21 @@
 
 - ✅ **Phase 0** 모노레포 골격 + GitHub 푸시 + 기획 문서 26개 정리
 - ✅ **Phase 1** Supabase dev 프로젝트 연결 + 환경 변수 세팅
-- ✅ **Phase 2** Prisma 초기 마이그레이션 (21 테이블, 29 enum, snake_case 컬럼, UUID User.id) + RLS 4종
+- ✅ **Phase 2** Prisma 초기 마이그레이션 (22 테이블, 29 enum, snake_case 컬럼, UUID User.id) + RLS 4종
 - ✅ **Phase 3** NestJS 횡단 골격
   - `/api/health`, `/api/docs` (Swagger), `/api/v1/me`
   - Supabase JWT 가드, `@Public`/`@CurrentUser` 데코레이터
   - 글로벌 ExceptionFilter + ResponseInterceptor (`{ data }` / `{ error }`)
   - Pino 로거 (PII 마스킹), Throttler (60req/min)
   - Prisma/SupabaseModule, 외부 서비스 인터페이스 + mock 6종
-- ⏳ **Phase 4** P1 기능 (FR-A ~ FR-H) 구현 중
+- ✅ **Phase 4 — FR-A** 회원가입/로그인 (통합 본인 인증 흐름)
+  - 본인 인증으로 가입 (`/auth/identity/start` + `/auth/identity/complete`) — PASS/NICE mock
+  - SMS OTP 로그인 (`/auth/login/otp/send` + `/auth/login/otp/verify`)
+  - 카카오 OAuth 로그인 / 가입 (`/auth/login/kakao`, identity start with kakaoAccessToken)
+  - Refresh token 회전 + Logout (`/auth/refresh`, `/auth/logout`)
+  - User.kakaoId, UserAuth.identityCiHash 유니크 제약
+  - 모바일 A03 화면 (Expo Web/Native) + 토큰 secure storage
+- ⏳ **Phase 4 — FR-B 이후** 얼굴 인증, 프로필 작성, 추천, 매칭, 대화, 신고/차단
 
 ---
 
@@ -160,19 +167,35 @@ pnpm --filter mobile dev
 에러 코드는 [`packages/shared/src/errors.ts`](./packages/shared/src/errors.ts) 에 정의.
 새 비즈니스 에러는 `AppException` + 적절한 `ErrorCode` 로 던진다.
 
+## 현재 노출된 엔드포인트
+
+| 경로 | 인증 | 설명 |
+|---|---|---|
+| `GET  /api/health` | Public | 헬스체크 |
+| `GET  /api/docs` | Public | Swagger UI |
+| `POST /api/v1/auth/identity/start` | Public | 본인 인증 시작 (kakao 토큰 옵션) |
+| `POST /api/v1/auth/identity/complete` | Public | 본인 인증 완료 → 가입/로그인 → JWT |
+| `POST /api/v1/auth/login/otp/send` | Public | SMS OTP 발송 |
+| `POST /api/v1/auth/login/otp/verify` | Public | OTP 검증 → JWT |
+| `POST /api/v1/auth/login/kakao` | Public | 카카오 OAuth 로그인 → JWT |
+| `POST /api/v1/auth/refresh` | Public | refresh token 으로 새 access token |
+| `POST /api/v1/auth/logout` | Bearer | 모든 refresh token revoke |
+| `GET  /api/v1/me` | Bearer | 내 사용자 정보 |
+
 ---
 
 ## 외부 서비스 (로컬 개발에서는 mock 으로 동작)
 
-| 영역 | 운영 | 로컬 개발 (현재) |
-|---|---|---|
-| Database / Auth / Storage / Realtime | Supabase prod | Supabase dev |
-| 본인 인증 | PASS / NICE | `MockIdentityVerificationService` |
-| SMS | NHN Toast | `MockSmsService` (콘솔에 OTP 출력, 휴대폰 뒷자리만) |
-| 얼굴 인증 | AWS Rekognition / Clova | `MockFaceVerificationService` (항상 matched=true) |
-| 사진 검수 | AWS Rekognition Moderation | `MockPhotoModerationService` |
-| 푸시 | Expo Push | `MockPushService` |
-| 결제 | 토스 / IAP | `MockPaymentService` |
+| 영역 | 운영 | 로컬 개발 (현재) | 전환 방법 |
+|---|---|---|---|
+| Database / Auth / Storage / Realtime | Supabase prod | Supabase dev | env: `SUPABASE_URL` 등 |
+| 본인 인증 | PASS / NICE | `MockIdentityVerificationService` | provider 인터페이스 교체 |
+| SMS | NHN Toast | `MockSmsService` (콘솔에 OTP 출력, 휴대폰 뒷자리만) | provider 인터페이스 교체 |
+| 카카오 로그인 | kakao API | `KakaoUserInfoService` mock 모드 | env: `KAKAO_USER_INFO_PROVIDER=real` + `KAKAO_REST_API_KEY` |
+| 얼굴 인증 | AWS Rekognition / Clova | `MockFaceVerificationService` (항상 matched=true) | provider 인터페이스 교체 |
+| 사진 검수 | AWS Rekognition Moderation | `MockPhotoModerationService` | provider 인터페이스 교체 |
+| 푸시 | Expo Push | `MockPushService` | provider 인터페이스 교체 |
+| 결제 | 토스 / IAP | `MockPaymentService` | provider 인터페이스 교체 |
 
 실 연동은 Phase 6 (외부 서비스 계약 완료 후).
 
@@ -193,6 +216,13 @@ pnpm --filter mobile dev
 - `packages/shared` 변경 후 → `pnpm --filter @prologue/shared build` 필수 (런타임은 `dist/`를 읽음)
 - `nest start --watch` 의 dist race 회피 위해 `apps/api/nest-cli.json`에서 `deleteOutDir: false`
 - 모바일 실기기에서 백엔드 호출 시 `localhost` 대신 PC의 LAN IP 사용
+  → `apps/mobile/.env` 의 `EXPO_PUBLIC_API_BASE_URL` 을 `http://192.168.x.x:3001/api/v1` 로 변경
+- 윈도우 + pnpm install 시 Defender 실시간 검사가 `node_modules/.pnpm/*_tmp_*` 폴더의
+  atomic rename 을 잡을 수 있음 → 프로젝트 폴더를 Defender 제외 목록에 추가
+- Expo SDK 는 폰의 Expo Go SDK 버전과 일치해야 함. 불일치 시 `npx expo install --fix`
+  (단, 그 전에 `expo` 패키지 버전을 `~XX.0.0` 로 핀하고 `pnpm install` 먼저)
+- 카카오 로그인 mock 모드: `KAKAO_USER_INFO_PROVIDER=mock` 일 때 access_token 의 해시로
+  결정적 kakaoId 생성. 모바일에서 임의 토큰을 보내도 동일 토큰 = 동일 사용자로 시연 가능.
 
 ---
 
