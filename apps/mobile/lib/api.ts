@@ -210,6 +210,24 @@ export const api = {
     }
     return body!.data!;
   },
+
+  // === 추천 (FR-D) ===
+  listRecommendations(accessToken: string) {
+    return request<RecommendationCard[]>('/me/recommendations', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
+  getRecommendation(accessToken: string, id: string) {
+    return request<RecommendationCard>(`/recommendations/${id}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
+  markRecommendationShown(accessToken: string, id: string) {
+    return request<{ status: string }>(`/recommendations/${id}/shown`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
 };
 
 // ============== 프로필 타입 ==============
@@ -282,4 +300,37 @@ export interface FaceVerificationResult {
   matched: boolean;
   confidence: number;
   faceMatchStatus: 'verified' | 'rejected' | 'pending';
+}
+
+export interface RecommendationCard {
+  id: string;
+  recommendationDate: string;
+  rank: number;
+  status: 'created' | 'shown' | 'interested' | 'skipped' | 'expired';
+  shownAt: string | null;
+  target: {
+    userId: string;
+    gender: string;
+    birthYear: number;
+    region1: string;
+    region2: string | null;
+    profile: {
+      jobCategory: string | null;
+      intro: string | null;
+      lifestyleTags: string[];
+    } | null;
+    mainPhotoUrl: string | null;
+    badges: {
+      identityVerified: boolean;
+      faceMatchVerified: boolean;
+      employmentVerified: boolean;
+    };
+  };
+  reason: {
+    summary: string;
+    matchedPoints: string[];
+    differencePoints: string[];
+    conversationTopics: string[];
+    curatorMemo: string;
+  };
 }

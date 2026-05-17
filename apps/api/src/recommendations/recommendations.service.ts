@@ -3,6 +3,7 @@ import type { Recommendation, RecommendationReason } from '@prisma/client';
 import { ErrorCode, POLICY } from '@prologue/shared';
 import { AppException } from '../common/exceptions/app.exception';
 import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseService } from '../supabase/supabase.service';
 import { generateReason } from './reason-generator';
 import { calculateScore, type UserWithDetails } from './score-calculator';
 
@@ -26,6 +27,7 @@ export interface RecommendationCardView {
       intro: string | null;
       lifestyleTags: string[];
     } | null;
+    mainPhotoUrl: string | null;
     badges: {
       identityVerified: boolean;
       faceMatchVerified: boolean;
@@ -45,7 +47,10 @@ export interface RecommendationCardView {
 export class RecommendationsService {
   private readonly logger = new Logger(RecommendationsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly supabase: SupabaseService,
+  ) {}
 
   /**
    * 오늘의 추천 목록 (Asia/Seoul 기준).
@@ -70,15 +75,25 @@ export class RecommendationsService {
       existing = [...existing, ...created];
     }
 
-    // 3. target 사용자 정보 조회
+    // 3. target 사용자 정보 + 메인 사진 URL 조회
     const targetIds = existing.map((r) => r.targetUserId);
     const targets = await this.prisma.user.findMany({
       where: { id: { in: targetIds } },
       include: { auth: true, profile: true },
     });
+    const mainPhotos = await this.prisma.photo.findMany({
+      where: { userId: { in: targetIds }, isMain: true, deletedAt: null },
+    });
+    const mainPhotoMap = new Map<string, string>();
+    for (const p of mainPhotos) {
+      const url = await this.signPhotoUrl(p.storageKey);
+      if (url) mainPhotoMap.set(p.userId, url);
+    }
     const targetMap = new Map(targets.map((t) => [t.id, t]));
 
-    return existing.map((rec) => this.toCardView(rec, targetMap.get(rec.targetUserId)));
+    return existing.map((rec) =>
+      this.toCardView(rec, targetMap.get(rec.targetUserId), mainPhotoMap.get(rec.targetUserId) ?? null),
+    );
   }
 
   async getRecommendation(userId: string, recId: string): Promise<RecommendationCardView> {
@@ -97,7 +112,18 @@ export class RecommendationsService {
       where: { id: rec.targetUserId },
       include: { auth: true, profile: true },
     });
-    return this.toCardView(rec, target ?? undefined);
+    const mainPhoto = await this.prisma.photo.findFirst({
+      where: { userId: rec.targetUserId, isMain: true, deletedAt: null },
+    });
+    const mainPhotoUrl = mainPhoto ? await this.signPhotoUrl(mainPhoto.storageKey) : null;
+    return this.toCardView(rec, target ?? undefined, mainPhotoUrl);
+  }
+
+  private async signPhotoUrl(storageKey: string): Promise<string | null> {
+    const { data } = await this.supabase.admin.storage
+      .from('photos')
+      .createSignedUrl(storageKey, 60 * 60);
+    return data?.signedUrl ?? null;
   }
 
   async markShown(userId: string, recId: string): Promise<{ status: string }> {
@@ -292,6 +318,7 @@ export class RecommendationsService {
         lifestyleTags: string[];
       } | null;
     },
+    mainPhotoUrl: string | null = null,
   ): RecommendationCardView {
     return {
       id: rec.id,
@@ -312,6 +339,7 @@ export class RecommendationsService {
               lifestyleTags: target.profile.lifestyleTags,
             }
           : null,
+        mainPhotoUrl,
         badges: {
           identityVerified: target?.auth?.identityVerified ?? false,
           faceMatchVerified: target?.auth?.faceMatchStatus === 'verified',
