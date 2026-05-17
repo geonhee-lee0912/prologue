@@ -103,4 +103,132 @@ export const api = {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
   },
+
+  // === 프로필 ===
+  getMyProfile(accessToken: string) {
+    return request<ProfileResponse>('/me/profile', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
+  updateMyProfile(accessToken: string, dto: ProfilePatch) {
+    return request<ProfileResponse>('/me/profile', {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify(dto),
+    });
+  },
+
+  // === 사진 ===
+  listPhotos(accessToken: string) {
+    return request<PhotoView[]>('/me/photos', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
+  async uploadPhoto(
+    accessToken: string,
+    asset: { uri: string; mimeType?: string; fileName?: string; file?: File },
+    photoType?: 'main' | 'daily' | 'hobby',
+  ): Promise<PhotoView> {
+    const formData = new FormData();
+    if (asset.file) {
+      // Web: 실제 File 객체
+      formData.append('file', asset.file);
+    } else {
+      // Native: { uri, type, name } 형태
+      formData.append('file', {
+        uri: asset.uri,
+        type: asset.mimeType ?? 'image/jpeg',
+        name: asset.fileName ?? `photo-${Date.now()}.jpg`,
+      } as unknown as Blob);
+    }
+    if (photoType) formData.append('photoType', photoType);
+
+    const res = await fetch(`${BASE_URL}/me/photos`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: formData,
+    });
+    const body = (await res.json().catch(() => null)) as
+      | { data?: PhotoView; error?: { code: string; message: string } }
+      | null;
+    if (!res.ok) {
+      throw new ApiError(
+        body?.error?.code ?? 'UNKNOWN',
+        body?.error?.message ?? `HTTP ${res.status}`,
+        res.status,
+      );
+    }
+    return body!.data!;
+  },
+  deletePhoto(accessToken: string, photoId: string) {
+    return request<{ deleted: true }>(`/me/photos/${photoId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
+  setMainPhoto(accessToken: string, photoId: string) {
+    return request<PhotoView[]>(`/me/photos/${photoId}/main`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
 };
+
+// ============== 프로필 타입 ==============
+
+export interface AnswerItem {
+  category: 'story' | 'relationship';
+  questionKey: string;
+  answer: string;
+}
+
+export interface PreferenceData {
+  intent:
+    | 'serious_long_term'
+    | 'natural_dating'
+    | 'open_to_marriage'
+    | 'casual_meeting'
+    | 'friendship_first';
+  pace: 'slow' | 'moderate' | 'fast';
+  contactFrequency: 'low' | 'medium' | 'high';
+  extra?: Record<string, unknown> | null;
+}
+
+export interface ProfileResponse {
+  user: {
+    region1: string;
+    region2: string | null;
+    targetGender: string;
+    gender: string;
+    birthYear: number;
+  };
+  profile: {
+    jobCategory: string | null;
+    intro: string | null;
+    lifestyleTags: string[];
+  } | null;
+  answers: AnswerItem[];
+  preference: PreferenceData | null;
+  completion: number;
+}
+
+export interface ProfilePatch {
+  region1?: string;
+  region2?: string;
+  targetGender?: 'male' | 'female';
+  jobCategory?: string;
+  intro?: string;
+  lifestyleTags?: string[];
+  answers?: AnswerItem[];
+  preference?: PreferenceData;
+}
+
+export interface PhotoView {
+  id: string;
+  photoType: 'main' | 'daily' | 'hobby';
+  isMain: boolean;
+  reviewStatus: string;
+  moderationFlags: string[];
+  signedUrl: string | null;
+  createdAt: string;
+}

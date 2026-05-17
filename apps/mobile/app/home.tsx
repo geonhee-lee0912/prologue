@@ -92,12 +92,16 @@ export default function Home() {
         </View>
       )}
 
+      <Pressable style={styles.primaryButton} onPress={() => router.push('/profile-edit')}>
+        <Text style={styles.primaryButtonText}>프로필 편집</Text>
+      </Pressable>
+
       <Pressable style={styles.logoutButton} onPress={onLogout}>
         <Text style={styles.logoutText}>로그아웃</Text>
       </Pressable>
 
       <Text style={styles.note}>
-        다음 단계 (얼굴 인증 · 프로필 작성 · 추천) 는 후속 Phase 에서 구현됩니다.
+        다음 단계 (얼굴 인증 · 추천) 는 후속 Phase 에서 구현됩니다.
       </Text>
     </View>
   );
@@ -119,13 +123,21 @@ const styles = StyleSheet.create({
   label: { fontSize: 12, color: '#888', marginTop: 8 },
   value: { fontSize: 14, color: '#1A1A1A', marginTop: 2 },
   error: { color: '#C00', marginBottom: 12 },
-  logoutButton: {
+  primaryButton: {
     backgroundColor: '#1A1A1A',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  primaryButtonText: { color: '#FFF', fontSize: 15, fontWeight: '600' },
+  logoutButton: {
+    backgroundColor: '#F0F0F0',
     borderRadius: 8,
     paddingVertical: 12,
     alignItems: 'center',
     marginBottom: 16,
   },
-  logoutText: { color: '#FFF', fontSize: 15, fontWeight: '600' },
+  logoutText: { color: '#333', fontSize: 14 },
   note: { fontSize: 12, color: '#888', textAlign: 'center', marginTop: 'auto' },
 });
