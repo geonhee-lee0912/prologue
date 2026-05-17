@@ -1,12 +1,26 @@
+import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { authStorage } from '../../lib/auth-storage';
 
 /**
  * A01 — Splash
  *
- * 화면 ID: A01
- * 첫 진입 화면. 추후 자동 로그인 검사 → 다음 화면 라우팅으로 확장.
+ * 1.2초 후 토큰 보유 여부에 따라 분기.
+ * - 토큰 있음 → /home
+ * - 없음 → /a03-login
  */
 export default function A01Splash() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      const token = await authStorage.getAccessToken();
+      router.replace(token ? '/home' : '/a03-login');
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [router]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.brand}>프롤로그</Text>
