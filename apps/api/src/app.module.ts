@@ -10,6 +10,7 @@ import { LoggerModule } from './common/logger/logger.module';
 import { HealthModule } from './health/health.module';
 import { InfraModule } from './infra/infra.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ProfileModule } from './profile/profile.module';
 import { SupabaseModule } from './supabase/supabase.module';
 import { UsersModule } from './users/users.module';
 
@@ -24,6 +25,7 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     HealthModule,
     UsersModule,
+    ProfileModule,
   ],
   providers: [
     // 순서 중요: ThrottlerGuard 가 먼저 → 인증 가드가 나중

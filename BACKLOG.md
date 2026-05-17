@@ -71,7 +71,47 @@
 
 ---
 
-## 3. (기록용) 다음 우선순위 후보
+## 3. 얼굴 인증 (FR-B02) + 사진 등록 (FR-C01) — 묶음 보류
+
+**보류 이유**: 사용자 결정 — "완성도가 어느 정도 나오면 그때 진행". 두 기능은 상호 의존성이 강해 묶어서 보류.
+
+**의존 관계**:
+- 사진 등록 시 대표 사진과 본인 인증 결과(얼굴) 매칭 필요 (FR-C01 요구사항 6)
+- 따라서 두 기능을 동시에 구현하는 게 자연스러움
+
+**필요한 작업** (재개 시):
+
+### 백엔드
+- [ ] Supabase Storage 버킷 생성 (`photos`, `face-auth` 둘 다)
+  - `face-auth` 는 운영자도 직접 SELECT 불가, 24시간 TTL
+  - `photos` 는 매칭/추천 관계만 SELECT (RLS + 서명 URL)
+- [ ] `/api/v1/photos` 엔드포인트 (multipart 또는 signed URL 패턴)
+  - 업로드 → mock 사진 검수 → Photo 레코드 생성
+  - 대표 사진 변경, 삭제
+- [ ] `/api/v1/verification/face` 엔드포인트
+  - 라이브 셀피 업로드 + 대표 사진과 얼굴 매칭
+  - `MockFaceVerificationProvider` 결과로 `UserAuth.faceMatchStatus` 갱신
+- [ ] 24시간 TTL 자동 삭제 cron (`face-auth` 버킷)
+
+### 모바일
+- [ ] C02 사진 등록 화면 (대표 + 추가, 갤러리 선택 / 카메라)
+- [ ] B02 얼굴 인증 화면 (셀피 촬영)
+- [ ] expo-camera 통합
+
+### 스키마
+- 기존 `Photo` 모델 활용. 마이그레이션 없음.
+
+### RLS
+- [ ] `supabase/policies/photos.sql` 작성 (own SELECT + 매칭/추천 관계 SELECT)
+
+**현재 상태**:
+- Photo, UserAuth.faceMatchStatus 스키마는 이미 존재
+- `MockFaceVerificationService` + `MockPhotoModerationService` 도 이미 작성됨 (`apps/api/src/infra/`)
+- 엔드포인트만 추가하면 동작 가능
+
+---
+
+## 4. (기록용) 다음 우선순위 후보
 
 `README.md` 의 "Phase 4 — FR-B 이후" 와 동일. 카카오 작업 재개 외에 진행 가능한 항목:
 
