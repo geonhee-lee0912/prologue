@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { ApiError, api, type RecommendationCard } from '../lib/api';
 import { authStorage } from '../lib/auth-storage';
+import { routeForStep } from '../lib/onboarding-route';
 
 /**
  * D01 — 오늘의 프롤로그 (홈)
@@ -33,6 +34,12 @@ export default function Home() {
       return;
     }
     try {
+      // 온보딩 미완료면 다음 단계로 보낸다
+      const status = await api.getOnboardingStatus(token);
+      if (status.nextStep !== 'completed') {
+        router.replace(routeForStep(status.nextStep) as never);
+        return;
+      }
       const list = await api.listRecommendations(token);
       setCards(list);
       setError(null);

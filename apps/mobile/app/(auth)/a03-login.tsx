@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { ApiError, api, type IdentityInput } from '../../lib/api';
 import { authStorage } from '../../lib/auth-storage';
+import { routeForStep } from '../../lib/onboarding-route';
 
 /**
  * A03 — 로그인/가입
@@ -72,7 +73,7 @@ export default function A03Login() {
       ];
       const res = await api.identityComplete(sessionId, input, consents);
       await authStorage.setTokens(res.accessToken, res.refreshToken);
-      router.replace('/home');
+      await routeAfterAuth(res.accessToken);
     } catch (e) {
       handleError(e);
     } finally {
@@ -102,11 +103,20 @@ export default function A03Login() {
       const res = await api.identityComplete(sessionId, input, consents);
       // 카카오 토큰을 secure storage 에 저장해두면 이후 카카오로 로그인 검증 가능
       await authStorage.setTokens(res.accessToken, res.refreshToken);
-      router.replace('/home');
+      await routeAfterAuth(res.accessToken);
     } catch (e) {
       handleError(e);
     } finally {
       setBusy(null);
+    }
+  }
+
+  async function routeAfterAuth(accessToken: string) {
+    try {
+      const status = await api.getOnboardingStatus(accessToken);
+      router.replace(routeForStep(status.nextStep) as never);
+    } catch {
+      router.replace('/home');
     }
   }
 
@@ -128,7 +138,7 @@ export default function A03Login() {
     try {
       const res = await api.loginOtpVerify(otpPhone, otpCode);
       await authStorage.setTokens(res.accessToken, res.refreshToken);
-      router.replace('/home');
+      await routeAfterAuth(res.accessToken);
     } catch (e) {
       handleError(e);
     } finally {

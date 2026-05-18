@@ -305,6 +305,34 @@ export const api = {
     });
   },
 
+  // === 온보딩 (FR-B03~B06) ===
+  getOnboardingStatus(accessToken: string) {
+    return request<OnboardingStatus>('/me/onboarding-status', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
+  saveRelationshipPreference(accessToken: string, payload: RelationshipPreferenceInput) {
+    return request<{ nextStep: OnboardingStep }>('/me/relationship-preference', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify(payload),
+    });
+  },
+  agreeMannerPledge(accessToken: string, version: string) {
+    return request<{ nextStep: OnboardingStep }>('/me/manner-pledge', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ agreed: true, version }),
+    });
+  },
+  agreeSinglePledge(accessToken: string, version: string) {
+    return request<{ nextStep: OnboardingStep }>('/me/single-pledge', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ agreed: true, version }),
+    });
+  },
+
   // === 안전 (FR-H) ===
   createReport(
     accessToken: string,
@@ -401,6 +429,48 @@ export interface FaceVerificationResult {
   matched: boolean;
   confidence: number;
   faceMatchStatus: 'verified' | 'rejected' | 'pending';
+}
+
+// ============== 온보딩 (FR-B03~B06) ==============
+
+export type OnboardingStep =
+  | 'identity_verification'
+  | 'face_verification'
+  | 'age_check'
+  | 'relationship_survey'
+  | 'manner_pledge'
+  | 'single_pledge'
+  | 'profile_intro'
+  | 'completed';
+
+export interface OnboardingStatus {
+  identityVerified: boolean;
+  faceMatchStatus: 'not_submitted' | 'pending' | 'verified' | 'rejected';
+  ageVerified: boolean;
+  relationshipSurveyCompleted: boolean;
+  mannerPledgeAgreed: boolean;
+  singlePledgeAgreed: boolean;
+  hasMainPhoto: boolean;
+  hasProfileIntro: boolean;
+  nextStep: OnboardingStep;
+}
+
+export type RelationshipIntent =
+  | 'serious_long_term'
+  | 'natural_dating'
+  | 'open_to_marriage'
+  | 'casual_meeting'
+  | 'friendship_first';
+export type RelationshipPace = 'slow' | 'moderate' | 'fast';
+export type ContactFreq = 'low' | 'medium' | 'high';
+export type MarriageOpenness = 'open_to_marriage' | 'not_decided' | 'no_marriage';
+
+export interface RelationshipPreferenceInput {
+  intent: RelationshipIntent;
+  pace: RelationshipPace;
+  contactFrequency: ContactFreq;
+  marriageOpenness?: MarriageOpenness;
+  extra?: Record<string, unknown>;
 }
 
 export interface InterestResult {
