@@ -12,6 +12,7 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { LoggerModule } from './common/logger/logger.module';
 import { HealthModule } from './health/health.module';
 import { InfraModule } from './infra/infra.module';
+import { OnboardingModule } from './onboarding/onboarding.module';
 import { PhotosModule } from './photos/photos.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProfileModule } from './profile/profile.module';
@@ -35,6 +36,7 @@ import { VerificationModule } from './verification/verification.module';
     ProfileModule,
     PhotosModule,
     VerificationModule,
+    OnboardingModule,
     RecommendationsModule,
     ConversationsModule,
     ContactExchangesModule,

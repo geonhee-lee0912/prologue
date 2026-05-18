@@ -159,8 +159,8 @@ export class RecommendationsService {
     if (!me) {
       throw new AppException(ErrorCode.NOT_FOUND, '사용자를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
     }
-    if (!me.auth?.identityVerified || me.auth?.faceMatchStatus !== 'verified') {
-      // 자신이 인증 미완료면 추천 받을 자격 없음
+    if (!this.isEligibleForRecommendation(me)) {
+      // 자신이 인증/서약/설문 미완료면 추천 받을 자격 없음
       return [];
     }
 
@@ -227,11 +227,14 @@ export class RecommendationsService {
         id: { not: me.user.id },
         // 자기와 반대 성별 (단순 매칭, 양방향 호환 검증 별도)
         gender: me.user.targetGender,
-        // 본인 인증 + 얼굴 인증 둘 다 (FR-D 자격)
+        // 추천 자격: 본인+얼굴 인증, 매너·싱글 서약, 관계 목적 설문 (FR-B05/B06/B04)
         auth: {
           identityVerified: true,
           faceMatchStatus: 'verified',
+          mannerPledgeAgreed: true,
+          singlePledgeAgreed: true,
         },
+        relationshipPreference: { isNot: null },
         // 차단 관계 제외
         AND: [
           { blocksMade: { none: { blockedId: me.user.id } } },
@@ -298,6 +301,15 @@ export class RecommendationsService {
       profileAnswers: user.profileAnswers,
       relationshipPreference: user.relationshipPreference,
     };
+  }
+
+  private isEligibleForRecommendation(me: UserWithDetails): boolean {
+    if (!me.auth?.identityVerified) return false;
+    if (me.auth.faceMatchStatus !== 'verified') return false;
+    if (!me.auth.mannerPledgeAgreed) return false;
+    if (!me.auth.singlePledgeAgreed) return false;
+    if (!me.relationshipPreference) return false;
+    return true;
   }
 
   // ============================================================
