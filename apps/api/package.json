@@ -14,7 +14,8 @@
     "test:e2e": "vitest run --config ./test/vitest.e2e.config.ts",
     "typecheck": "tsc --noEmit",
     "db:seed": "tsx prisma/seed.ts",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "seed:admin": "tsx scripts/seed-admin.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.0",

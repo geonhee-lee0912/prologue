@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ActionsModule } from './actions/actions.module';
+import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { ConversationsModule } from './conversations/conversations.module';
@@ -42,6 +43,7 @@ import { VerificationModule } from './verification/verification.module';
     ContactExchangesModule,
     ActionsModule,
     SafetyModule,
+    AdminModule,
   ],
   providers: [
     // 순서 중요: ThrottlerGuard 가 먼저 → 인증 가드가 나중
