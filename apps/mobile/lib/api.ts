@@ -333,6 +333,24 @@ export const api = {
     });
   },
 
+  // === 마이페이지 (FR-J) ===
+  getMeSummary(accessToken: string) {
+    return request<MeSummary>('/me/summary', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
+  getMyVerifications(accessToken: string) {
+    return request<MyVerifications>('/me/verifications', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
+  withdrawAccount(accessToken: string) {
+    return request<{ withdrawn: true }>('/me/account', {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
+
   // === 안전 (FR-H) ===
   createReport(
     accessToken: string,
@@ -471,6 +489,50 @@ export interface RelationshipPreferenceInput {
   contactFrequency: ContactFreq;
   marriageOpenness?: MarriageOpenness;
   extra?: Record<string, unknown>;
+}
+
+// ============== 마이페이지 (FR-J) ==============
+
+export interface MeSummary {
+  user: {
+    id: string;
+    gender: string;
+    birthYear: number;
+    region1: string;
+    region2: string | null;
+    membershipType: string;
+    status: string;
+  };
+  profile: {
+    intro: string | null;
+    jobCategory: string | null;
+    lifestyleTags: string[];
+    completionScore: number;
+    mainPhotoUrl: string | null;
+  } | null;
+  verification: {
+    identityVerified: boolean;
+    faceMatchStatus: string;
+    ageVerified: boolean;
+    mannerPledgeAgreed: boolean;
+    singlePledgeAgreed: boolean;
+    employmentVerificationStatus: string;
+  };
+  onboardingCompleted: boolean;
+}
+
+export interface MyVerifications {
+  identityVerified: boolean;
+  identityVerifiedAt: string | null;
+  faceMatchStatus: 'not_submitted' | 'pending' | 'verified' | 'rejected';
+  faceVerifiedAt: string | null;
+  ageVerified: boolean;
+  mannerPledgeAgreed: boolean;
+  mannerPledgeAgreedAt: string | null;
+  singlePledgeAgreed: boolean;
+  singlePledgeAgreedAt: string | null;
+  employmentVerificationStatus: 'not_submitted' | 'pending' | 'verified' | 'rejected';
+  employmentVerifiedAt: string | null;
 }
 
 export interface InterestResult {

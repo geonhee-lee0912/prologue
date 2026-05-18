@@ -10,9 +10,9 @@ import {
   Text,
   View,
 } from 'react-native';
-import { ApiError, api, type RecommendationCard } from '../lib/api';
-import { authStorage } from '../lib/auth-storage';
-import { routeForStep } from '../lib/onboarding-route';
+import { ApiError, api, type RecommendationCard } from '../../lib/api';
+import { authStorage } from '../../lib/auth-storage';
+import { routeForStep } from '../../lib/onboarding-route';
 
 /**
  * D01 — 오늘의 프롤로그 (홈)

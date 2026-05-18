@@ -9,8 +9,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import { ApiError, api, type SentInterest } from '../lib/api';
-import { authStorage } from '../lib/auth-storage';
+import { ApiError, api, type SentInterest } from '../../lib/api';
+import { authStorage } from '../../lib/auth-storage';
 
 /**
  * E04 — 관심 목록
