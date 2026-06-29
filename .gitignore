@@ -95,3 +95,6 @@ secrets/
 test-*.png
 test-*.jpg
 test-*.txt
+
+# Claude Code worktrees (중첩 체크아웃 — 저장소에 포함하지 않음)
+.claude/worktrees/

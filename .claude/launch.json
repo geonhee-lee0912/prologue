@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "mobile-web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "mobile", "web"],
+      "port": 8081
+    },
+    {
+      "name": "device-frame",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/device-frame.mjs"],
+      "port": 8090
+    }
+  ]
+}
