@@ -140,6 +140,78 @@ pnpm --filter mobile dev
 
 ---
 
+## 환경 변수 — 여러 컴퓨터에서 쓰기
+
+`.env` 는 **절대 git 에 올리지 않는다.** 대신 `.env.example` 을 올려 "무엇을 채워야 하는지"만 공유하고, 값은 비밀번호 관리자에서 가져온다.
+
+```bash
+# 새 컴퓨터에서
+cp apps/api/.env.example apps/api/.env
+# 빈 값을 비밀번호 관리자에서 복사해 채운다
+```
+
+### 값을 어디서 구하나
+
+| 변수 | 출처 | 잃어버리면 |
+|---|---|---|
+| `DATABASE_URL`, `DIRECT_URL` | Supabase → Settings → Database | 대시보드에서 다시 본다 |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET` | Supabase → Settings → API | 대시보드에서 다시 본다 |
+| `KAKAO_REST_API_KEY` | 카카오 Developers 콘솔 | 콘솔에서 다시 본다 |
+| `OPENAI_API_KEY` | OpenAI 대시보드 | 새로 발급 (기존 키는 못 본다) |
+| **`PHONE_HASH_PEPPER`** | 최초 1회 생성 | **복구 불가. 아래 경고 참조** |
+| `ADMIN_JWT_SECRET` | 최초 1회 생성 | 새로 만들면 기존 세션만 무효 |
+
+```bash
+# 시크릿 최초 생성
+openssl rand -hex 32
+```
+
+### ⚠️ `PHONE_HASH_PEPPER` 는 반드시 백업한다
+
+휴대폰 번호는 평문으로 저장하지 않고 `SHA-256(번호 + pepper)` 만 저장한다(CLAUDE.md §10.1). **pepper 가 바뀌면 기존 해시와 아무것도 일치하지 않아 모든 사용자가 로그인할 수 없게 된다.** 재생성으로 복구할 수 없다.
+
+비밀번호 관리자에 반드시 보관한다. 이 값만큼은 잃어버리면 DB 를 버려야 한다.
+
+### 여러 컴퓨터 운용 방법 세 가지
+
+**1. 비밀번호 관리자에 secure note (권장 — 혼자 쓸 때)**
+
+1Password·Bitwarden 등에 `.env` 내용을 통째로 secure note 로 저장하고, 새 컴퓨터에서 복사해 붙여넣는다. 파일이 몇 개 안 되고 자주 바뀌지 않으면 이게 가장 단순하다.
+
+**2. 1Password CLI (`op`) 참조 방식**
+
+`.env` 에 실제 값 대신 `op://` 참조를 넣고 실행 시 주입한다. 이러면 `.env` 자체에 비밀이 없어 동기화가 자유롭다.
+
+```bash
+# .env 예시
+DATABASE_URL=op://Private/prologue-supabase/database_url
+
+# 실행
+op run --env-file=apps/api/.env -- pnpm --filter api dev
+```
+
+**3. Doppler / Infisical (팀이 생기면)**
+
+전용 시크릿 관리 SaaS. 무료 티어가 있고 CLI 로 주입한다. 혼자일 때는 과하다.
+
+### 하지 말 것
+
+- iCloud·Dropbox 공유 폴더에 `.env` 두기 — 동기화 충돌과 유출 위험
+- 카카오톡·메일로 나에게 보내기
+- `.gitignore` 를 지우고 커밋 — 한 번 올라가면 history 에서 지우기 어렵다
+
+### 운영 환경
+
+로컬 `.env` 는 개발용이다. 운영에서는 파일을 쓰지 않는다.
+
+| 대상 | 관리 위치 |
+|---|---|
+| NestJS | Railway 환경 변수 UI |
+| Mobile | EAS Secret |
+| Admin | Vercel 환경 변수 UI |
+
+---
+
 ## 자주 쓰는 명령어
 
 | 명령 | 설명 |
