@@ -35,18 +35,6 @@ CREATE TYPE "ContactFrequency" AS ENUM ('low', 'medium', 'high');
 CREATE TYPE "PhotoType" AS ENUM ('main', 'daily', 'hobby');
 
 -- CreateEnum
-CREATE TYPE "RecommendationStatus" AS ENUM ('created', 'shown', 'interested', 'skipped', 'expired');
-
--- CreateEnum
-CREATE TYPE "RecommendationGeneratedBy" AS ENUM ('rule', 'ai', 'admin');
-
--- CreateEnum
-CREATE TYPE "UserActionType" AS ENUM ('view_card', 'view_profile', 'view_report', 'send_interest', 'skip', 'block_request', 'report_request');
-
--- CreateEnum
-CREATE TYPE "SkipReason" AS ENUM ('appearance_low_match', 'intent_mismatch', 'distance_mismatch', 'conversation_style_mismatch', 'job_lifestyle_mismatch', 'values_mismatch', 'insufficient_profile', 'other');
-
--- CreateEnum
 CREATE TYPE "MatchStatus" AS ENUM ('active', 'expired', 'blocked', 'reported');
 
 -- CreateEnum
@@ -68,12 +56,6 @@ CREATE TYPE "ReportType" AS ENUM ('rude_message', 'sexual_content', 'harassment'
 CREATE TYPE "ReportStatus" AS ENUM ('pending', 'reviewing', 'resolved', 'rejected');
 
 -- CreateEnum
-CREATE TYPE "PaymentProductType" AS ENUM ('plus_subscription', 'extra_recommendation');
-
--- CreateEnum
-CREATE TYPE "PaymentStatus" AS ENUM ('pending', 'succeeded', 'failed', 'refunded', 'cancelled');
-
--- CreateEnum
 CREATE TYPE "AdminRole" AS ENUM ('owner', 'manager', 'reviewer');
 
 -- CreateEnum
@@ -90,6 +72,7 @@ CREATE TABLE "users" (
     "id" UUID NOT NULL,
     "phone_hash" TEXT NOT NULL,
     "email" TEXT,
+    "kakao_id" TEXT,
     "login_provider" "LoginProvider" NOT NULL,
     "gender" "Gender" NOT NULL,
     "birth_year" INTEGER NOT NULL,
@@ -216,58 +199,6 @@ CREATE TABLE "photos" (
 );
 
 -- CreateTable
-CREATE TABLE "recommendations" (
-    "id" TEXT NOT NULL,
-    "user_id" UUID NOT NULL,
-    "target_user_id" UUID NOT NULL,
-    "recommendation_date" DATE NOT NULL,
-    "batch_id" TEXT,
-    "rank" INTEGER NOT NULL,
-    "total_score" DOUBLE PRECISION NOT NULL,
-    "trust_score" DOUBLE PRECISION,
-    "relationship_score" DOUBLE PRECISION,
-    "lifestyle_score" DOUBLE PRECISION,
-    "conversation_score" DOUBLE PRECISION,
-    "distance_score" DOUBLE PRECISION,
-    "profile_quality_score" DOUBLE PRECISION,
-    "status" "RecommendationStatus" NOT NULL DEFAULT 'created',
-    "shown_at" TIMESTAMP(3),
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "recommendations_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "recommendation_reasons" (
-    "id" TEXT NOT NULL,
-    "recommendation_id" TEXT NOT NULL,
-    "summary_text" TEXT NOT NULL,
-    "matched_points" TEXT[],
-    "difference_points" TEXT[],
-    "conversation_topics" TEXT[],
-    "curator_memo" TEXT NOT NULL,
-    "generated_by" "RecommendationGeneratedBy" NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "recommendation_reasons_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "user_actions" (
-    "id" TEXT NOT NULL,
-    "user_id" UUID NOT NULL,
-    "target_user_id" UUID NOT NULL,
-    "recommendation_id" TEXT,
-    "action_type" "UserActionType" NOT NULL,
-    "skip_reason" "SkipReason",
-    "skip_reason_note" TEXT,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "user_actions_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "matches" (
     "id" TEXT NOT NULL,
     "user_a_id" UUID NOT NULL,
@@ -288,8 +219,6 @@ CREATE TABLE "conversations" (
     "user_b_id" UUID NOT NULL,
     "status" "ConversationStatus" NOT NULL DEFAULT 'active',
     "started_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "expires_at" TIMESTAMP(3) NOT NULL,
-    "extensions_used" INTEGER NOT NULL DEFAULT 0,
     "ended_at" TIMESTAMP(3),
     "end_reason" TEXT,
 
@@ -355,24 +284,6 @@ CREATE TABLE "blocks" (
 );
 
 -- CreateTable
-CREATE TABLE "payments" (
-    "id" TEXT NOT NULL,
-    "user_id" UUID NOT NULL,
-    "product_type" "PaymentProductType" NOT NULL,
-    "amount" INTEGER NOT NULL,
-    "currency" TEXT NOT NULL DEFAULT 'KRW',
-    "status" "PaymentStatus" NOT NULL DEFAULT 'pending',
-    "provider" TEXT NOT NULL,
-    "provider_tx_id" TEXT,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-    "succeeded_at" TIMESTAMP(3),
-    "refunded_at" TIMESTAMP(3),
-
-    CONSTRAINT "payments_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "admin_users" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
@@ -422,6 +333,9 @@ CREATE UNIQUE INDEX "users_phone_hash_key" ON "users"("phone_hash");
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "users_kakao_id_key" ON "users"("kakao_id");
+
+-- CreateIndex
 CREATE INDEX "users_status_gender_target_gender_idx" ON "users"("status", "gender", "target_gender");
 
 -- CreateIndex
@@ -435,6 +349,9 @@ CREATE INDEX "user_consents_user_id_consent_type_idx" ON "user_consents"("user_i
 
 -- CreateIndex
 CREATE UNIQUE INDEX "user_auths_user_id_key" ON "user_auths"("user_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "user_auths_identity_ci_hash_key" ON "user_auths"("identity_ci_hash");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "profiles_user_id_key" ON "profiles"("user_id");
@@ -452,24 +369,6 @@ CREATE UNIQUE INDEX "relationship_preferences_user_id_key" ON "relationship_pref
 CREATE INDEX "photos_user_id_idx" ON "photos"("user_id");
 
 -- CreateIndex
-CREATE INDEX "recommendations_user_id_status_recommendation_date_idx" ON "recommendations"("user_id", "status", "recommendation_date");
-
--- CreateIndex
-CREATE INDEX "recommendations_batch_id_idx" ON "recommendations"("batch_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "recommendations_user_id_target_user_id_recommendation_date_key" ON "recommendations"("user_id", "target_user_id", "recommendation_date");
-
--- CreateIndex
-CREATE UNIQUE INDEX "recommendation_reasons_recommendation_id_key" ON "recommendation_reasons"("recommendation_id");
-
--- CreateIndex
-CREATE INDEX "user_actions_user_id_action_type_created_at_idx" ON "user_actions"("user_id", "action_type", "created_at");
-
--- CreateIndex
-CREATE INDEX "user_actions_target_user_id_action_type_idx" ON "user_actions"("target_user_id", "action_type");
-
--- CreateIndex
 CREATE INDEX "matches_status_idx" ON "matches"("status");
 
 -- CreateIndex
@@ -483,9 +382,6 @@ CREATE INDEX "conversations_user_a_id_status_idx" ON "conversations"("user_a_id"
 
 -- CreateIndex
 CREATE INDEX "conversations_user_b_id_status_idx" ON "conversations"("user_b_id", "status");
-
--- CreateIndex
-CREATE INDEX "conversations_expires_at_idx" ON "conversations"("expires_at");
 
 -- CreateIndex
 CREATE INDEX "messages_conversation_id_created_at_idx" ON "messages"("conversation_id", "created_at");
@@ -504,12 +400,6 @@ CREATE INDEX "blocks_blocked_id_idx" ON "blocks"("blocked_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "blocks_blocker_id_blocked_id_key" ON "blocks"("blocker_id", "blocked_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "payments_provider_tx_id_key" ON "payments"("provider_tx_id");
-
--- CreateIndex
-CREATE INDEX "payments_user_id_status_idx" ON "payments"("user_id", "status");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "admin_users_email_key" ON "admin_users"("email");
@@ -543,21 +433,6 @@ ALTER TABLE "relationship_preferences" ADD CONSTRAINT "relationship_preferences_
 
 -- AddForeignKey
 ALTER TABLE "photos" ADD CONSTRAINT "photos_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "recommendations" ADD CONSTRAINT "recommendations_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "recommendations" ADD CONSTRAINT "recommendations_target_user_id_fkey" FOREIGN KEY ("target_user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "recommendation_reasons" ADD CONSTRAINT "recommendation_reasons_recommendation_id_fkey" FOREIGN KEY ("recommendation_id") REFERENCES "recommendations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "user_actions" ADD CONSTRAINT "user_actions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "user_actions" ADD CONSTRAINT "user_actions_target_user_id_fkey" FOREIGN KEY ("target_user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "matches" ADD CONSTRAINT "matches_user_a_id_fkey" FOREIGN KEY ("user_a_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -602,10 +477,8 @@ ALTER TABLE "blocks" ADD CONSTRAINT "blocks_blocker_id_fkey" FOREIGN KEY ("block
 ALTER TABLE "blocks" ADD CONSTRAINT "blocks_blocked_id_fkey" FOREIGN KEY ("blocked_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "payments" ADD CONSTRAINT "payments_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "admin_reviews" ADD CONSTRAINT "admin_reviews_reviewer_id_fkey" FOREIGN KEY ("reviewer_id") REFERENCES "admin_users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "admin_audit_logs" ADD CONSTRAINT "admin_audit_logs_admin_id_fkey" FOREIGN KEY ("admin_id") REFERENCES "admin_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+

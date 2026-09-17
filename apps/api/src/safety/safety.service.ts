@@ -51,17 +51,6 @@ export class SafetyService {
       },
     });
 
-    // user_actions 에 흔적 (운영 데이터)
-    await this.prisma.userAction
-      .create({
-        data: {
-          userId,
-          targetUserId: dto.targetUserId,
-          actionType: 'report_request',
-        },
-      })
-      .catch(() => null);
-
     this.logger.log(`report created: ${report.id} (reporter=${userId})`);
     return { id: report.id };
   }
@@ -120,17 +109,6 @@ export class SafetyService {
         where: { userAId, userBId, status: 'active' },
         data: { status: 'blocked', endedAt: new Date(), endReason: 'block' },
       });
-
-      // user_actions 흔적
-      await tx.userAction
-        .create({
-          data: {
-            userId,
-            targetUserId: dto.blockedId,
-            actionType: 'block_request',
-          },
-        })
-        .catch(() => null);
 
       return created;
     });

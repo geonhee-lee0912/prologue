@@ -1,8 +1,9 @@
 // 프롤로그 Prisma 스키마 v0.1
 //
-// 작성 기준: 08_데이터항목_정의서_v_0_1.md
-// 기획 문서의 엔티티/필드/enum 을 가능한 그대로 옮겼다.
-// 컬럼명은 정의서의 snake_case → camelCase 로만 변환.
+// 작성 기준: docs/superpowers/specs/2026-09-02-컨셉-재설정-design.md
+//
+// 2026-09 컨셉 재설정으로 Recommendation(점수 6종), UserAction(SkipReason),
+// Payment, Conversation 만료 필드를 제거했다. 구 스키마는 v0-old-concept 태그.
 //
 // 변경 시:
 // 1. 데이터항목 정의서와 어긋나면 정의서를 먼저 갱신할지 확인
@@ -78,10 +79,6 @@ model User {
   profileAnswers              ProfileAnswer[]
   relationshipPreference      RelationshipPreference?
   photos                      Photo[]
-  recommendationsReceived     Recommendation[]        @relation("RecommendationReceiver")
-  recommendationsAsTarget     Recommendation[]        @relation("RecommendationTarget")
-  actionsByUser               UserAction[]            @relation("ActionByUser")
-  actionsTowardUser           UserAction[]            @relation("ActionTowardUser")
   matchesAsUserA              Match[]                 @relation("MatchUserA")
   matchesAsUserB              Match[]                 @relation("MatchUserB")
   conversationsAsUserA        Conversation[]          @relation("ConvUserA")
@@ -93,7 +90,6 @@ model User {
   reportsReceived             Report[]                @relation("ReportTarget")
   blocksMade                  Block[]                 @relation("BlockerUser")
   blocksReceived              Block[]                 @relation("BlockedUser")
-  payments                    Payment[]
   refreshTokens               RefreshToken[]
 
   @@index([status, gender, targetGender])
@@ -309,119 +305,6 @@ model Photo {
 // 4. Recommendation / RecommendationReason / UserAction
 // =====================================================================
 
-enum RecommendationStatus {
-  created
-  shown
-  interested
-  skipped
-  expired
-}
-
-enum RecommendationGeneratedBy {
-  rule
-  ai
-  admin
-}
-
-model Recommendation {
-  id           String @id @default(cuid())
-  // 추천을 받는 사용자
-  userId       String @map("user_id") @db.Uuid
-  user         User   @relation("RecommendationReceiver", fields: [userId], references: [id], onDelete: Cascade)
-  // 추천 대상 사용자
-  targetUserId String @map("target_user_id") @db.Uuid
-  targetUser   User   @relation("RecommendationTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
-
-  recommendationDate DateTime @map("recommendation_date") @db.Date
-  batchId            String?  @map("batch_id")
-  rank               Int
-
-  // 점수 (사용자 응답에 절대 노출 금지)
-  totalScore          Float  @map("total_score")
-  trustScore          Float? @map("trust_score")
-  relationshipScore   Float? @map("relationship_score")
-  lifestyleScore      Float? @map("lifestyle_score")
-  conversationScore   Float? @map("conversation_score")
-  distanceScore       Float? @map("distance_score")
-  profileQualityScore Float? @map("profile_quality_score")
-
-  status  RecommendationStatus @default(created)
-  shownAt DateTime?            @map("shown_at")
-
-  reason RecommendationReason?
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@unique([userId, targetUserId, recommendationDate])
-  @@index([userId, status, recommendationDate])
-  @@index([batchId])
-  @@map("recommendations")
-}
-
-model RecommendationReason {
-  id               String         @id @default(cuid())
-  recommendationId String         @unique @map("recommendation_id")
-  recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
-
-  // 사용자에게 공개되는 텍스트 (정책 상수에서 생성된 결과)
-  summaryText        String   @map("summary_text") @db.Text
-  matchedPoints      String[] @map("matched_points")
-  differencePoints   String[] @map("difference_points")
-  conversationTopics String[] @map("conversation_topics")
-  curatorMemo        String   @map("curator_memo") @db.Text
-
-  // 생성 출처 (사용자에게 노출 금지)
-  generatedBy RecommendationGeneratedBy @map("generated_by")
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("recommendation_reasons")
-}
-
-enum UserActionType {
-  view_card
-  view_profile
-  view_report
-  send_interest
-  skip
-  block_request
-  report_request
-}
-
-// 거절 사유 - 상대에게 공개 금지
-enum SkipReason {
-  appearance_low_match
-  intent_mismatch
-  distance_mismatch
-  conversation_style_mismatch
-  job_lifestyle_mismatch
-  values_mismatch
-  insufficient_profile
-  other
-}
-
-model UserAction {
-  id               String  @id @default(cuid())
-  userId           String  @map("user_id") @db.Uuid
-  user             User    @relation("ActionByUser", fields: [userId], references: [id], onDelete: Cascade)
-  targetUserId     String  @map("target_user_id") @db.Uuid
-  targetUser       User    @relation("ActionTowardUser", fields: [targetUserId], references: [id], onDelete: Cascade)
-  recommendationId String? @map("recommendation_id")
-
-  actionType UserActionType @map("action_type")
-
-  // 거절 사유는 SkipReason enum 또는 자유텍스트 (상대 비공개)
-  skipReason     SkipReason? @map("skip_reason")
-  skipReasonNote String?     @map("skip_reason_note") @db.Text
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@index([userId, actionType, createdAt])
-  @@index([targetUserId, actionType])
-  @@map("user_actions")
-}
-
 // =====================================================================
 // 5. Match
 // =====================================================================
@@ -475,19 +358,17 @@ model Conversation {
   userBId String @map("user_b_id") @db.Uuid
   userB   User   @relation("ConvUserB", fields: [userBId], references: [id], onDelete: Cascade)
 
-  status         ConversationStatus @default(active)
-  startedAt      DateTime           @default(now()) @map("started_at")
-  expiresAt      DateTime           @map("expires_at") // 기본 7일 + 연장
-  extensionsUsed Int                @default(0) @map("extensions_used")
-  endedAt        DateTime?          @map("ended_at")
-  endReason      String?            @map("end_reason")
+  // 만료 없음. 붙잡지도 내보내지도 않는다 (CLAUDE.md 하드룰 6)
+  status    ConversationStatus @default(active)
+  startedAt DateTime           @default(now()) @map("started_at")
+  endedAt   DateTime?          @map("ended_at")
+  endReason String?            @map("end_reason")
 
   messages         Message[]
   contactExchanges ContactExchange[]
 
   @@index([userAId, status])
   @@index([userBId, status])
-  @@index([expiresAt])
   @@map("conversations")
 }
 
@@ -622,40 +503,6 @@ model Block {
 // =====================================================================
 // 8. Payment (MVP P2)
 // =====================================================================
-
-enum PaymentProductType {
-  plus_subscription
-  extra_recommendation
-}
-
-enum PaymentStatus {
-  pending
-  succeeded
-  failed
-  refunded
-  cancelled
-}
-
-model Payment {
-  id     String @id @default(cuid())
-  userId String @map("user_id") @db.Uuid
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  productType  PaymentProductType @map("product_type")
-  amount       Int // 원
-  currency     String             @default("KRW")
-  status       PaymentStatus      @default(pending)
-  provider     String // toss, iamport, iap_apple, iap_google
-  providerTxId String?            @unique @map("provider_tx_id")
-
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  succeededAt DateTime? @map("succeeded_at")
-  refundedAt  DateTime? @map("refunded_at")
-
-  @@index([userId, status])
-  @@map("payments")
-}
 
 // =====================================================================
 // 9. Admin
