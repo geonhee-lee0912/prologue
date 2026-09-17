@@ -17,10 +17,6 @@
       "types": "./dist/errors.d.ts",
       "default": "./dist/errors.js"
     },
-    "./recommendation-reasons": {
-      "types": "./dist/recommendation-reasons.d.ts",
-      "default": "./dist/recommendation-reasons.js"
-    },
     "./integrations": {
       "types": "./dist/integrations/index.d.ts",
       "default": "./dist/integrations/index.js"

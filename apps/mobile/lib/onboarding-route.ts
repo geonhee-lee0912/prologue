@@ -1,7 +1,11 @@
 /**
  * 온보딩 nextStep → expo-router 경로 매핑.
  *
- * 로그인/가입 직후 + 홈 진입 시 GET /me/onboarding-status 호출 후 분기.
+ * 2026-09 컨셉 재설정으로 기존 온보딩 단계(나이 확인, 관계 설문, 매너 서약,
+ * 싱글 서약, 조건표형 프로필)는 폐기됐다. 새 온보딩은 동의 3종 분리 수집 →
+ * 기본 정보 → AI 인터뷰이며 아직 구현 전이다.
+ *
+ * 화면 흐름 설계 2장(A 진입) 참조.
  */
 import type { OnboardingStep } from './api';
 
@@ -9,20 +13,10 @@ export function routeForStep(step: OnboardingStep): string {
   switch (step) {
     case 'identity_verification':
       return '/a03-login';
-    case 'face_verification':
-      // FR-B02 얼굴 인증은 현재 profile-edit 안에 통합되어 있음
-      return '/profile-edit';
-    case 'age_check':
-      return '/(onboarding)/b04-age-result';
-    case 'relationship_survey':
-      return '/(onboarding)/b05-relationship';
-    case 'manner_pledge':
-      return '/(onboarding)/b06-manner';
-    case 'single_pledge':
-      return '/(onboarding)/b07-single';
-    case 'profile_intro':
-      return '/profile-edit';
     case 'completed':
-      return '/home';
+      return '/(main)';
+    default:
+      // 새 온보딩 화면이 서기 전까지는 루트로 보낸다
+      return '/(main)';
   }
 }

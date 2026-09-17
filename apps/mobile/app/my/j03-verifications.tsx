@@ -84,7 +84,7 @@ export default function J03Verifications() {
         }
         cta={
           data.faceMatchStatus !== 'verified'
-            ? { label: '얼굴 인증하기', onPress: () => router.push('/profile-edit' as never) }
+            ? undefined // 얼굴 인증 화면은 컨셉 재설정으로 재작성 예정
             : undefined
         }
       />
@@ -92,27 +92,15 @@ export default function J03Verifications() {
         label="매너 서약"
         sub={data.mannerPledgeAgreedAt ? formatDate(data.mannerPledgeAgreedAt) : null}
         status={data.mannerPledgeAgreed ? 'verified' : 'required'}
-        cta={
-          !data.mannerPledgeAgreed
-            ? {
-                label: '서약하기',
-                onPress: () => router.push('/(onboarding)/b06-manner' as never),
-              }
-            : undefined
-        }
+        // 매너 서약 화면은 컨셉 재설정으로 폐기. 새 온보딩 확정 후 재작성.
+        cta={undefined}
       />
       <Row
         label="싱글 상태 서약"
         sub={data.singlePledgeAgreedAt ? formatDate(data.singlePledgeAgreedAt) : null}
         status={data.singlePledgeAgreed ? 'verified' : 'required'}
-        cta={
-          !data.singlePledgeAgreed
-            ? {
-                label: '서약하기',
-                onPress: () => router.push('/(onboarding)/b07-single' as never),
-              }
-            : undefined
-        }
+        // 싱글 서약 화면은 컨셉 재설정으로 폐기. 새 온보딩 확정 후 재작성.
+        cta={undefined}
       />
       <Row
         label="직업/재직 인증"

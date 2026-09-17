@@ -4,13 +4,12 @@
  * 기획 문서에서 결정된 모든 정책 수치는 여기에 모은다.
  * 코드의 어떤 곳에서도 magic number 로 작성하지 않는다.
  *
- * 변경 시: 이 파일 수정 + 관련 기획 문서 갱신 + PR 본문에 둘 다 반영했음을 명시.
+ * 변경 시: 이 파일 수정 + 컨셉 재설정 문서 갱신 + PR 본문에 둘 다 반영했음을 명시.
  *
- * 출처:
- * - prologue_service_concept_v1_1.md
- * - 08_MVP_기능범위_정의서_v_0_1.md
- * - 08_추천_알고리즘_기준서_v_0_1.md
- * - prologue_03_conversation_experience_plan_v0_2.md
+ * 출처: docs/superpowers/specs/2026-09-02-컨셉-재설정-design.md (5·6장)
+ *       CLAUDE.md 1.1 하드룰, 12장
+ *
+ * 2026-09 컨셉 재설정으로 추천 점수 가중치, 대화 만료, 일일 추천 한도는 폐기됐다.
  */
 
 export const POLICY = {
@@ -21,49 +20,81 @@ export const POLICY = {
     targetMaxAge: 39,
     smsOtpTtlSeconds: 180,
     smsOtpMaxAttempts: 5,
-  },
-
-  /** 추천 시스템 (08_추천_알고리즘_기준서) */
-  recommendation: {
-    /** 점수 만점 (사용자 응답에 노출 금지) */
-    scoreMax: 100,
-    /** 점수 컴포넌트 가중치 — 합계 100 */
-    weights: {
-      relationshipIntent: 25,
-      trustVerification: 20,
-      lifestyle: 20,
-      conversationStyle: 15,
-      proximity: 10,
-      profileQuality: 10,
-    },
-    /** 일일 추천 한도 (가설값. BM 결정 후 확정) */
-    dailyLimit: {
-      free: 3,
-      plus: 10,
-    },
-    /** 최근 스킵된 상대를 재추천 제외하는 기간 (일) */
-    recentSkipExclusionDays: 30,
-    /** 추가 추천권 월 구매 한도 (가설값) */
-    extraTicketMonthlyLimit: 10,
   } as const,
 
-  /** 대화방 (prologue_03_conversation_experience_plan_v0_2 9.6) */
+  /**
+   * 소개(주선) — 하드룰 3
+   *
+   * 정기 배급을 하지 않는다. 개수를 약속하지 않는다.
+   * 후보 품질이 임계 미만이면 소개하지 않는다.
+   */
+  introduction: {
+    /** 하루 상한을 두지 않는다. 좋은 상대가 있을 때만 소개한다. */
+    dailyCap: null,
+    /** 품질 임계값. 실측 전까지 미확정이므로 런타임에서 별도 주입한다. */
+    minQualityThreshold: null,
+    /** 넘긴 상대를 다시 소개하지 않는 기간 (일) */
+    passedExclusionDays: 180,
+    /** LLM 판단에 넘기기 전 규칙·임베딩으로 좁힐 후보 수 */
+    llmCandidateLimit: 5,
+  } as const,
+
+  /**
+   * 연결권 — 하드룰 4
+   *
+   * 차감은 "양쪽 수락 후 앱 내 대화가 성립한 시점"에만.
+   * 좋아요·사진 공개·대화방 개설·매칭 자체에는 과금하지 않는다.
+   * 만남도 과금 대상이 아니다 (돈을 걸면 사용자가 만남을 숨겨 학습 루프가 죽는다).
+   */
+  credit: {
+    chargeOn: 'conversationEstablished',
+    /** 양쪽이 각각 이 턴 수 이상 주고받아야 대화 성립으로 본다. 실측 후 확정. */
+    turnsRequiredEachSide: 2,
+    /** 미사용 연결권 이월 상한 */
+    carryOverLimit: 6,
+    /** 연결권 유효기간 (개월) */
+    expiryMonths: 6,
+  } as const,
+
+  /**
+   * 대화 — 하드룰 6
+   *
+   * 붙잡지도 내보내지도 않는다. 체류 유도 장치를 두지 않는다.
+   */
   conversation: {
-    defaultDurationDays: 7,
-    extensionUnitDays: 7,
-    /** MVP 가설값 */
-    maxFreeDurationDays: 14,
-    maxPlusDurationDays: 21,
-    /** 종료 N시간 전 안내 */
-    expiryReminderHours: 24,
+    /** 만료 없음 */
+    expiryDays: null,
+    /** 읽음 확인 금지 */
+    readReceipts: false,
+    /** 온라인 상태 표시 금지 */
+    onlineStatus: false,
   } as const,
 
-  /** 연락처 교환 */
+  /** 연락처 교환 — 하드룰 5 */
   contactExchange: {
-    /** 양쪽 동의 필수 */
     requireMutualConsent: true,
-    /** 동의해도 자동 노출 금지. 동의 시점에 사용자가 직접 입력. */
+    /** 동의해도 자동 노출 금지 */
     autoExposeOnConsent: false,
+    /** 우리가 권하지 않는다. 유도 UI·카피 금지 */
+    promote: false,
+  } as const,
+
+  /** 노출 — 하드룰 1. 진열 금지 */
+  exposure: {
+    searchEnabled: false,
+    feedEnabled: false,
+    browseEnabled: false,
+  } as const,
+
+  /** AI 인터뷰 */
+  interview: {
+    /** 완주로 인정하는 최소 사용자 답변 수 */
+    minTurns: 12,
+    /** 이 턴 수에 도달하면 더 묻지 않고 마무리한다 */
+    maxTurns: 30,
+    /** 중단 후 재개 리마인드 (최대 1회) */
+    resumeReminderHours: 24,
+    resumeReminderMaxCount: 1,
   } as const,
 
   /** 프로필 */
