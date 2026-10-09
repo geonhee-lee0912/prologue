@@ -251,8 +251,7 @@ prologue/
 ├─ tsconfig.base.json
 ├─ CLAUDE.md            # 클로드 코드 작업 지침
 ├─ DEVELOPMENT_SPEC.md  # 이 문서
-├─ 09_아키텍처_의사결정_v0_2.md
-└─ NEXT_STEPS.md
+└─ 09_아키텍처_의사결정_v0_2.md
 ```
 
 **Docker Compose 와 MinIO 는 사용하지 않는다.** Supabase 가 모두 대체.

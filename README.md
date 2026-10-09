@@ -1,34 +1,43 @@
 # 프롤로그 (Prologue)
 
-가볍지 않은 만남을 위한 인증 기반 진지한 소개팅 앱.
+**진열되지 않는 소개팅.** 여성은 아무에게도 노출되지 않고, 남성은 조건이 아니라 성의로 검증되며, AI는 사람에게는 못 하는 말을 받아 다음 소개를 좋게 만든다.
 
-> 좋은 만남은, 좋은 첫문장에서 시작됩니다.
+컨셉과 하드룰은 [`CLAUDE.md`](./CLAUDE.md), 그 근거는 [컨셉 재설정 문서](docs/superpowers/specs/2026-09-02-컨셉-재설정-design.md)에 있다.
 
 ---
 
-## 현재 진행 상태
+## 현재 상태
 
-- ✅ **Phase 0** 모노레포 골격 + GitHub 푸시 + 기획 문서 26개 정리
-- ✅ **Phase 1** Supabase dev 프로젝트 연결 + 환경 변수 세팅
-- ✅ **Phase 2** Prisma 초기 마이그레이션 (22 테이블, 29 enum, snake_case 컬럼, UUID User.id) + RLS 4종
-- ✅ **Phase 3** NestJS 횡단 골격
-  - `/api/health`, `/api/docs` (Swagger), `/api/v1/me`
-  - Supabase JWT 가드, `@Public`/`@CurrentUser` 데코레이터
-  - 글로벌 ExceptionFilter + ResponseInterceptor (`{ data }` / `{ error }`)
-  - Pino 로거 (PII 마스킹), Throttler (60req/min)
-  - Prisma/SupabaseModule, 외부 서비스 인터페이스 + mock 6종
-- ✅ **Phase 4 — FR-A** 회원가입/로그인 (통합 본인 인증 흐름)
-  - 본인 인증으로 가입 (`/auth/identity/start` + `/auth/identity/complete`) — PASS/NICE mock
-  - SMS OTP 로그인 (`/auth/login/otp/send` + `/auth/login/otp/verify`)
-  - 카카오 OAuth 로그인 / 가입 (`/auth/login/kakao`, identity start with kakaoAccessToken)
-  - **카카오 real 모드 백엔드 동작 확인** (`KAKAO_USER_INFO_PROVIDER=real`, code 교환 엔드포인트)
-  - Refresh token 회전 + Logout (`/auth/refresh`, `/auth/logout`)
-  - User.kakaoId, UserAuth.identityCiHash 유니크 제약
-  - 모바일 A03 화면 (Expo Web/Native) + 토큰 secure storage (카카오는 mock 유지)
-- 🟡 **보류된 작업** — [`BACKLOG.md`](./BACKLOG.md) 참고
-  - 카카오 real 사용자 end-to-end 검증 (카카오 콘솔 redirect URI 등록 필요)
-  - 모바일 real OAuth (expo-auth-session, 카카오 로그인 버튼 실 연동)
-- ⏳ **Phase 4 — FR-B 이후** 얼굴 인증, 프로필 작성, 추천, 매칭, 대화, 신고/차단
+**2026-09 컨셉을 백지에서 재설정했다.** 이전의 "인증 기반 진지한 소개팅 앱" 기획과 그 기준으로 만든 코드는 폐기됐다.
+
+- ✅ 컨셉 재설정 v2.5, CLAUDE.md v0.3 (하드룰 8가지), 화면 흐름 설계 v0.2
+- ✅ 폐기된 기획 문서 21종을 `docs/archive/` 로 이동
+- ✅ 폐기된 코드 제거 — 추천·관심·대화 API, 4탭 화면, 추천 카드, 조건표형 프로필 편집
+- ✅ Prisma 스키마 베이스라인 재생성 (`20260917000000_reset_for_concept_v2`)
+- 옛 코드는 git 태그 `v0-old-concept` 에 있다: `git checkout v0-old-concept -- <경로>`
+
+### 남아 있는 것
+
+| 영역 | 내용 |
+|---|---|
+| 백엔드 골격 | Supabase JWT 가드, 예외 필터, 응답 인터셉터, PII 마스킹 로거, Throttler, Prisma·Supabase 모듈, 외부 서비스 인터페이스 + mock |
+| 인증 | 본인 인증으로 가입(PASS/NICE mock), SMS OTP·카카오 로그인, refresh token 회전 |
+| 계정 | 내 정보, 인증 상태, 얼굴 인증, 계정 탈퇴 |
+| 안전 | 신고, 차단 |
+| 운영자 도구 | 로그인, 사용자 관리, 사진·재직 검수, 신고 처리 |
+| 모바일 | 스플래시, 로그인(A03), 인증 상태, 탈퇴, 신고 화면. 주선자 대화창 `(main)/index.tsx` 는 자리만 있다 |
+
+옛 컨셉 기준으로 남아 있어 손봐야 할 코드와 알려진 문제는 [`BACKLOG.md`](./BACKLOG.md)에 있다.
+
+### 다음
+
+[화면 흐름 설계](docs/superpowers/specs/2026-09-11-화면-흐름-설계.md) 9절 순서를 따른다. **앱(Expo)으로 만들고, 백엔드보다 화면을 먼저 만든다.**
+
+1. 화면별 상세 — B2 인터뷰 대화부터
+2. mock 데이터로 B2 → C2 → D1 → D2
+3. 화면이 서면 [AI 인터뷰 엔진 계획](docs/superpowers/plans/2026-09-11-ai-인터뷰-엔진.md)을 화면에 맞게 조정해 실행
+
+코드 밖의 우선순위(커뮤니티 침투 경로, 남성 측 가치 명제, 법률 자문 등)는 컨셉 문서 11장에 있다.
 
 ---
 
@@ -47,7 +56,7 @@
 
 자세한 의사결정은 [`09_아키텍처_의사결정_v0_2.md`](./09_아키텍처_의사결정_v0_2.md)
 기술 스택과 규칙은 [`DEVELOPMENT_SPEC.md`](./DEVELOPMENT_SPEC.md)
-클로드 코드 작업 지침은 [`CLAUDE.md`](./CLAUDE.md)
+(두 문서 모두 컨셉 재설정 전에 쓰였다. 기술 결정은 유효하지만 기능 서술은 옛 컨셉 기준이다)
 
 ---
 
@@ -61,8 +70,8 @@ prologue/
 │  └─ admin/    # Next.js 운영자 도구 (Vercel)
 ├─ packages/
 │  └─ shared/   # 공유 타입, enum, 정책 상수, 외부서비스 인터페이스
-├─ supabase/    # 마이그레이션 SQL, RLS 정책 SQL, RLS 일괄 적용 스크립트
-└─ docs/        # 기획/정책/브랜드 문서 26종
+├─ supabase/    # RLS 정책 SQL, RLS 일괄 적용 스크립트
+└─ docs/        # 현행 설계는 docs/superpowers/, 정책 문서 일부는 docs/ 바로 아래, 폐기된 기획은 docs/archive/
 ```
 
 ---
@@ -94,6 +103,13 @@ prologue/
 3. **Railway**: [railway.com](https://railway.com) — 백엔드 호스팅, 베타 전까지 미뤄도 OK
 4. **Vercel**: 운영자 도구 호스팅, 베타 전까지 미뤄도 OK
 
+베타 직전에 필요한 계약·계정:
+
+- 본인 인증 (PASS 또는 NICE), SMS (NHN Toast 권장)
+- Apple Developer ($99/년), Google Play ($25 1회)
+- OpenAI API — 무보존(zero data retention) 적용 조건 확인 필요 (컨셉 문서 8.4)
+- AWS (Rekognition 을 쓸 경우), Sentry (선택)
+
 ---
 
 ## 처음 실행
@@ -116,6 +132,7 @@ cp apps/admin/.env.example apps/admin/.env
 pnpm --filter api prisma migrate deploy
 
 # 5. RLS 정책 일괄 적용
+#    ⚠️ 지금은 중간에 실패한다 — BACKLOG.md 1번 참고
 pnpm db:rls
 
 # 6. 백엔드 실행
@@ -243,20 +260,7 @@ op run --env-file=apps/api/.env -- pnpm --filter api dev
 에러 코드는 [`packages/shared/src/errors.ts`](./packages/shared/src/errors.ts) 에 정의.
 새 비즈니스 에러는 `AppException` + 적절한 `ErrorCode` 로 던진다.
 
-## 현재 노출된 엔드포인트
-
-| 경로 | 인증 | 설명 |
-|---|---|---|
-| `GET  /api/health` | Public | 헬스체크 |
-| `GET  /api/docs` | Public | Swagger UI |
-| `POST /api/v1/auth/identity/start` | Public | 본인 인증 시작 (kakao 토큰 옵션) |
-| `POST /api/v1/auth/identity/complete` | Public | 본인 인증 완료 → 가입/로그인 → JWT |
-| `POST /api/v1/auth/login/otp/send` | Public | SMS OTP 발송 |
-| `POST /api/v1/auth/login/otp/verify` | Public | OTP 검증 → JWT |
-| `POST /api/v1/auth/login/kakao` | Public | 카카오 OAuth 로그인 → JWT |
-| `POST /api/v1/auth/refresh` | Public | refresh token 으로 새 access token |
-| `POST /api/v1/auth/logout` | Bearer | 모든 refresh token revoke |
-| `GET  /api/v1/me` | Bearer | 내 사용자 정보 |
+엔드포인트 목록은 Swagger UI(`/api/docs`)가 기준이다. 옛 컨셉 기준으로 남아 있는 엔드포인트(온보딩 설문·서약, 프로필)는 BACKLOG.md 3번에 있다.
 
 ---
 
@@ -273,17 +277,15 @@ op run --env-file=apps/api/.env -- pnpm --filter api dev
 | 푸시 | Expo Push | `MockPushService` | provider 인터페이스 교체 |
 | 결제 | 토스 / IAP | `MockPaymentService` | provider 인터페이스 교체 |
 
-실 연동은 Phase 6 (외부 서비스 계약 완료 후).
+실 연동은 외부 서비스 계약 후에 한다.
 
 ---
 
-## 화면 ID 와 코드 매핑
+## 화면 ID
 
-기획 문서의 화면 ID(A01 ~ K05)와 기능 ID(FR-A01 ~ FR-J)를 코드에 명시적으로 노출.
+현행 화면 ID는 [화면 흐름 설계](docs/superpowers/specs/2026-09-11-화면-흐름-설계.md)의 A1~G5 다. 앱 전체가 하나의 주선자 대화창이라 B(인터뷰)·C(대기)·D(소개) 화면은 `(main)/index.tsx` 안에서 일어난다.
 
-- 모바일 화면 파일: `a03-login.tsx`, `b02-identity.tsx` 처럼 prefix 사용
-- 백엔드 컨트롤러: JSDoc `@fr FR-XX` 로 매핑 명시
-- 커밋 메시지: `feat(api): FR-B01 본인 인증 API 추가`
+옛 화면 ID(A01~K05)와 기능 ID(FR-*)는 폐기된 기획서 기준이다. 기존 파일명(`a03-login.tsx`, `j07-withdraw.tsx`)과 컨트롤러 JSDoc 에만 남아 있다.
 
 ---
 
@@ -299,6 +301,24 @@ op run --env-file=apps/api/.env -- pnpm --filter api dev
   (단, 그 전에 `expo` 패키지 버전을 `~XX.0.0` 로 핀하고 `pnpm install` 먼저)
 - 카카오 로그인 mock 모드: `KAKAO_USER_INFO_PROVIDER=mock` 일 때 access_token 의 해시로
   결정적 kakaoId 생성. 모바일에서 임의 토큰을 보내도 동일 토큰 = 동일 사용자로 시연 가능.
+
+### 자주 막히는 지점
+
+**DATABASE_URL 연결이 안 된다**
+
+Supabase 대시보드 → Settings → Database → Connection string 의 두 모드를 구분한다.
+
+- **Pooler (port 6543, pgbouncer)**: 일반 쿼리용. `DATABASE_URL` 에 넣는다
+- **Direct (port 5432)**: 마이그레이션용. `DIRECT_URL` 에 넣는다 (Prisma `datasource` 의 `directUrl`)
+
+**RLS 때문에 데이터가 안 보인다**
+
+의도된 동작이다. 모바일은 RLS 가 허용한 데이터만 SELECT 할 수 있다. 디버깅할 때는 Supabase Studio → Authentication → Users 에서 테스트 사용자를 만들고 그 토큰으로 시도한다. NestJS 는 service role key 로 접근하므로 RLS 를 우회한다.
+
+**Supabase Realtime 메시지가 도착하지 않는다**
+
+- 해당 테이블이 Realtime publication 에 들어 있는지 확인한다: `ALTER PUBLICATION supabase_realtime ADD TABLE messages;`
+- RLS 정책이 SELECT 를 허용해야 구독도 된다
 
 ---
 

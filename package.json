@@ -2,7 +2,7 @@
   "name": "prologue",
   "version": "0.1.0",
   "private": true,
-  "description": "프롤로그 - 가볍지 않은 만남을 위한 인증 기반 소개팅 앱",
+  "description": "프롤로그 - 진열되지 않는 소개팅",
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
