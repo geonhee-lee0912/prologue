@@ -8,9 +8,10 @@ import { StatusForm } from './status-form';
  *
  * 프로필 요약, 인증 상태, 관계 성향, 최근 신고 이력, 운영자 상태 변경.
  */
-export default async function UserDetailPage({ params }: { params: { id: string } }) {
+export default async function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const { accessToken } = await requireSession();
-  const u = await adminApi.getUser(accessToken, params.id);
+  const u = await adminApi.getUser(accessToken, id);
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">

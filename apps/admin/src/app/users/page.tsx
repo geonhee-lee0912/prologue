@@ -10,13 +10,14 @@ import { requireSession } from '@/lib/require-session';
 export default async function UsersListPage({
   searchParams,
 }: {
-  searchParams: { q?: string; status?: string; verified?: string; page?: string };
+  searchParams: Promise<{ q?: string; status?: string; verified?: string; page?: string }>;
 }) {
+  const sp = await searchParams;
   const { accessToken } = await requireSession();
-  const q = searchParams.q ?? '';
-  const status = searchParams.status ?? 'all';
-  const verified = searchParams.verified ?? 'all';
-  const page = Number(searchParams.page ?? '1');
+  const q = sp.q ?? '';
+  const status = sp.status ?? 'all';
+  const verified = sp.verified ?? 'all';
+  const page = Number(sp.page ?? '1');
 
   const { items, total } = await adminApi.listUsers(accessToken, {
     q: q || undefined,

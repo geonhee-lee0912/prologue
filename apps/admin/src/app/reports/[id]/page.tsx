@@ -9,9 +9,10 @@ import { ResolveForm } from './resolve-form';
  * 신고 description, 운영자 메모, 관련 대화, 피신고자의 과거 신고 수 표시.
  * description / resolutionNote 는 운영자 전용 (RLS · API 가드).
  */
-export default async function ReportDetailPage({ params }: { params: { id: string } }) {
+export default async function ReportDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const { accessToken } = await requireSession();
-  const report = await adminApi.getReport(accessToken, params.id);
+  const report = await adminApi.getReport(accessToken, id);
 
   const resolved = report.status === 'resolved' || report.status === 'rejected';
 

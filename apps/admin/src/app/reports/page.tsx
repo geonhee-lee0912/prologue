@@ -10,11 +10,12 @@ import { requireSession } from '@/lib/require-session';
 export default async function ReportsListPage({
   searchParams,
 }: {
-  searchParams: { status?: string; page?: string };
+  searchParams: Promise<{ status?: string; page?: string }>;
 }) {
+  const sp = await searchParams;
   const { accessToken } = await requireSession();
-  const status = searchParams.status ?? 'pending';
-  const page = Number(searchParams.page ?? '1');
+  const status = sp.status ?? 'pending';
+  const page = Number(sp.page ?? '1');
   const { items, total } = await adminApi.listReports(accessToken, { status, page, pageSize: 20 });
 
   return (

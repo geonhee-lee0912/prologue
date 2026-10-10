@@ -1,13 +1,14 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { resolveReportAction, type ResolveState } from './actions';
 
 const initial: ResolveState = {};
 
 export function ResolveForm({ reportId }: { reportId: string }) {
   const boundAction = resolveReportAction.bind(null, reportId);
-  const [state, formAction] = useFormState(boundAction, initial);
+  const [state, formAction] = useActionState(boundAction, initial);
 
   return (
     <form action={formAction} className="rounded-lg border border-zinc-200 bg-white p-5">

@@ -1,6 +1,7 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { setUserStatusAction, type UserStatusState } from './actions';
 
 const initial: UserStatusState = {};
@@ -13,7 +14,7 @@ export function StatusForm({
   currentStatus: string;
 }) {
   const bound = setUserStatusAction.bind(null, userId);
-  const [state, formAction] = useFormState(bound, initial);
+  const [state, formAction] = useActionState(bound, initial);
   // 탈퇴/대기 상태에서는 변경 비활성
   const canSuspend = currentStatus === 'active';
   const canReactivate = currentStatus === 'suspended';

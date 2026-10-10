@@ -1,6 +1,7 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import {
   decideEmploymentAction,
   decidePhotoAction,
@@ -11,13 +12,13 @@ const initial: DecisionState = {};
 
 export function PhotoDecisionForm({ photoId }: { photoId: string }) {
   const bound = decidePhotoAction.bind(null, photoId);
-  const [state, formAction] = useFormState(bound, initial);
+  const [state, formAction] = useActionState(bound, initial);
   return <DecisionFormBody formAction={formAction} state={state} />;
 }
 
 export function EmploymentDecisionForm({ userId }: { userId: string }) {
   const bound = decideEmploymentAction.bind(null, userId);
-  const [state, formAction] = useFormState(bound, initial);
+  const [state, formAction] = useActionState(bound, initial);
   return <DecisionFormBody formAction={formAction} state={state} />;
 }
 

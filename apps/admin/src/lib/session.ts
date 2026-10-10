@@ -25,5 +25,5 @@ export const sessionOptions: SessionOptions = {
 };
 
 export async function getSession(): Promise<IronSession<AdminSession>> {
-  return getIronSession<AdminSession>(cookies(), sessionOptions);
+  return getIronSession<AdminSession>(await cookies(), sessionOptions);
 }
