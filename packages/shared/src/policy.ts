@@ -29,7 +29,7 @@ export const POLICY = {
    * 후보 품질이 임계 미만이면 소개하지 않는다.
    */
   introduction: {
-    /** 하루 상한을 두지 않는다. 좋은 상대가 있을 때만 소개한다. */
+    /** 하루 상한. 실측 후 확정(TBD). 상한은 되고 "매일 N명" 약속은 안 된다 */
     dailyCap: null,
     /** 품질 임계값. 실측 전까지 미확정이므로 런타임에서 별도 주입한다. */
     minQualityThreshold: null,
@@ -37,6 +37,35 @@ export const POLICY = {
     passedExclusionDays: 180,
     /** LLM 판단에 넘기기 전 규칙·임베딩으로 좁힐 후보 수 */
     llmCandidateLimit: 5,
+    /** 한 번에 한 통 — 지금 편지에 답하기 전엔 다음 편지가 오지 않는다 (앱 IA 4.1) */
+    oneAtATime: true,
+    /** 편지 만료 (일). 만료되면 닫히고 다음 편지를 받을 수 있다 */
+    letterExpiryDays: 7,
+    /** 기준을 넘는 후보가 둘이면 이야기 한 줄로 하나를 고른다 */
+    maxStoryChoices: 2,
+  } as const,
+
+  /** 가벼운 소개 — 하드룰 3 단서 (앱 IA 4.1~4.3) */
+  lightIntro: {
+    /** 본인이 켜야 다른 사람의 가벼운 소개에 나간다 */
+    exposureDefault: false,
+    /** 하루 상한. 실측 후 확정 */
+    dailyCap: null,
+    /** 그날 자정에 만료 */
+    expiresAt: 'midnight',
+  } as const,
+
+  /** 갈피 — 앱 IA 3.11, 갈피 문서 3.6 */
+  galpi: {
+    /** 갈피가 먼저 거는 알림 (잠정). 나중에 고도화 */
+    proactiveMessagesPerDay: 1,
+    /** 오랜만에 왔다고 보는 기준 (일) */
+    welcomeBackAfterDays: 3,
+  } as const,
+
+  /** 친구 탭 소식 — 앱 IA 3.3. 다른 사용자는 소식에 나오지 않는다 */
+  feed: {
+    maxItems: 5,
   } as const,
 
   /**
@@ -82,6 +111,7 @@ export const POLICY = {
   /** 노출 — 하드룰 1. 진열 금지 */
   exposure: {
     searchEnabled: false,
+    /** 다른 사용자를 보여주는 피드 (하드룰 1). 갈피·서고 소식(앱 IA 3.3)은 별개 */
     feedEnabled: false,
     browseEnabled: false,
   } as const,
