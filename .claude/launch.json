@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "mobile-web",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "mobile", "web"],
+      "runtimeExecutable": "corepack",
+      "runtimeArgs": ["pnpm", "--filter", "mobile", "web"],
       "port": 8081
     },
     {
