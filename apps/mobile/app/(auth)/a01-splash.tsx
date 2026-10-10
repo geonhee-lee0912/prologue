@@ -7,7 +7,7 @@ import { authStorage } from '../../lib/auth-storage';
  * A01 — Splash
  *
  * 1.2초 후 토큰 보유 여부에 따라 분기.
- * - 토큰 있음 → /home
+ * - 토큰 있음 → /friends
  * - 없음 → /a03-login
  */
 export default function A01Splash() {
@@ -16,7 +16,7 @@ export default function A01Splash() {
   useEffect(() => {
     const timer = setTimeout(async () => {
       const token = await authStorage.getAccessToken();
-      router.replace(token ? '/home' : '/a03-login');
+      router.replace(token ? '/friends' : '/a03-login');
     }, 1200);
     return () => clearTimeout(timer);
   }, [router]);

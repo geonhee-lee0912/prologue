@@ -14,9 +14,9 @@ export function routeForStep(step: OnboardingStep): string {
     case 'identity_verification':
       return '/a03-login';
     case 'completed':
-      return '/(main)';
+      return '/friends';
     default:
       // 새 온보딩 화면이 서기 전까지는 루트로 보낸다
-      return '/(main)';
+      return '/friends';
   }
 }

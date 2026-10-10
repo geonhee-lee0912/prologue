@@ -116,7 +116,7 @@ export default function A03Login() {
       const status = await api.getOnboardingStatus(accessToken);
       router.replace(routeForStep(status.nextStep) as never);
     } catch {
-      router.replace('/home');
+      router.replace('/friends');
     }
   }
 
