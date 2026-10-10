@@ -20,6 +20,7 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="galpi/chat" />
+        <Stack.Screen name="letter/[id]" />
       </Stack>
     </>
   );
