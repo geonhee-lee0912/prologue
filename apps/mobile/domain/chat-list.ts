@@ -43,8 +43,6 @@ export function galpiPreview(message: GalpiMessage | undefined): string {
       return '✉️ 편지를 썼어요';
     case 'lightIntroInvite':
       return '가볍게 볼 분이 있어요';
-    case 'passedLetter':
-      return '넘긴 편지';
   }
 }
 

@@ -174,11 +174,8 @@ export function answerLetter(
   return {
     ...state,
     letters: state.letters.map((l) => (l.id === letterId ? passed : l)),
-    galpiMessages: [
-      ...state.galpiMessages,
-      { id: ctx.newId(), kind: 'passedLetter', from: 'system', at: ctx.now.toISOString() },
-      galpiText(ctx, thanks),
-    ],
+    // "넘긴 편지" 한 줄은 대화방의 편지 카드가 바뀌어 남는다 (letterCardView)
+    galpiMessages: [...state.galpiMessages, galpiText(ctx, thanks)],
   };
 }
 

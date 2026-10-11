@@ -6,6 +6,7 @@
  * 그래서 FeedItem 에는 사람을 담을 필드가 아예 없다.
  */
 import { POLICY } from '@prologue/shared/policy';
+import { currentLightIntro } from './light-intros';
 import { localDateKey, pickByDay } from './time';
 import type { AppState } from './types';
 
@@ -29,7 +30,7 @@ export function buildFeed(state: AppState, now: Date): FeedItem[] {
   const today = localDateKey(now);
   const items: FeedItem[] = [];
 
-  if (state.lightIntros.some((i) => i.status === 'new' && new Date(i.expiresAt) > now)) {
+  if (currentLightIntro(state.lightIntros, now)) {
     items.push({ id: `light-${today}`, kind: 'lightIntroAvailable' });
   }
 

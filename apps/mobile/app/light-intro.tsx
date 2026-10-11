@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Photo } from '../components/Photo';
 import { Button, GalpiText, Header, Screen } from '../components/ui';
+import { currentLightIntro } from '../domain/light-intros';
 import { useAppStore } from '../state/app-store';
 import { RADIUS, SPACE } from '../theme/tokens';
 import { useTheme } from '../theme/use-theme';
@@ -23,7 +24,7 @@ export default function LightIntroSheet() {
   const [passing, setPassing] = useState(false);
 
   const now = new Date();
-  const current = intros.find((i) => i.status === 'new' && new Date(i.expiresAt) > now);
+  const current = currentLightIntro(intros, now);
   const close = () => (router.canGoBack() ? router.back() : router.replace('/galpi/chat'));
   const pass = (reason?: string) => {
     if (!current) return;

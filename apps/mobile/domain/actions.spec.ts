@@ -150,10 +150,11 @@ describe('편지에 답하기', () => {
     expect(s.keepsakes.filter((k) => k.kind === 'firstLetter')).toHaveLength(1);
   });
 
-  it('넘기면 넘긴 편지 한 줄과 고맙다는 말, 이유는 서고에만', () => {
-    const s = answerLetter(withLetter(), 'L1', 'pass', ctx(), '분위기가 달라요');
+  it('넘기면 고맙다는 말만 더한다 — "넘긴 편지" 한 줄은 편지 카드가 바뀌어 남고, 이유는 서고에만', () => {
+    const s0 = withLetter();
+    const s = answerLetter(s0, 'L1', 'pass', ctx(), '분위기가 달라요');
     expect(s.letters[0]).toMatchObject({ status: 'passed', passReason: '분위기가 달라요' });
-    expect(s.galpiMessages.some((m) => m.kind === 'passedLetter')).toBe(true);
+    expect(s.galpiMessages).toHaveLength(s0.galpiMessages.length + 1);
     expect(lastText(s)).toBe('말해 줘서 고마워요. 이 말은 서고에만 남아요.');
     expect(JSON.stringify(s.galpiMessages)).not.toContain('분위기가 달라요');
   });

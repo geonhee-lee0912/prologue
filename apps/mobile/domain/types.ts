@@ -92,8 +92,7 @@ export type GalpiMessage =
   | { id: string; kind: 'text'; from: 'galpi' | 'me'; text: string; at: string }
   | { id: string; kind: 'emoticon'; from: 'galpi'; expression: Expression; at: string }
   | { id: string; kind: 'letter'; from: 'galpi'; letterId: string; at: string }
-  | { id: string; kind: 'lightIntroInvite'; from: 'galpi'; at: string }
-  | { id: string; kind: 'passedLetter'; from: 'system'; at: string };
+  | { id: string; kind: 'lightIntroInvite'; from: 'galpi'; at: string };
 
 export interface PersonMessage {
   id: string;

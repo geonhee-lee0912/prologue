@@ -19,7 +19,7 @@ import {
 import { GalpiAvatar } from '../../components/GalpiAvatar';
 import { GalpiMessageView } from '../../components/GalpiMessageView';
 import { Header, Screen } from '../../components/ui';
-import { expiryLabel, isAwaitingMyAnswer, isExpired } from '../../domain/letters';
+import { expiryLabel, pinnedLetter } from '../../domain/letters';
 import { useAppStore } from '../../state/app-store';
 import { SPACE } from '../../theme/tokens';
 import { useTheme } from '../../theme/use-theme';
@@ -29,6 +29,7 @@ export default function GalpiChatScreen() {
   const router = useRouter();
   const messages = useAppStore((s) => s.galpiMessages);
   const letters = useAppStore((s) => s.letters);
+  const connections = useAppStore((s) => s.connections);
   const firstRunDone = useAppStore((s) => s.firstRunDone);
   const interviewDone = useAppStore((s) => s.interview.completed);
   const startFirstRun = useAppStore((s) => s.startFirstRun);
@@ -49,9 +50,7 @@ export default function GalpiChatScreen() {
   }, [messages.length, markGalpiRead]);
 
   const now = new Date();
-  const pending = letters.find(
-    (l) => isAwaitingMyAnswer(l, now) || (l.status === 'acceptedWaiting' && !isExpired(l, now)),
-  );
+  const pending = pinnedLetter(letters, now);
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/friends'));
   const send = () => {
@@ -97,6 +96,8 @@ export default function GalpiChatScreen() {
               key={m.id}
               message={m}
               letter={m.kind === 'letter' ? letters.find((l) => l.id === m.letterId) : undefined}
+              connectionEnded={m.kind === 'letter' && connections.find((c) => c.letterId === m.letterId)?.ended === true}
+              now={now}
               onOpenLetter={(id) => router.push(`/letter/${id}`)}
               onOpenLightIntro={() => router.push('/light-intro')}
             />

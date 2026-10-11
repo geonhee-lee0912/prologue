@@ -10,7 +10,9 @@ import {
   isAwaitingMyAnswer,
   isExpired,
   isLetterClosed,
+  letterCardView,
   passLetter,
+  pinnedLetter,
   revealedProfile,
 } from './letters';
 import { addDays } from './time';
@@ -34,6 +36,7 @@ const one = () =>
     candidates: [{ id: 'a', storyLine: '주말마다 동네 빵집을 하나씩 찾아다니는 분' }],
     profiles: { a: profile('민준') },
   });
+const deadline = (l: Letter) => new Date(l.expiresAt);
 
 describe('편지 만들기', () => {
   it('후보가 둘이면 고르는 단계에서 시작한다', () => {
@@ -126,6 +129,72 @@ describe('닫힌 편지', () => {
     const exp = new Date(l.expiresAt);
     expect(isLetterClosed(l, exp)).toBe(false);
     expect(isLetterClosed(l, addDays(exp, 30))).toBe(false);
+  });
+});
+
+describe('대화방의 편지 카드', () => {
+  const line = (text: string) => ({ kind: 'line', text });
+  const card = (text: string) => ({ kind: 'card', text, openable: true });
+
+  it('넘긴 편지는 기한 안이어도 "넘긴 편지" 한 줄', () => {
+    expect(letterCardView(passLetter(one()), sentAt, false)).toEqual(line('넘긴 편지'));
+  });
+
+  it('만료된 편지는 "닫힌 편지" 한 줄', () => {
+    expect(letterCardView({ ...one(), status: 'expired' }, sentAt, false)).toEqual(line('닫힌 편지'));
+  });
+
+  it('수락했다가 기한이 지난 편지도 "닫힌 편지" — 넘겼다고 하지 않는다', () => {
+    const l = acceptLetter(one());
+    expect(letterCardView(l, deadline(l), false)).toEqual(line('닫힌 편지'));
+    expect(letterCardView(applyExpiry([l], deadline(l))[0], deadline(l), false)).toEqual(line('닫힌 편지'));
+  });
+
+  it.each([
+    ['고르는 중인', two],
+    ['열린', one],
+  ] as [string, () => Letter][])('%s 편지도 기한이 지나면 "닫힌 편지"', (_name, make) => {
+    const l = make();
+    expect(letterCardView(l, deadline(l), false)).toEqual(line('닫힌 편지'));
+  });
+
+  it('기한 안의 편지는 상태를 말하는 카드', () => {
+    expect(letterCardView(two(), sentAt, false)).toEqual(card('두 분 중 누구 이야기를 먼저 들을까요?'));
+    expect(letterCardView(one(), sentAt, false)).toEqual(card('편지가 열려 있어요'));
+    expect(letterCardView(acceptLetter(one()), sentAt, false)).toEqual(card('상대분의 답을 기다리는 중이에요'));
+  });
+
+  it('연결된 편지는 기한이 지나도 카드, 연결이 끝나면 "지난 대화예요"', () => {
+    const l: Letter = { ...one(), status: 'connected' };
+    const later = addDays(deadline(l), 30);
+    expect(letterCardView(l, later, false)).toEqual(card('서로 이야기 나눠 보기로 했어요'));
+    expect(letterCardView(l, later, true)).toEqual(card('지난 대화예요'));
+  });
+});
+
+describe('대화방 위에 고정하는 편지', () => {
+  const now = new Date(2026, 9, 11, 9, 0);
+
+  it('내 답을 기다리는 편지가 상대 답을 기다리는 편지보다 먼저 — 배열 순서와 상관없이', () => {
+    const { candidates, profiles } = one();
+    const older = acceptLetter(createLetter({ id: 'L0', sentAt: addDays(sentAt, -2), candidates, profiles }));
+    const newer = one();
+    expect(pinnedLetter([older, newer], now)).toBe(newer);
+  });
+
+  it('상대 답을 기다리는 편지만 있으면 그 편지', () => {
+    const l = acceptLetter(one());
+    expect(pinnedLetter([l], now)).toBe(l);
+  });
+
+  it('상대 답을 기다리다 기한이 지난 편지는 고정하지 않는다', () => {
+    const l = acceptLetter(one());
+    expect(pinnedLetter([l], deadline(l))).toBeNull();
+  });
+
+  it('넘긴·연결된·만료된 편지는 고정하지 않는다', () => {
+    const letters: Letter[] = [passLetter(one()), { ...one(), status: 'connected' }, { ...one(), status: 'expired' }];
+    expect(pinnedLetter(letters, now)).toBeNull();
   });
 });
 

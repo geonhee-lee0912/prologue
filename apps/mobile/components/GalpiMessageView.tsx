@@ -1,40 +1,26 @@
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { GALPI_EXPRESSIONS } from '../assets/galpi';
+import { letterCardView } from '../domain/letters';
 import type { GalpiMessage, Letter } from '../domain/types';
 import { RADIUS, SPACE } from '../theme/tokens';
 import { useTheme } from '../theme/use-theme';
 import { GalpiAvatar } from './GalpiAvatar';
 import { GalpiText } from './ui';
 
-function letterStatusText(letter: Letter | undefined): string {
-  if (!letter) return '';
-  switch (letter.status) {
-    case 'choosing':
-      return '두 분 중 누구 이야기를 먼저 들을까요?';
-    case 'open':
-      return '편지가 열려 있어요';
-    case 'acceptedWaiting':
-      return '상대분의 답을 기다리는 중이에요';
-    case 'connected':
-      return '서로 이야기 나눠 보기로 했어요';
-    case 'passed':
-      return '넘긴 편지예요';
-    case 'expired':
-      return '기한이 지난 편지예요';
-  }
-}
-
-const OPENABLE: readonly Letter['status'][] = ['choosing', 'open', 'acceptedWaiting', 'connected'];
-
 export function GalpiMessageView({
   message,
   letter,
+  connectionEnded,
+  now,
   onOpenLetter,
   onOpenLightIntro,
 }: {
   message: GalpiMessage;
   letter?: Letter;
+  /** 이 편지로 생긴 연결이 끝났는가 */
+  connectionEnded: boolean;
+  now: Date;
   onOpenLetter: (letterId: string) => void;
   onOpenLightIntro: () => void;
 }) {
@@ -64,18 +50,22 @@ export function GalpiMessageView({
         </View>
       );
     case 'letter': {
-      const openable = letter !== undefined && OPENABLE.includes(letter.status);
+      if (!letter) return null;
+      // 닫힌 편지는 다시 열 수 없는 조용한 한 줄로만 남는다 (앱 IA 5장)
+      const view = letterCardView(letter, now, connectionEnded);
+      if (view.kind === 'line') {
+        return <Text style={[styles.system, { color: t.sub }]}>{view.text}</Text>;
+      }
       return (
         <View style={styles.galpiRow}>
           <GalpiAvatar size={30} />
           <Pressable
             accessibilityRole="button"
-            disabled={!openable}
             onPress={() => onOpenLetter(message.letterId)}
-            style={[styles.letterCard, { backgroundColor: t.card, borderColor: t.accent.a1, opacity: openable ? 1 : 0.6 }]}
+            style={[styles.letterCard, { backgroundColor: t.card, borderColor: t.accent.a1 }]}
           >
             <Text style={[styles.letterTitle, { color: t.ink }]}>✉️ 갈피의 편지</Text>
-            <Text style={[styles.letterStatus, { color: t.sub }]}>{letterStatusText(letter)}</Text>
+            <Text style={[styles.letterStatus, { color: t.sub }]}>{view.text}</Text>
           </Pressable>
         </View>
       );
@@ -93,8 +83,6 @@ export function GalpiMessageView({
           </Pressable>
         </View>
       );
-    case 'passedLetter':
-      return <Text style={[styles.system, { color: t.sub }]}>넘긴 편지</Text>;
   }
 }
 

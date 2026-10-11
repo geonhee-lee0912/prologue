@@ -58,6 +58,41 @@ export function isLetterClosed(letter: Letter, now: Date): boolean {
   }
 }
 
+export type LetterCardView = { kind: 'line'; text: string } | { kind: 'card'; text: string; openable: true };
+
+/**
+ * 갈피 대화방의 편지 카드 — 닫힌 편지는 다시 열 수 없는 조용한 한 줄로만 남는다 (앱 IA 5장).
+ * 기한이 지난 편지는 수락했던 편지여도 "닫힌 편지" — 내가 넘겼다고 말하지 않고, 상대 쪽을 짐작하게 하지 않는다.
+ */
+export function letterCardView(letter: Letter, now: Date, connectionEnded: boolean): LetterCardView {
+  const closedLine: LetterCardView = { kind: 'line', text: '닫힌 편지' };
+  const card = (text: string): LetterCardView =>
+    isLetterClosed(letter, now) ? closedLine : { kind: 'card', text, openable: true };
+  switch (letter.status) {
+    case 'passed':
+      return { kind: 'line', text: '넘긴 편지' };
+    case 'expired':
+      return closedLine;
+    case 'choosing':
+      return card('두 분 중 누구 이야기를 먼저 들을까요?');
+    case 'open':
+      return card('편지가 열려 있어요');
+    case 'acceptedWaiting':
+      return card('상대분의 답을 기다리는 중이에요');
+    case 'connected':
+      return card(connectionEnded ? '지난 대화예요' : '서로 이야기 나눠 보기로 했어요');
+  }
+}
+
+/** 갈피 대화방 위에 고정할 편지 — 내 답을 기다리는 편지가 먼저, 없으면 아직 닫히지 않은 상대 답 대기 편지 (앱 IA 3.5) */
+export function pinnedLetter(letters: Letter[], now: Date): Letter | null {
+  return (
+    letters.find((l) => isAwaitingMyAnswer(l, now)) ??
+    letters.find((l) => l.status === 'acceptedWaiting' && !isLetterClosed(l, now)) ??
+    null
+  );
+}
+
 /** "10월 17일 토요일까지 열려 있어요" — 사실만 말하고 재촉하지 않는다 (CLAUDE.md 9.1) */
 export function expiryLabel(letter: Letter): string {
   return `${untilLabel(new Date(letter.expiresAt))} 열려 있어요`;
@@ -71,13 +106,19 @@ export function chooseCandidate(letter: Letter, candidateId: string): Letter {
   return { ...letter, chosenCandidateId: candidateId, status: 'open' };
 }
 
-/** 고른 후보의 편지만 열린다. 고르지 않은 쪽은 어떤 상태에서도 열리지 않는다 */
+/** 고른 후보의 편지만 열린다. 고르지 않은 쪽은 어떤 상태에서도 열리지 않는다 — 열리는 상태만 적는다 */
 export function revealedProfile(letter: Letter): LetterProfile | null {
-  if (letter.status === 'choosing' || letter.status === 'passed' || letter.status === 'expired') {
-    return null;
+  switch (letter.status) {
+    case 'open':
+    case 'acceptedWaiting':
+    case 'connected':
+      if (!letter.chosenCandidateId) return null;
+      return letter.profiles[letter.chosenCandidateId] ?? null;
+    case 'choosing':
+    case 'passed':
+    case 'expired':
+      return null;
   }
-  if (!letter.chosenCandidateId) return null;
-  return letter.profiles[letter.chosenCandidateId] ?? null;
 }
 
 export function acceptLetter(letter: Letter): Letter {
