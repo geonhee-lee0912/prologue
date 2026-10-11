@@ -80,11 +80,11 @@
 
 ### 3.4 관리자 도구 (운영자용)
 
-**Next.js 14 (App Router) + TypeScript**
+**Next.js 15 (App Router) + TypeScript**
 
 | 항목 | 선택 |
 |---|---|
-| 프레임워크 | Next.js 14 App Router |
+| 프레임워크 | Next.js 15 App Router |
 | UI | shadcn/ui + Tailwind |
 | 데이터 | NestJS Admin API (`/api/admin/v1`) 호출 |
 | 인증 | Supabase Auth + 운영자 권한 검증 |

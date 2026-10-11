@@ -42,10 +42,11 @@
 ### 모바일 미리보기 (mock)
 
 ```bash
+corepack pnpm --filter shared build
 corepack pnpm --filter mobile web
 ```
 
-http://localhost:8081 — 처음엔 "첫 실행" 시나리오(갈피 대화방). 설정 탭 아래 "개발용" 패널에서 시나리오 8종과 팔레트 3종을 바꿀 수 있다. 휴대폰 프레임으로 보려면 `node scripts/device-frame.mjs` 후 http://localhost:8090. 규칙 테스트는 `corepack pnpm --filter mobile test`.
+http://localhost:8081 — 처음엔 "첫 실행" 시나리오(갈피 대화방). 설정 탭 아래 "개발용" 패널에서 시나리오 8종과 팔레트 3종을 바꿀 수 있다. 휴대폰 프레임으로 보려면 `node scripts/device-frame.mjs` 후 http://localhost:8090. 규칙 테스트는 `corepack pnpm --filter mobile test`. 처음 한 번과 `packages/shared` 를 고친 뒤에는 먼저 shared 를 빌드한다(Metro 는 `packages/shared/dist` 를 읽는다).
 
 ---
 
@@ -291,7 +292,7 @@ op run --env-file=apps/api/.env -- pnpm --filter api dev
 
 ## 화면 ID
 
-현행 화면 ID는 [화면 흐름 설계](docs/superpowers/specs/2026-09-11-화면-흐름-설계.md)의 A1~G5 다. 앱 전체가 하나의 주선자 대화창이라 B(인터뷰)·C(대기)·D(소개) 화면은 `(main)/index.tsx` 안에서 일어난다.
+현행 화면 ID는 [화면 흐름 설계](docs/superpowers/specs/2026-09-11-화면-흐름-설계.md)의 A1~G5 다. 앱 IA v2(2026-10)부터 B(인터뷰)·C(매일 대화)는 갈피 대화방(`app/galpi/chat.tsx`), D(소개)는 편지(`app/letter/[id].tsx`)와 가벼운 소개(`app/light-intro.tsx`)에서 일어난다. 새 화면은 파일 맨 위 `@screen` 주석에 기존 ID를 적는다(CLAUDE.md 8.1).
 
 옛 화면 ID(A01~K05)와 기능 ID(FR-*)는 폐기된 기획서 기준이다. 기존 파일명(`a03-login.tsx`, `j07-withdraw.tsx`)과 컨트롤러 JSDoc 에만 남아 있다.
 
