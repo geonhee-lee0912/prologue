@@ -1,35 +1,26 @@
 /**
- * 디자인 토큰 — 앱 IA 10.6 디자인 기준(잠정)
- * 모노톤 바탕 + 파스텔 포인트. 팔레트는 화면을 만들며 고른다(설정 탭 개발용 스위처).
+ * 디자인 토큰 — 흰 바탕 모노톤 (2026-10-11 결정, 앱 IA 10.6)
+ * 화면은 먹과 회색으로 조용히 둔다. 색은 갈피, 갈피의 방, 상대 사진에서 나온다.
+ * 화면에 쓰는 색은 코랄 표시(mark) 하나뿐이다.
  */
-export interface Palette {
-  label: string;
-  a1: string;
-  a2: string;
-  a3: string;
-  /** 연한 바탕 — 내 말풍선, 칩 */
-  soft: string;
-  /** 주 버튼 */
-  primary: string;
-}
-
-export const PALETTES = {
-  lavender: { label: '라벤더·버터', a1: '#D6CFEA', a2: '#F5E6A8', a3: '#F3C9C4', soft: '#F1EEF8', primary: '#7E6FB0' },
-  sky: { label: '하늘·살구', a1: '#C7DDEB', a2: '#F7D1B5', a3: '#E3EBC9', soft: '#EBF3F8', primary: '#5D8FB3' },
-  rose: { label: '로즈·올리브', a1: '#EBCFD2', a2: '#D7DDB8', a3: '#F2DEC7', soft: '#F7EEEF', primary: '#A9737C' },
-} satisfies Record<string, Palette>;
-
-export type PaletteKey = keyof typeof PALETTES;
-
-export const BASE = {
-  bg: '#FBFAF7',
-  card: '#FFFFFF',
-  ink: '#262420',
-  sub: '#8F8A80',
-  line: '#ECE9E3',
-  /** 새 말 점 — 숫자 대신 */
-  dot: '#E79A8F',
-  /** 갈피 프로필의 방. 화면의 틀은 그대로, 방 안만 밤이 된다 (IA 3.6) */
+export const COLORS = {
+  bg: '#FFFFFF',
+  /** 회색 상자, 갈피·상대 말풍선, 칩, 입력줄. 상자 안의 칩·보조 버튼은 흰색 + 선 */
+  fill: '#F5F5F5',
+  /** 선·테두리, 사진·아바타 자리 */
+  line: '#EBEBEB',
+  /** 글자, 주 버튼, 내 말풍선 */
+  ink: '#191919',
+  /** 먹 위의 글자 */
+  onInk: '#FFFFFF',
+  sub: '#6B6B6B',
+  /** 갈피의 코랄 책갈피 — 새 말 점, 편지 리본, 고정 표시에만 */
+  mark: '#C8603C',
+  /** 되돌릴 수 없는 동작의 글자 */
+  danger: '#C8372D',
+  /** 대화방 바탕. 배경 바꾸기(테마)는 갈피 대화방 고도화 때 (BACKLOG 8) */
+  chatBg: '#FFFFFF',
+  /** 갈피 프로필의 방 — 앱에서 유일하게 따뜻한 곳. 화면의 틀은 그대로, 방 안만 밤이 된다 (IA 3.6) */
   room: {
     wall: '#F1EBDF',
     floor: '#E4DACA',
@@ -37,11 +28,10 @@ export const BASE = {
     nightWall: '#2E3530',
     nightFloor: '#262C28',
     lamp: '#F3C97A',
+    /** 책등 — 갈피의 옷 색 (카디건 초록, 책갈피 코랄, 놋쇠, 구두 갈색) */
+    spines: ['#5E7358', '#D7744C', '#C9A060', '#8A6A4F'],
   },
-};
-
-/** 갈피의 말과 편지만 명조 — 갈피 문서 2.7 */
-export const FONT = { letter: 'GowunBatang_400Regular' } as const;
+} as const;
 
 export const RADIUS = { card: 16, bubble: 16, chip: 12 } as const;
 

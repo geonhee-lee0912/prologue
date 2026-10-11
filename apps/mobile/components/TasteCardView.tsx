@@ -1,8 +1,9 @@
 /** 취향 카드 — 사람이 아니라 장면을 둘 중 하나. 아무도 비교당하지 않는다 (앱 IA 7장) */
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import type { TasteCard } from '../domain/types';
 import { RADIUS, SPACE } from '../theme/tokens';
 import { useTheme } from '../theme/use-theme';
+import { Text } from './AppText';
 
 export function TasteCardView({ card, onPick }: { card: TasteCard; onPick: (picked: 0 | 1) => void }) {
   const t = useTheme();
@@ -20,10 +21,12 @@ export function TasteCardView({ card, onPick }: { card: TasteCard; onPick: (pick
             onPress={() => onPick(i)}
             style={[
               styles.option,
-              { backgroundColor: picked ? t.accent.a1 : t.accent.soft, opacity: dimmed ? 0.5 : 1 },
+              // 회색 상자 안이라 흰색 + 선, 고르면 먹색
+              picked ? { backgroundColor: t.ink, borderColor: t.ink } : { backgroundColor: t.bg, borderColor: t.line },
+              { opacity: dimmed ? 0.5 : 1 },
             ]}
           >
-            <Text style={[styles.label, { color: t.ink }]}>{card.options[i]}</Text>
+            <Text style={[styles.label, { color: picked ? t.onInk : t.ink }]}>{card.options[i]}</Text>
           </Pressable>
         );
       })}
@@ -33,6 +36,6 @@ export function TasteCardView({ card, onPick }: { card: TasteCard; onPick: (pick
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: SPACE.s, marginTop: SPACE.s },
-  option: { flex: 1, borderRadius: RADIUS.chip, paddingVertical: SPACE.m, paddingHorizontal: SPACE.s },
+  option: { flex: 1, borderWidth: 1, borderRadius: RADIUS.chip, paddingVertical: SPACE.m, paddingHorizontal: SPACE.s },
   label: { fontSize: 13, textAlign: 'center' },
 });

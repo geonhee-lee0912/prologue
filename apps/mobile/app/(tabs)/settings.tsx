@@ -1,9 +1,10 @@
 /**
  * @screen 설정 탭 — 앱 IA v2 8장. 기존 G 계정
  * 가벼운 소개에 나가기(기본 꺼짐), 편지 잠시 쉬기. 동의·결제·신고는 담백한 시스템 문구(갈피 문서 2.6).
- * __DEV__ 에서만 시나리오·팔레트 스위처(DevPanel)를 보인다.
+ * __DEV__ 에서만 시나리오 스위처(DevPanel)를 보인다.
  */
-import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Text } from '../../components/AppText';
 import { DevPanel } from '../../components/DevPanel';
 import { Screen, TabTitle } from '../../components/ui';
 import { useAppStore } from '../../state/app-store';
@@ -38,7 +39,7 @@ function ToggleRow({
         <Text style={[styles.toggleLabel, { color: t.ink }]}>{label}</Text>
         <Text style={[styles.caption, { color: t.sub }]}>{caption}</Text>
       </View>
-      <Switch value={value} onValueChange={onChange} trackColor={{ true: t.accent.primary, false: t.line }} />
+      <Switch value={value} onValueChange={onChange} trackColor={{ true: t.ink, false: t.line }} />
     </View>
   );
 }

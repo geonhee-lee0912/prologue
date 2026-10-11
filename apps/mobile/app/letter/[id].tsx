@@ -5,7 +5,8 @@
  */
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { type ReactNode, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '../../components/AppText';
 import { LetterView } from '../../components/LetterView';
 import { Button, Empty, GalpiText, Header, Screen } from '../../components/ui';
 import { expiryLabel, isLetterClosed, revealedProfile } from '../../domain/letters';
@@ -59,7 +60,7 @@ export default function LetterScreen() {
           multiline
           placeholder="편하게 적어 주세요"
           placeholderTextColor={t.sub}
-          style={[styles.reason, { backgroundColor: t.card, color: t.ink, borderColor: t.line }]}
+          style={[styles.reason, { backgroundColor: t.fill, color: t.ink, borderColor: t.fill }]}
         />
         <View style={styles.row}>
           <Button variant="secondary" label="건너뛰기" onPress={() => finishPass(false)} />
@@ -78,7 +79,7 @@ export default function LetterScreen() {
             key={c.id}
             accessibilityRole="button"
             onPress={() => choose(letter.id, c.id)}
-            style={[styles.story, { borderColor: t.accent.primary, backgroundColor: t.card }]}
+            style={[styles.story, { borderColor: t.fill, backgroundColor: t.fill }]}
           >
             <GalpiText>{c.storyLine}</GalpiText>
           </Pressable>

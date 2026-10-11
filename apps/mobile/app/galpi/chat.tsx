@@ -6,16 +6,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '../../components/AppText';
 import { GalpiAvatar } from '../../components/GalpiAvatar';
 import { GalpiMessageView } from '../../components/GalpiMessageView';
 import { Header, Screen } from '../../components/ui';
@@ -74,10 +66,12 @@ export default function GalpiChatScreen() {
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push(`/letter/${pending.id}`)}
-          style={[styles.notice, { backgroundColor: t.accent.soft }]}
+          style={[styles.notice, { backgroundColor: t.fill }]}
         >
+          {/* 고정 표시는 갈피의 코랄 책갈피 */}
+          <Ionicons name="bookmark" size={14} color={t.mark} />
           <Text style={[styles.noticeText, { color: t.ink }]}>
-            ✉️ {pending.status === 'acceptedWaiting' ? '답을 기다리는 편지' : '편지가 왔어요'} · {expiryLabel(pending)}
+            {pending.status === 'acceptedWaiting' ? '답을 기다리는 편지' : '편지가 왔어요'} · {expiryLabel(pending)}
           </Text>
         </Pressable>
       ) : null}
@@ -112,22 +106,22 @@ export default function GalpiChatScreen() {
             <Text style={[styles.skipText, { color: t.sub }]}>이 질문은 넘어갈게요</Text>
           </Pressable>
         ) : null}
-        <View style={[styles.inputRow, { borderTopColor: t.line, backgroundColor: t.card }]}>
+        <View style={[styles.inputRow, { borderTopColor: t.line, backgroundColor: t.bg }]}>
           <TextInput
             value={draft}
             onChangeText={setDraft}
             placeholder="갈피에게 말하기"
             placeholderTextColor={t.sub}
-            style={[styles.input, { color: t.ink }]}
+            style={[styles.input, { color: t.ink, backgroundColor: t.fill }]}
             multiline
           />
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="보내기"
             onPress={send}
-            style={[styles.send, { backgroundColor: draft.trim() ? t.accent.primary : t.line }]}
+            style={[styles.send, { backgroundColor: draft.trim() ? t.ink : t.line }]}
           >
-            <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
+            <Ionicons name="arrow-up" size={18} color={draft.trim() ? t.onInk : t.sub} />
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -137,7 +131,7 @@ export default function GalpiChatScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  notice: { paddingVertical: SPACE.s, paddingHorizontal: SPACE.l },
+  notice: { flexDirection: 'row', alignItems: 'center', gap: SPACE.xs, paddingVertical: SPACE.s, paddingHorizontal: SPACE.l },
   noticeText: { fontSize: 13 },
   list: { padding: SPACE.m, gap: SPACE.s },
   disclosure: { fontSize: 12, textAlign: 'center', lineHeight: 18, paddingHorizontal: SPACE.l, paddingBottom: SPACE.s },
@@ -150,6 +144,6 @@ const styles = StyleSheet.create({
     padding: SPACE.s,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  input: { flex: 1, minHeight: 40, maxHeight: 120, fontSize: 15, paddingHorizontal: SPACE.s, paddingVertical: SPACE.s },
+  input: { flex: 1, minHeight: 40, maxHeight: 120, fontSize: 15, borderRadius: 20, paddingHorizontal: SPACE.m, paddingVertical: SPACE.s },
   send: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
 });

@@ -4,7 +4,8 @@
  * 끝난 연결은 "지난 대화"로, 사진 없이 이름만.
  */
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../components/AppText';
 import { GalpiAvatar } from '../../components/GalpiAvatar';
 import { Photo } from '../../components/Photo';
 import { Empty, Screen, SectionLabel, TabTitle } from '../../components/ui';
@@ -27,7 +28,7 @@ export default function ChatsTab() {
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push('/galpi/chat')}
-          style={[styles.row, styles.galpiRow, { backgroundColor: t.accent.soft }]}
+          style={[styles.row, styles.galpiRow, { backgroundColor: t.fill }]}
         >
           <GalpiAvatar size={46} />
           <View style={styles.flex}>
@@ -36,7 +37,7 @@ export default function ChatsTab() {
               {list.galpi.preview}
             </Text>
           </View>
-          {list.galpi.hasNew ? <View accessibilityLabel="새 말" style={[styles.dot, { backgroundColor: t.dot }]} /> : null}
+          {list.galpi.hasNew ? <View accessibilityLabel="새 말" style={[styles.dot, { backgroundColor: t.mark }]} /> : null}
         </Pressable>
 
         {list.active.length === 0 ? (
@@ -53,7 +54,7 @@ export default function ChatsTab() {
               </Text>
             </View>
             {row.unreadCount > 0 ? (
-              <Text style={[styles.badge, { backgroundColor: t.dot }]}>{row.unreadCount}</Text>
+              <Text style={[styles.badge, { backgroundColor: t.ink, color: t.onInk }]}>{row.unreadCount}</Text>
             ) : null}
           </Pressable>
         ))}
@@ -81,6 +82,6 @@ const styles = StyleSheet.create({
   name: { fontSize: 15, fontWeight: '600' },
   preview: { fontSize: 13, marginTop: 2 },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  badge: { color: '#FFFFFF', fontSize: 11, fontWeight: '700', borderRadius: 9, minWidth: 18, textAlign: 'center', paddingHorizontal: 5, paddingVertical: 1, overflow: 'hidden' },
+  badge: { fontSize: 11, fontWeight: '700', borderRadius: 9, minWidth: 18, textAlign: 'center', paddingHorizontal: 5, paddingVertical: 1, overflow: 'hidden' },
   pastName: { fontSize: 14 },
 });

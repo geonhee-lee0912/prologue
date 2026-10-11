@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps, ReactNode } from 'react';
-import { Pressable, type StyleProp, StyleSheet, Text, type TextStyle, View, type ViewStyle } from 'react-native';
+import { Pressable, type StyleProp, StyleSheet, type TextStyle, View, type ViewStyle } from 'react-native';
 import { type Edge, SafeAreaView } from 'react-native-safe-area-context';
-import { FONT, RADIUS, SPACE } from '../theme/tokens';
+import { RADIUS, SPACE } from '../theme/tokens';
 import { useTheme } from '../theme/use-theme';
+import { Text } from './AppText';
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -76,7 +77,7 @@ export function Card({
   onPress?: () => void;
 }) {
   const t = useTheme();
-  const base = [styles.card, { backgroundColor: t.card }, style];
+  const base = [styles.card, { backgroundColor: t.fill }, style];
   if (!onPress) return <View style={base}>{children}</View>;
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={base}>
@@ -106,18 +107,18 @@ export function Button({
       style={[
         styles.button,
         {
-          backgroundColor: primary ? t.accent.primary : t.card,
-          borderColor: primary ? t.accent.primary : t.line,
+          backgroundColor: primary ? t.ink : t.bg,
+          borderColor: primary ? t.ink : t.line,
           opacity: disabled ? 0.4 : 1,
         },
       ]}
     >
-      <Text style={[styles.buttonText, { color: primary ? '#FFFFFF' : t.ink }]}>{label}</Text>
+      <Text style={[styles.buttonText, { color: primary ? t.onInk : t.ink }]}>{label}</Text>
     </Pressable>
   );
 }
 
-/** 갈피의 말 — 명조. 세계관은 여기에만 담는다 (갈피 문서 2.7) */
+/** 갈피의 말 — 세계관은 여기에만 담는다 (갈피 문서 2.7). 글꼴은 다른 글자와 같은 Pretendard */
 export function GalpiText({
   children,
   style,
@@ -168,7 +169,6 @@ const styles = StyleSheet.create({
     padding: SPACE.m,
     marginHorizontal: SPACE.l,
     marginBottom: SPACE.s,
-    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
   },
   button: {
     flex: 1,
@@ -179,6 +179,6 @@ const styles = StyleSheet.create({
     paddingVertical: SPACE.m,
   },
   buttonText: { fontSize: 14, fontWeight: '600' },
-  galpiText: { fontFamily: FONT.letter, fontSize: 15, lineHeight: 23 },
+  galpiText: { fontSize: 15, lineHeight: 23 },
   empty: { fontSize: 13, lineHeight: 20, paddingHorizontal: SPACE.l, paddingVertical: SPACE.m },
 });

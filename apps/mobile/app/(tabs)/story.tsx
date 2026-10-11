@@ -4,7 +4,8 @@
  * 세계관 이름(서고)은 탭 이름이 아니라 이 화면 안에서만 쓴다.
  */
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../components/AppText';
 import { TasteCardView } from '../../components/TasteCardView';
 import { Card, Empty, GalpiText, Screen, SectionLabel, TabTitle } from '../../components/ui';
 import { localDateKey } from '../../domain/time';
@@ -80,7 +81,7 @@ export default function StoryTab() {
                     setConfirming(null);
                   }}
                 >
-                  <Text style={[styles.danger, { color: t.dot }]}>정말 뺄게요</Text>
+                  <Text style={[styles.danger, { color: t.danger }]}>정말 뺄게요</Text>
                 </Pressable>
               ) : (
                 <Pressable accessibilityRole="button" onPress={() => setConfirming(c.id)}>

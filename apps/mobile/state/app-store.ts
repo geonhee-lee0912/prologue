@@ -6,7 +6,6 @@ import { create } from 'zustand';
 import * as A from '../domain/actions';
 import type { AppState } from '../domain/types';
 import { SCENARIOS, type ScenarioKey } from '../mock/scenarios';
-import type { PaletteKey } from '../theme/tokens';
 
 let seq = 0;
 function ctx(): A.Ctx {
@@ -15,9 +14,7 @@ function ctx(): A.Ctx {
 
 export interface AppStore extends AppState {
   scenario: ScenarioKey;
-  palette: PaletteKey;
   loadScenario: (key: ScenarioKey) => void;
-  setPalette: (key: PaletteKey) => void;
   beginSession: () => void;
   startFirstRun: () => void;
   sendToGalpi: (text: string, opts?: { skipped?: boolean }) => void;
@@ -42,9 +39,7 @@ const INITIAL: ScenarioKey = 'firstRun';
 export const useAppStore = create<AppStore>()((set) => ({
   ...SCENARIOS[INITIAL](new Date()),
   scenario: INITIAL,
-  palette: 'lavender',
   loadScenario: (key) => set({ ...SCENARIOS[key](new Date()), scenario: key }),
-  setPalette: (palette) => set({ palette }),
   beginSession: () => set((s) => A.beginSession(s, ctx())),
   startFirstRun: () => set((s) => A.startFirstRun(s, ctx())),
   sendToGalpi: (text, opts) => set((s) => A.sendToGalpi(s, text, ctx(), opts)),

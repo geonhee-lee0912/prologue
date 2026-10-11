@@ -1,9 +1,8 @@
-import { useAppStore } from '../state/app-store';
-import { BASE, type Palette, PALETTES } from './tokens';
+import { COLORS } from './tokens';
 
-export type Theme = typeof BASE & { accent: Palette };
+export type Theme = typeof COLORS;
 
+/** 지금은 한 벌. 대화방 배경 바꾸기(테마)가 생기면 여기서 고른다 (BACKLOG 8) */
 export function useTheme(): Theme {
-  const key = useAppStore((s) => s.palette);
-  return { ...BASE, accent: PALETTES[key] };
+  return COLORS;
 }

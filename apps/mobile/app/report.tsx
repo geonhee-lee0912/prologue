@@ -8,10 +8,9 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   View,
 } from 'react-native';
+import { Text, TextInput } from '../components/AppText';
 import { ApiError, api } from '../lib/api';
 import { authStorage } from '../lib/auth-storage';
 

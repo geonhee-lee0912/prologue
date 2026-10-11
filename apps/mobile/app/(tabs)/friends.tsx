@@ -5,7 +5,8 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../components/AppText';
 import { EventCard } from '../../components/EventCard';
 import { FeedCard } from '../../components/FeedCard';
 import { GalpiAvatar } from '../../components/GalpiAvatar';
@@ -35,8 +36,8 @@ export default function FriendsTab() {
         <TabTitle title="친구" />
 
         <Pressable accessibilityRole="button" onPress={() => router.push('/me/letter-preview')} style={styles.me}>
-          <View style={[styles.meAvatar, { backgroundColor: t.accent.a1 }]}>
-            <Text style={styles.meInitial}>{state.userName.slice(0, 1)}</Text>
+          <View style={[styles.meAvatar, { backgroundColor: t.line }]}>
+            <Text style={[styles.meInitial, { color: t.sub }]}>{state.userName.slice(0, 1)}</Text>
           </View>
           <View style={styles.flex}>
             <Text style={[styles.meName, { color: t.ink }]}>{state.userName}</Text>
@@ -73,7 +74,7 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: SPACE.xl },
   me: { flexDirection: 'row', alignItems: 'center', gap: SPACE.m, paddingHorizontal: SPACE.l, paddingVertical: SPACE.m },
   meAvatar: { width: 46, height: 46, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-  meInitial: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
+  meInitial: { fontSize: 18, fontWeight: '700' },
   meName: { fontSize: 15, fontWeight: '700' },
   meSub: { fontSize: 12, marginTop: 2 },
   friend: { flexDirection: 'row', alignItems: 'center', gap: SPACE.m, paddingHorizontal: SPACE.l, paddingVertical: SPACE.s },

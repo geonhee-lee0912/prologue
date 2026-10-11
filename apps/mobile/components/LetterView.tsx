@@ -3,10 +3,11 @@
  * 인터뷰 원문과 넘긴 이유는 담지 않는다 (하드룰 2).
  */
 import type { ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import type { LetterProfile } from '../domain/types';
 import { RADIUS, SPACE } from '../theme/tokens';
 import { useTheme } from '../theme/use-theme';
+import { Text } from './AppText';
 import { Photo } from './Photo';
 import { GalpiText } from './ui';
 
@@ -23,12 +24,12 @@ export function LetterView({
   const t = useTheme();
   const chips = [`${profile.age} · ${profile.area}`, ...profile.practical, ...profile.badges, ...profile.allowedConditions];
   return (
-    <View style={[styles.paper, { backgroundColor: t.card }]}>
+    <View style={[styles.paper, { backgroundColor: t.bg }]}>
       {showPhoto ? <Photo uri={profile.photoUri} name={profile.name} height={240} /> : null}
       <Text style={[styles.name, { color: t.ink }]}>{profile.name} 님</Text>
       <View style={styles.chips}>
         {chips.map((c) => (
-          <Text key={c} style={[styles.chip, { backgroundColor: t.accent.soft, color: t.ink }]}>
+          <Text key={c} style={[styles.chip, { backgroundColor: t.fill, color: t.ink }]}>
             {c}
           </Text>
         ))}
@@ -43,7 +44,7 @@ export function LetterView({
 }
 
 const styles = StyleSheet.create({
-  paper: { borderRadius: RADIUS.card, padding: SPACE.l, gap: SPACE.m, boxShadow: '0 3px 14px rgba(0,0,0,0.07)' },
+  paper: { borderRadius: RADIUS.card, padding: SPACE.l, gap: SPACE.m },
   name: { fontSize: 18, fontWeight: '700' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.xs },
   chip: { fontSize: 12, borderRadius: 10, paddingVertical: 3, paddingHorizontal: SPACE.s, overflow: 'hidden' },

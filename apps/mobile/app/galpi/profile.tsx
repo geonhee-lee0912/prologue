@@ -6,8 +6,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Text } from '../../components/AppText';
 import { RoomScene } from '../../components/RoomScene';
 import { GalpiText, IconButton, type IconName } from '../../components/ui';
 import { selectHome } from '../../domain/home';
@@ -26,7 +27,7 @@ function Action({ icon, label, onPress }: { icon: IconName; label: string; onPre
   const t = useTheme();
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.action}>
-      <View style={[styles.actionIcon, { backgroundColor: t.card }]}>
+      <View style={[styles.actionIcon, { backgroundColor: t.fill }]}>
         <Ionicons name={icon} size={20} color={t.ink} />
       </View>
       <Text style={[styles.actionLabel, { color: t.ink }]}>{label}</Text>
@@ -58,8 +59,8 @@ export default function GalpiProfileScreen() {
         onShelfPress={() => router.dismissTo('/story')}
       />
       <SafeAreaView edges={['top']} style={styles.closeWrap}>
-        {/* 밤에도 읽히도록 방 색과 무관한 카드색 칩 위에 둔다 (앱 IA 3.6: 틀은 그대로, 방 안만 바뀐다) */}
-        <View style={[styles.actionIcon, { backgroundColor: t.card }]}>
+        {/* 밤에도 읽히도록 방 색과 무관한 흰 칩 위에 둔다 (앱 IA 3.6: 틀은 그대로, 방 안만 바뀐다) */}
+        <View style={[styles.actionIcon, styles.floating, { backgroundColor: t.bg }]}>
           <IconButton name="close" label="닫기" onPress={close} />
         </View>
       </SafeAreaView>
@@ -89,6 +90,7 @@ const styles = StyleSheet.create({
   line: { textAlign: 'center' },
   actions: { flexDirection: 'row', gap: SPACE.xl, marginTop: SPACE.s },
   action: { alignItems: 'center', gap: SPACE.xs },
-  actionIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.07)' },
+  actionIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  floating: { boxShadow: '0 2px 8px rgba(0,0,0,0.07)' },
   actionLabel: { fontSize: 11 },
 });

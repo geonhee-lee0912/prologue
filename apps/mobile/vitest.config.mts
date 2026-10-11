@@ -9,7 +9,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['domain/**/*.spec.ts', 'mock/**/*.spec.ts'],
+    include: ['domain/**/*.spec.ts', 'mock/**/*.spec.ts', 'theme/**/*.spec.ts'],
     environment: 'node',
   },
 });

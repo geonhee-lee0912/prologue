@@ -5,7 +5,8 @@
  */
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../components/AppText';
 import { Photo } from '../components/Photo';
 import { Button, GalpiText, Header, Screen } from '../components/ui';
 import { currentLightIntro } from '../domain/light-intros';
@@ -72,7 +73,7 @@ export default function LightIntroSheet() {
                     key={r}
                     accessibilityRole="button"
                     onPress={() => pass(r)}
-                    style={[styles.chip, { borderColor: t.line, backgroundColor: t.card }]}
+                    style={[styles.chip, { borderColor: t.line, backgroundColor: t.bg }]}
                   >
                     <Text style={{ color: t.ink }}>{r}</Text>
                   </Pressable>

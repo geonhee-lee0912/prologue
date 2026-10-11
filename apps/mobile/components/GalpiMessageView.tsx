@@ -1,10 +1,11 @@
 import { Image } from 'expo-image';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { GALPI_EXPRESSIONS } from '../assets/galpi';
 import { letterCardView } from '../domain/letters';
 import type { GalpiMessage, Letter } from '../domain/types';
-import { RADIUS, SPACE } from '../theme/tokens';
+import { COLORS, RADIUS, SPACE } from '../theme/tokens';
 import { useTheme } from '../theme/use-theme';
+import { Text } from './AppText';
 import { GalpiAvatar } from './GalpiAvatar';
 import { GalpiText } from './ui';
 
@@ -30,14 +31,14 @@ export function GalpiMessageView({
       if (message.from === 'me') {
         return (
           <View style={styles.mineRow}>
-            <Text style={[styles.mine, { backgroundColor: t.accent.soft, color: t.ink }]}>{message.text}</Text>
+            <Text style={[styles.mine, { backgroundColor: t.ink, color: t.onInk }]}>{message.text}</Text>
           </View>
         );
       }
       return (
         <View style={styles.galpiRow}>
           <GalpiAvatar size={30} />
-          <View style={[styles.galpiBubble, { backgroundColor: t.card }]}>
+          <View style={[styles.galpiBubble, { backgroundColor: t.fill }]}>
             <GalpiText>{message.text}</GalpiText>
           </View>
         </View>
@@ -62,7 +63,7 @@ export function GalpiMessageView({
           <Pressable
             accessibilityRole="button"
             onPress={() => onOpenLetter(message.letterId)}
-            style={[styles.letterCard, { backgroundColor: t.card, borderColor: t.accent.a1 }]}
+            style={[styles.letterCard, { backgroundColor: t.bg, borderColor: t.line }]}
           >
             <Text style={[styles.letterTitle, { color: t.ink }]}>✉️ 갈피의 편지</Text>
             <Text style={[styles.letterStatus, { color: t.sub }]}>{view.text}</Text>
@@ -77,7 +78,7 @@ export function GalpiMessageView({
           <Pressable
             accessibilityRole="button"
             onPress={onOpenLightIntro}
-            style={[styles.invite, { backgroundColor: t.accent.primary }]}
+            style={[styles.invite, { backgroundColor: t.ink }]}
           >
             <Text style={styles.inviteText}>가볍게 볼 분이 있어요 · 열기</Text>
           </Pressable>
@@ -104,6 +105,6 @@ const styles = StyleSheet.create({
   letterTitle: { fontSize: 15, fontWeight: '600' },
   letterStatus: { fontSize: 13 },
   invite: { borderRadius: RADIUS.chip, paddingVertical: SPACE.s, paddingHorizontal: SPACE.m },
-  inviteText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
+  inviteText: { color: COLORS.onInk, fontSize: 14, fontWeight: '600' },
   system: { alignSelf: 'center', fontSize: 12, paddingVertical: SPACE.xs },
 });

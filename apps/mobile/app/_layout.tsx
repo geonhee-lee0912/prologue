@@ -1,11 +1,12 @@
-import { GowunBatang_400Regular, useFonts } from '@expo-google-fonts/gowun-batang';
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { FONT_FILES } from '../assets/fonts';
 import { useAppStore } from '../state/app-store';
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({ GowunBatang_400Regular });
+  const [fontsLoaded] = useFonts(FONT_FILES);
   const beginSession = useAppStore((s) => s.beginSession);
 
   useEffect(() => {

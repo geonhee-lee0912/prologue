@@ -3,7 +3,8 @@
  * 진열되지 않는다는 안심 + 사진·정보를 다듬을 동기. 갈피에게 한 말은 실리지 않는다(하드룰 2).
  */
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
+import { Text } from '../../components/AppText';
 import { LetterView } from '../../components/LetterView';
 import { Header, Screen } from '../../components/ui';
 import type { LetterProfile } from '../../domain/types';

@@ -1,9 +1,10 @@
 /** 친구 탭 소식 카드 — 갈피·서고·나에 대한 것만 (앱 IA 3.3) */
 import { useRouter } from 'expo-router';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet } from 'react-native';
 import type { FeedItem } from '../domain/feed';
 import { useAppStore } from '../state/app-store';
 import { useTheme } from '../theme/use-theme';
+import { Text } from './AppText';
 import { TasteCardView } from './TasteCardView';
 import { Card, GalpiText } from './ui';
 

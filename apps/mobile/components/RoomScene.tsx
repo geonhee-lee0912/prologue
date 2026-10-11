@@ -3,10 +3,11 @@
  * 밤에는 방 안만 바뀐다. 책장은 내 이야기만큼 찬다. 기념품은 여정의 순간에만 놓인다.
  */
 import { Image } from 'expo-image';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { GALPI_FRONT } from '../assets/galpi';
 import type { Keepsake } from '../domain/types';
 import { useTheme } from '../theme/use-theme';
+import { Text } from './AppText';
 
 const KEEPSAKE_ICON: Record<Keepsake['kind'], string> = {
   firstLetter: '✉️',
@@ -29,7 +30,7 @@ export function RoomScene({
 }) {
   const t = useTheme();
   const room = t.room;
-  const spines = [t.accent.a1, t.accent.a2, t.accent.a3];
+  const spines = room.spines;
   return (
     <View style={[styles.room, { backgroundColor: night ? room.nightWall : room.wall }]}>
       <View style={[styles.floor, { backgroundColor: night ? room.nightFloor : room.floor }]} />

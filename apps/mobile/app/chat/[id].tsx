@@ -6,16 +6,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '../../components/AppText';
 import { Empty, GalpiText, Header, IconButton, Screen } from '../../components/ui';
 import { revealedProfile } from '../../domain/letters';
 import { useAppStore } from '../../state/app-store';
@@ -94,7 +86,7 @@ export default function PersonChatScreen() {
             <Pressable
               accessibilityRole="button"
               onPress={() => router.push(`/letter/${letter.id}`)}
-              style={[styles.firstPage, { backgroundColor: t.card }]}
+              style={[styles.firstPage, { backgroundColor: t.fill }]}
             >
               <Text style={[styles.kicker, { color: t.sub }]}>첫 장</Text>
               <GalpiText numberOfLines={3}>{profile.why}</GalpiText>
@@ -106,7 +98,7 @@ export default function PersonChatScreen() {
               <Text
                 style={[
                   styles.bubble,
-                  { color: t.ink, backgroundColor: m.from === 'me' ? t.accent.soft : t.card },
+                  m.from === 'me' ? { color: t.onInk, backgroundColor: t.ink } : { color: t.ink, backgroundColor: t.fill },
                 ]}
               >
                 {m.text}
@@ -117,22 +109,22 @@ export default function PersonChatScreen() {
         {connection.ended ? (
           <Text style={[styles.ended, { color: t.sub }]}>끝난 대화예요.</Text>
         ) : (
-          <View style={[styles.inputRow, { borderTopColor: t.line, backgroundColor: t.card }]}>
+          <View style={[styles.inputRow, { borderTopColor: t.line, backgroundColor: t.bg }]}>
             <TextInput
               value={draft}
               onChangeText={setDraft}
               placeholder="메시지"
               placeholderTextColor={t.sub}
-              style={[styles.input, { color: t.ink }]}
+              style={[styles.input, { color: t.ink, backgroundColor: t.fill }]}
               multiline
             />
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="보내기"
               onPress={send}
-              style={[styles.send, { backgroundColor: draft.trim() ? t.accent.primary : t.line }]}
+              style={[styles.send, { backgroundColor: draft.trim() ? t.ink : t.line }]}
             >
-              <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
+              <Ionicons name="arrow-up" size={18} color={draft.trim() ? t.onInk : t.sub} />
             </Pressable>
           </View>
         )}
@@ -145,7 +137,7 @@ export default function PersonChatScreen() {
               onPress={() => setMenuOpen(false)}
               style={StyleSheet.absoluteFill}
             />
-            <View style={[styles.menu, { backgroundColor: t.card, borderColor: t.line }]}>
+            <View style={[styles.menu, { backgroundColor: t.bg, borderColor: t.line }]}>
               <MenuItem
                 label="연결 끝내기"
                 onPress={() => {
@@ -168,7 +160,7 @@ const styles = StyleSheet.create({
   menu: { position: 'absolute', right: SPACE.m, top: SPACE.xs, zIndex: 10, borderWidth: 1, borderRadius: RADIUS.chip, paddingVertical: SPACE.xs, minWidth: 180 },
   menuItem: { paddingVertical: SPACE.s, paddingHorizontal: SPACE.m },
   list: { padding: SPACE.m, gap: SPACE.s },
-  firstPage: { borderRadius: RADIUS.card, padding: SPACE.m, gap: SPACE.xs, boxShadow: '0 2px 10px rgba(0,0,0,0.05)' },
+  firstPage: { borderRadius: RADIUS.card, padding: SPACE.m, gap: SPACE.xs },
   kicker: { fontSize: 11 },
   notice: { fontSize: 12, textAlign: 'center', paddingVertical: SPACE.s },
   mineRow: { alignItems: 'flex-end' },
@@ -176,6 +168,6 @@ const styles = StyleSheet.create({
   bubble: { maxWidth: '80%', borderRadius: RADIUS.bubble, paddingVertical: SPACE.s, paddingHorizontal: SPACE.m, fontSize: 15, lineHeight: 22, overflow: 'hidden' },
   ended: { textAlign: 'center', padding: SPACE.m, fontSize: 13 },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: SPACE.s, padding: SPACE.s, borderTopWidth: StyleSheet.hairlineWidth },
-  input: { flex: 1, minHeight: 40, maxHeight: 120, fontSize: 15, paddingHorizontal: SPACE.s, paddingVertical: SPACE.s },
+  input: { flex: 1, minHeight: 40, maxHeight: 120, fontSize: 15, borderRadius: 20, paddingHorizontal: SPACE.m, paddingVertical: SPACE.s },
   send: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
 });
