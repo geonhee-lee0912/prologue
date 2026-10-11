@@ -25,14 +25,20 @@ describe('time', () => {
     expect(calendarDayDiff(new Date(2026, 9, 10, 23, 59), new Date(2026, 9, 10, 0, 0))).toBe(0);
   });
 
-  it('기한 표기는 날짜와 요일을 함께 쓴다', () => {
-    expect(untilLabel(new Date(2026, 9, 17, 10, 0))).toBe('10월 17일 토요일까지');
+  it('기한 표기는 날짜, 요일, 닫히는 시각을 함께 쓴다', () => {
+    expect(untilLabel(new Date(2026, 9, 17, 10, 0))).toBe('10월 17일 토요일 오전 10시까지');
   });
 
   it('일주일 뒤 같은 요일도 날짜로 구분된다', () => {
     const sent = new Date(2026, 9, 10, 10, 0); // 토요일
-    expect(untilLabel(addDays(sent, 7))).toBe('10월 17일 토요일까지');
+    expect(untilLabel(addDays(sent, 7))).toBe('10월 17일 토요일 오전 10시까지');
     expect(untilLabel(addDays(sent, 7))).not.toBe(untilLabel(sent));
+  });
+
+  it('시각은 오전·오후 12시간제, 분이 있으면 분까지', () => {
+    expect(untilLabel(new Date(2026, 9, 17, 15, 30))).toBe('10월 17일 토요일 오후 3시 30분까지');
+    expect(untilLabel(new Date(2026, 9, 17, 0, 5))).toBe('10월 17일 토요일 오전 12시 5분까지');
+    expect(untilLabel(new Date(2026, 9, 17, 12, 0))).toBe('10월 17일 토요일 오후 12시까지');
   });
 
   it('그날의 끝은 다음 날 0시', () => {

@@ -45,7 +45,7 @@ describe('친구 탭 우선순위', () => {
     expect(s.primary.card).toMatchObject({
       actionLabel: '읽기',
       href: '/letter/L1',
-      subtitle: '10월 17일 토요일까지 열려 있어요',
+      subtitle: '10월 17일 토요일 오전 10시까지 열려 있어요',
     });
   });
 

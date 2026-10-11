@@ -80,8 +80,8 @@ describe('만료', () => {
     expect(isExpired(l, new Date(exp))).toBe(true);
   });
 
-  it('기한 표기는 날짜와 요일', () => {
-    expect(expiryLabel(one())).toBe('10월 17일 토요일까지 열려 있어요');
+  it('기한 표기는 날짜, 요일, 닫히는 시각', () => {
+    expect(expiryLabel(one())).toBe('10월 17일 토요일 오전 10시까지 열려 있어요');
   });
 
   it('만료되면 답을 기다리는 편지가 아니고, 닫힌다', () => {

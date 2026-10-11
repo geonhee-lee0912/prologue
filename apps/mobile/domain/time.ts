@@ -16,9 +16,15 @@ export function calendarDayDiff(a: Date, b: Date): number {
   return Math.round((ua - ub) / DAY_MS);
 }
 
-/** "10월 17일 토요일까지". 요일만 쓰면 일주일 뒤 같은 요일이 오늘과 헷갈린다 */
+/**
+ * "10월 17일 토요일 오전 10시까지". 요일만 쓰면 일주일 뒤 같은 요일이 오늘과 헷갈리고,
+ * 편지는 그날이 끝날 때가 아니라 보낸 시각에 닫히므로 시각까지 쓴다 (앱 IA 3.5 "만료일을 사실대로")
+ */
 export function untilLabel(date: Date): string {
-  return `${date.getMonth() + 1}월 ${date.getDate()}일 ${WEEKDAYS[date.getDay()]}요일까지`;
+  const h = date.getHours();
+  const m = date.getMinutes();
+  const time = `${h < 12 ? '오전' : '오후'} ${h % 12 === 0 ? 12 : h % 12}시${m > 0 ? ` ${m}분` : ''}`;
+  return `${date.getMonth() + 1}월 ${date.getDate()}일 ${WEEKDAYS[date.getDay()]}요일 ${time}까지`;
 }
 
 /** 그날이 끝나는 순간 (다음 날 0시) */
