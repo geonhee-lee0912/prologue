@@ -83,19 +83,6 @@ export default function PersonChatScreen() {
         onBack={back}
         right={<IconButton name="ellipsis-horizontal" label="메뉴" onPress={() => setMenuOpen((v) => !v)} />}
       />
-      {menuOpen ? (
-        <View style={[styles.menu, { backgroundColor: t.card, borderColor: t.line }]}>
-          <MenuItem
-            label="연결 끝내기"
-            onPress={() => {
-              endConnection(connection.id);
-              setMenuOpen(false);
-            }}
-          />
-          <MenuItem label="신고·차단 (준비 중)" disabled />
-          <MenuItem label="연락처 교환 (준비 중)" disabled />
-        </View>
-      ) : null}
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           ref={scrollRef}
@@ -149,6 +136,28 @@ export default function PersonChatScreen() {
             </Pressable>
           </View>
         )}
+        {/* 메뉴는 헤더 아래에서 열린다 — 절대 위치는 SafeAreaView 패딩을 더하지 않아, 헤더 쪽에 두면 노치·상태바 기기에서 "…"를 덮는다 */}
+        {menuOpen ? (
+          <>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="메뉴 닫기"
+              onPress={() => setMenuOpen(false)}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={[styles.menu, { backgroundColor: t.card, borderColor: t.line }]}>
+              <MenuItem
+                label="연결 끝내기"
+                onPress={() => {
+                  endConnection(connection.id);
+                  setMenuOpen(false);
+                }}
+              />
+              <MenuItem label="신고·차단 (준비 중)" disabled />
+              <MenuItem label="연락처 교환 (준비 중)" disabled />
+            </View>
+          </>
+        ) : null}
       </KeyboardAvoidingView>
     </Screen>
   );
@@ -156,7 +165,7 @@ export default function PersonChatScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  menu: { position: 'absolute', right: SPACE.m, top: 52, zIndex: 10, borderWidth: 1, borderRadius: RADIUS.chip, paddingVertical: SPACE.xs, minWidth: 180 },
+  menu: { position: 'absolute', right: SPACE.m, top: SPACE.xs, zIndex: 10, borderWidth: 1, borderRadius: RADIUS.chip, paddingVertical: SPACE.xs, minWidth: 180 },
   menuItem: { paddingVertical: SPACE.s, paddingHorizontal: SPACE.m },
   list: { padding: SPACE.m, gap: SPACE.s },
   firstPage: { borderRadius: RADIUS.card, padding: SPACE.m, gap: SPACE.xs, boxShadow: '0 2px 10px rgba(0,0,0,0.05)' },
