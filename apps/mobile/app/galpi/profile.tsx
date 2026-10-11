@@ -19,7 +19,7 @@ import { useTheme } from '../../theme/use-theme';
 const WIND_REACTIONS = [
   '아, 따뜻하다. 고마워요 🙂',
   '태엽이 감기는 소리가 좋아요.',
-  '덕분에 오늘도 잘 읽을 수 있겠어요 📖',
+  '헤헤, 조금 간지러워요.',
 ] as const;
 
 function Action({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
@@ -58,7 +58,10 @@ export default function GalpiProfileScreen() {
         onShelfPress={() => router.dismissTo('/story')}
       />
       <SafeAreaView edges={['top']} style={styles.closeWrap}>
-        <IconButton name="close" label="닫기" onPress={close} />
+        {/* 밤에도 읽히도록 방 색과 무관한 카드색 칩 위에 둔다 (앱 IA 3.6: 틀은 그대로, 방 안만 바뀐다) */}
+        <View style={[styles.actionIcon, { backgroundColor: t.card }]}>
+          <IconButton name="close" label="닫기" onPress={close} />
+        </View>
       </SafeAreaView>
       <SafeAreaView edges={['bottom']} style={[styles.panel, { backgroundColor: t.bg }]}>
         <Text style={[styles.name, { color: t.ink }]}>갈피</Text>
