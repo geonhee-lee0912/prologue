@@ -115,7 +115,7 @@ export default function LetterScreen() {
     } else if (letter.status === 'connected' && connection) {
       footer = (
         <View style={styles.row}>
-          <Button label="대화하러 가기" onPress={() => router.push(`/chat/${connection.id}`)} />
+          <Button label="대화하러 가기" onPress={() => router.dismissTo(`/chat/${connection.id}`)} />
         </View>
       );
     }
