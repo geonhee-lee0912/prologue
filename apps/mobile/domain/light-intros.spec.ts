@@ -15,6 +15,7 @@ const intro = (id: string, over: Partial<LightIntro> = {}): LightIntro => ({
   expiresAt: endOfLocalDay(now).toISOString(),
   ...over,
 });
+const receiving = (lightIntros: LightIntro[]) => ({ lightIntros, settings: { lightIntroExposure: true } });
 
 describe('지금 보여줄 가벼운 소개', () => {
   it('답한 소개와 기한이 지난 소개는 건너뛰고, 아직 답하지 않은 첫 소개', () => {
@@ -25,11 +26,16 @@ describe('지금 보여줄 가벼운 소개', () => {
       intro('first'),
       intro('second'),
     ];
-    expect(currentLightIntro(intros, now)?.id).toBe('first');
+    expect(currentLightIntro(receiving(intros), now)?.id).toBe('first');
   });
 
   it('보여줄 소개가 없으면 없다', () => {
-    expect(currentLightIntro([intro('accepted', { status: 'accepted' })], now)).toBeNull();
-    expect(currentLightIntro([], now)).toBeNull();
+    expect(currentLightIntro(receiving([intro('accepted', { status: 'accepted' })]), now)).toBeNull();
+    expect(currentLightIntro(receiving([]), now)).toBeNull();
+  });
+
+  it('나도 "가벼운 소개에 나가기"를 켜야 받는다 — 양쪽 동의 (앱 IA 4.4)', () => {
+    const off = { lightIntros: [intro('first')], settings: { lightIntroExposure: false } };
+    expect(currentLightIntro(off, now)).toBeNull();
   });
 });

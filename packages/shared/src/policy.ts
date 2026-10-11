@@ -45,9 +45,9 @@ export const POLICY = {
     maxStoryChoices: 2,
   } as const,
 
-  /** 가벼운 소개 — 하드룰 3 단서 (앱 IA 4.1~4.3) */
+  /** 가벼운 소개 — 하드룰 3 단서 (앱 IA 4.1~4.4) */
   lightIntro: {
-    /** 본인이 켜야 다른 사람의 가벼운 소개에 나간다 */
+    /** 본인이 켜야 다른 사람의 가벼운 소개에 나가고, 켠 사람만 가벼운 소개를 받는다 (앱 IA 4.4 양쪽 동의) */
     exposureDefault: false,
     /** 하루 상한. 실측 후 확정 */
     dailyCap: null,

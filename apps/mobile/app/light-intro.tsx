@@ -1,7 +1,7 @@
 /**
- * @screen 가벼운 소개 시트 (새로) — 앱 IA v2 4.1, 4.3
+ * @screen 가벼운 소개 시트 (새로) — 앱 IA v2 4.1, 4.3, 4.4
  * 사진 중심, 한 장씩. 확신이 덜하다고 솔직히 말한다. 남은 개수를 숫자로 보여주지 않는다(하드룰 3).
- * 넘긴 한마디는 선택이고 상대에게 전달되지 않는다.
+ * 넘긴 한마디는 선택이고 상대에게 전달되지 않는다. 나가기를 켠 사람끼리만 주고받는다(양쪽 동의).
  */
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -19,12 +19,13 @@ export default function LightIntroSheet() {
   const t = useTheme();
   const router = useRouter();
   const intros = useAppStore((s) => s.lightIntros);
+  const settings = useAppStore((s) => s.settings);
   const userName = useAppStore((s) => s.userName);
   const answerLightIntro = useAppStore((s) => s.answerLightIntro);
   const [passing, setPassing] = useState(false);
 
   const now = new Date();
-  const current = currentLightIntro(intros, now);
+  const current = currentLightIntro({ lightIntros: intros, settings }, now);
   const close = () => (router.canGoBack() ? router.back() : router.replace('/galpi/chat'));
   const pass = (reason?: string) => {
     if (!current) return;
@@ -35,7 +36,17 @@ export default function LightIntroSheet() {
   return (
     <Screen edges={['top', 'bottom']}>
       <Header title="가벼운 소개" onBack={close} />
-      {!current ? (
+      {!settings.lightIntroExposure ? (
+        <View style={styles.pad}>
+          {/* 양쪽 동의 (앱 IA 4.4). 사실만 알리고 켜라고 권하지 않는다 — 노출은 본인이 정한다 (하드룰 3) */}
+          <Text style={[styles.caption, { color: t.sub }]}>
+            가벼운 소개는 ‘가벼운 소개에 나가기’를 켠 분끼리 주고받아요. 설정 탭에서 켜고 끌 수 있어요.
+          </Text>
+          <View style={styles.row}>
+            <Button label="닫기" onPress={close} />
+          </View>
+        </View>
+      ) : !current ? (
         <View style={styles.pad}>
           <GalpiText>오늘은 여기까지예요. 또 보여드릴 분이 생기면 말할게요 🙂</GalpiText>
           <View style={styles.row}>

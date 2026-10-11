@@ -54,7 +54,7 @@ export default function SettingsTab() {
         <Row label="편지에 담을 조건 정보" detail="준비 중" />
         <ToggleRow
           label="가벼운 소개에 나가기"
-          caption="켜면 다른 분의 가벼운 소개에 내 사진이 나갈 수 있어요. 기본은 꺼져 있어요."
+          caption="켜면 내 사진이 다른 분의 가벼운 소개에 나갈 수 있고, 나도 가벼운 소개를 받아요. 기본은 꺼져 있어요."
           value={settings.lightIntroExposure}
           onChange={(v) => setSetting('lightIntroExposure', v)}
         />

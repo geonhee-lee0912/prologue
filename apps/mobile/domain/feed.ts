@@ -30,7 +30,7 @@ export function buildFeed(state: AppState, now: Date): FeedItem[] {
   const today = localDateKey(now);
   const items: FeedItem[] = [];
 
-  if (currentLightIntro(state.lightIntros, now)) {
+  if (currentLightIntro(state, now)) {
     items.push({ id: `light-${today}`, kind: 'lightIntroAvailable' });
   }
 

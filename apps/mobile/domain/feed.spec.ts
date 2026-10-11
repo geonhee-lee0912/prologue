@@ -44,6 +44,8 @@ const busy = (): AppState => ({
   tasteCards: [{ id: 't1', date: localDateKey(now), options: ['비 오는 날 작은 서점', '새벽 한강 라면'], picked: null }],
   chapters: [{ id: 'ch1', title: '첫 장 — 요즘의 나', addedAt: now.toISOString() }],
   keepsakes: [{ id: 'k1', kind: 'firstLetter', at: now.toISOString() }],
+  // 가벼운 소개는 나가기를 켠 사람끼리 주고받는다 (앱 IA 4.4)
+  settings: { ...emptyState().settings, lightIntroExposure: true },
 });
 
 describe('소식', () => {
@@ -68,6 +70,11 @@ describe('소식', () => {
   it('고른 취향 카드는 소식에서 빠진다', () => {
     const st = { ...busy(), tasteCards: [{ ...busy().tasteCards[0], picked: 0 as const }] };
     expect(buildFeed(st, now).some((i) => i.kind === 'tasteCard')).toBe(false);
+  });
+
+  it('가벼운 소개에 나가기를 끈 사람에게는 가벼운 소개 소식이 없다', () => {
+    const st = { ...busy(), settings: { ...busy().settings, lightIntroExposure: false } };
+    expect(buildFeed(st, now).some((i) => i.kind === 'lightIntroAvailable')).toBe(false);
   });
 
   it('넘긴 가벼운 소개는 소식에 알리지 않는다', () => {
