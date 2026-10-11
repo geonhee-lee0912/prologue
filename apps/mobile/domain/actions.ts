@@ -2,9 +2,12 @@
  * 상태 전이 — 저장소(state/app-store.ts)가 감싸는 순수 함수.
  * 바뀌는 게 없으면 받은 state 를 그대로 돌려준다 (저장소가 불필요하게 다시 그리지 않도록).
  */
+import { POLICY } from '@prologue/shared/policy';
 import { firstMeetingMessages, replyToUser } from './galpi-script';
+import { isMeetingPending, selectHome } from './home';
 import { acceptLetter, applyExpiry, chooseCandidate, passLetter } from './letters';
-import type { AppState, Connection, GalpiMessage, Keepsake } from './types';
+import { localDateKey } from './time';
+import type { AppState, Connection, GalpiMessage, Keepsake, Meeting } from './types';
 
 export interface Ctx {
   now: Date;
@@ -44,19 +47,26 @@ export function startFirstRun(state: AppState, ctx: Ctx): AppState {
   };
 }
 
+/** 갈피가 물어본 만남 — 그 만남이 아직 이야기를 기다리는 동안만 (이미 들었거나 사흘째부터는 없다) */
+function askedMeeting(state: AppState, now: Date): Meeting | undefined {
+  const connectionId = state.askingMeetingFeedback;
+  if (connectionId === null) return undefined;
+  return state.meetings.find((m) => m.connectionId === connectionId && isMeetingPending(m, now));
+}
+
 export function sendToGalpi(state: AppState, text: string, ctx: Ctx, opts: { skipped?: boolean } = {}): AppState {
   const trimmed = text.trim();
   if (!trimmed) return state;
   const mine: GalpiMessage = { id: ctx.newId(), kind: 'text', from: 'me', text: trimmed, at: ctx.now.toISOString() };
-  const base: AppState = { ...state, galpiMessages: [...state.galpiMessages, mine] };
+  // 물어본 표시는 이 말로 끝난다 — 만남 이야기로 받든, 기다리는 때가 지나 평소 말로 받든
+  const base: AppState = { ...state, askingMeetingFeedback: null, galpiMessages: [...state.galpiMessages, mine] };
 
-  // 갈피가 만남 이야기를 물어본 뒤의 답은 만남 이야기로 받는다 (F2)
-  if (state.askingMeetingFeedback) {
-    const connectionId = state.askingMeetingFeedback;
+  // 갈피가 만남 이야기를 물어본 뒤의 답은, 그 만남이 아직 이야기를 기다리는 동안만 만남 이야기로 받는다 (F2)
+  const asked = askedMeeting(state, ctx.now);
+  if (asked) {
     return {
       ...base,
-      askingMeetingFeedback: null,
-      meetings: state.meetings.map((m) => (m.connectionId === connectionId ? { ...m, feedbackGiven: true } : m)),
+      meetings: state.meetings.map((m) => (m === asked ? { ...m, feedbackGiven: true } : m)),
       keepsakes: withKeepsake(state, 'firstMeeting', ctx),
       galpiMessages: [
         ...base.galpiMessages,
@@ -74,16 +84,54 @@ export function sendToGalpi(state: AppState, text: string, ctx: Ctx, opts: { ski
   };
 }
 
-export function askMeetingFeedback(state: AppState, connectionId: string, ctx: Ctx): AppState {
-  if (state.askingMeetingFeedback === connectionId) return state;
-  return {
-    ...state,
-    askingMeetingFeedback: connectionId,
-    galpiMessages: [
-      ...state.galpiMessages,
-      galpiText(ctx, '만남은 어땠어요? 좋았던 것도, 아니었던 것도 다 괜찮아요.'),
-    ],
-  };
+/**
+ * 갈피 대화방을 열 때 — 친구 탭과 같은 순위가 대화방의 첫 말을 정한다 (앱 IA 3.2, 3.5).
+ * 1순위 일이 만남 다음 날·편지 고민 중·오랜만에 옴일 때만 갈피가 먼저 말을 건넨다.
+ * 먼저 건네는 말은 하루 POLICY.galpi.proactiveMessagesPerDay 번까지.
+ */
+export function openGalpiChat(state: AppState, ctx: Ctx): AppState {
+  if (!state.firstRunDone) return state;
+
+  // 물어본 만남이 더는 이야기를 기다리지 않으면(이미 들었거나 사흘째부터) 표시를 지운다
+  const base: AppState =
+    state.askingMeetingFeedback !== null && !askedMeeting(state, ctx.now)
+      ? { ...state, askingMeetingFeedback: null }
+      : state;
+
+  const today = localDateKey(ctx.now);
+  const used = base.galpiOpeners.date === today ? base.galpiOpeners.count : 0;
+  if (used >= POLICY.galpi.proactiveMessagesPerDay) return base;
+  const opener = (text: string): Pick<AppState, 'galpiMessages' | 'galpiOpeners'> => ({
+    galpiMessages: [...base.galpiMessages, galpiText(ctx, text)],
+    galpiOpeners: { date: today, count: used + 1 },
+  });
+
+  const { primary } = selectHome(base, ctx.now);
+  switch (primary.kind) {
+    case 'meetingNextDay': {
+      // 만남은 다음 날 한 번만 묻는다. 답이 없어도 다시 묻지 않는다 (갈피 문서 3.6 ③)
+      const connectionId = primary.meetingConnectionId;
+      if (connectionId === undefined) return base;
+      const askedAt = ctx.now.toISOString();
+      return {
+        ...base,
+        ...opener('만남은 어땠어요? 좋았던 것도, 아니었던 것도 다 괜찮아요.'),
+        askingMeetingFeedback: connectionId,
+        meetings: base.meetings.map((m) =>
+          m.connectionId === connectionId && isMeetingPending(m, ctx.now) && !m.askedAt ? { ...m, askedAt } : m,
+        ),
+      };
+    }
+    case 'letterConsidering':
+    case 'welcomeBack':
+      return { ...base, ...opener(primary.galpiLine) };
+    // 친구 탭 카드, 대화방의 편지 카드, 기다리는 인터뷰 질문이 이미 말하고 있다
+    case 'mutualAccept':
+    case 'letterArrived':
+    case 'interviewResume':
+    case 'everyday':
+      return base;
+  }
 }
 
 export function markGalpiRead(state: AppState, ctx: Ctx): AppState {

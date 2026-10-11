@@ -21,7 +21,7 @@ export interface AppStore extends AppState {
   beginSession: () => void;
   startFirstRun: () => void;
   sendToGalpi: (text: string, opts?: { skipped?: boolean }) => void;
-  askMeetingFeedback: (connectionId: string) => void;
+  openGalpiChat: () => void;
   markGalpiRead: () => void;
   chooseLetterCandidate: (letterId: string, candidateId: string) => void;
   answerLetter: (letterId: string, answer: 'accept' | 'pass', reason?: string) => void;
@@ -48,7 +48,7 @@ export const useAppStore = create<AppStore>()((set) => ({
   beginSession: () => set((s) => A.beginSession(s, ctx())),
   startFirstRun: () => set((s) => A.startFirstRun(s, ctx())),
   sendToGalpi: (text, opts) => set((s) => A.sendToGalpi(s, text, ctx(), opts)),
-  askMeetingFeedback: (connectionId) => set((s) => A.askMeetingFeedback(s, connectionId, ctx())),
+  openGalpiChat: () => set((s) => A.openGalpiChat(s, ctx())),
   markGalpiRead: () => set((s) => A.markGalpiRead(s, ctx())),
   chooseLetterCandidate: (letterId, candidateId) => set((s) => A.chooseLetterCandidate(s, letterId, candidateId)),
   answerLetter: (letterId, answer, reason) => set((s) => A.answerLetter(s, letterId, answer, ctx(), reason)),

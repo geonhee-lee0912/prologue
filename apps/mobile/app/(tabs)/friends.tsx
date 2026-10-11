@@ -26,9 +26,6 @@ export default function FriendsTab() {
 
   const openEvent = (event: HomeEvent) => {
     if (!event.card) return;
-    if (event.kind === 'meetingNextDay' && event.meetingConnectionId) {
-      state.askMeetingFeedback(event.meetingConnectionId);
-    }
     router.push(event.card.href);
   };
 

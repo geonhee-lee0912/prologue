@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { SCENARIOS } from '../mock/scenarios';
 import {
   answerLetter,
   answerLightIntro,
-  askMeetingFeedback,
   beginSession,
   type Ctx,
   endConnection,
+  openGalpiChat,
   pickTasteCard,
   sendToGalpi,
   sendToPerson,
@@ -15,7 +16,9 @@ import {
 } from './actions';
 import { emptyState, profile } from './fixtures';
 import { INTERVIEW_QUESTIONS } from './galpi-script';
+import { collectHomeEvents, selectHome } from './home';
 import { createLetter } from './letters';
+import { addDays } from './time';
 import type { AppState, GalpiMessage } from './types';
 
 let n = 0;
@@ -65,19 +68,78 @@ describe('갈피에게 말하기', () => {
   });
 });
 
-describe('만남 이야기', () => {
-  it('물어본 뒤 들은 말은 만남 이야기로 받는다', () => {
-    const s0: AppState = {
-      ...emptyState(),
-      meetings: [{ connectionId: 'c1', date: new Date(2026, 9, 10, 19, 0).toISOString(), feedbackGiven: false }],
-    };
-    const s1 = askMeetingFeedback(s0, 'c1', ctx());
-    expect(askMeetingFeedback(s1, 'c1', ctx())).toBe(s1);
-    const s2 = sendToGalpi(s1, '대화가 잘 통했어요', ctx());
+describe('갈피 대화방을 열 때 — 친구 탭과 같은 순위가 첫 말을 정한다', () => {
+  const now = new Date(2026, 9, 11, 9, 0);
+  const day = (n: number) => ctx(addDays(now, n));
+  const MEETING_QUESTION = '만남은 어땠어요? 좋았던 것도, 아니었던 것도 다 괜찮아요.';
+  const MEETING_THANKS = '들려줘서 고마워요. 이 이야기는 다음 편지를 고를 때 꼭 참고할게요.';
+
+  it('만남 다음 날이면 만남 이야기를 한 번 묻고, 들은 말은 만남 이야기로 받는다', () => {
+    const s0 = SCENARIOS.meetingAndLetter(now);
+    const s1 = openGalpiChat(s0, day(0));
+    expect(s1.galpiMessages).toHaveLength(s0.galpiMessages.length + 1);
+    expect(lastText(s1)).toBe(MEETING_QUESTION);
+    expect(s1.askingMeetingFeedback).toBe('c1');
+    expect(s1.meetings[0].askedAt).toBe(now.toISOString());
+    expect(openGalpiChat(s1, day(0))).toBe(s1);
+    expect(collectHomeEvents(s1, now).map((e) => e.kind)).not.toContain('meetingNextDay');
+    expect(selectHome(s1, now).primary.kind).toBe('letterArrived');
+
+    const s2 = sendToGalpi(s1, '대화가 잘 통했어요', day(0));
     expect(s2.meetings[0].feedbackGiven).toBe(true);
     expect(s2.askingMeetingFeedback).toBeNull();
+    expect(lastText(s2)).toBe(MEETING_THANKS);
     expect(s2.keepsakes.map((k) => k.kind)).toContain('firstMeeting');
     expect(s2.interview).toEqual(s1.interview);
+  });
+
+  it('물어본 만남에 답이 없으면 이튿날 다시 묻지 않고, 친구 탭에도 다시 나오지 않는다', () => {
+    const asked = openGalpiChat(SCENARIOS.meetingAndLetter(now), day(0));
+    expect(openGalpiChat(asked, day(1))).toBe(asked);
+    expect(collectHomeEvents(asked, addDays(now, 1)).map((e) => e.kind)).not.toContain('meetingNextDay');
+  });
+
+  it('만남 사흘째에는 물어본 표시를 지우고, 새 말은 평소처럼 받는다', () => {
+    const asked = openGalpiChat(SCENARIOS.meetingAndLetter(now), day(0));
+    const opened = openGalpiChat(asked, day(2));
+    expect(opened.askingMeetingFeedback).toBeNull();
+    expect(opened.galpiMessages).toBe(asked.galpiMessages);
+
+    const replied = sendToGalpi(asked, '그냥 그랬어요', day(2));
+    expect(replied.askingMeetingFeedback).toBeNull();
+    expect(replied.galpiMessages).toHaveLength(asked.galpiMessages.length + 2);
+    expect(lastText(replied)).not.toBe(MEETING_THANKS);
+    expect(replied.meetings[0].feedbackGiven).toBe(false);
+    expect(replied.keepsakes.map((k) => k.kind)).not.toContain('firstMeeting');
+  });
+
+  it('편지 고민 중이면 그 말을 한 번 건네고, 같은 날 다시 열면 건네지 않는다', () => {
+    const s0 = SCENARIOS.considering(now);
+    const s1 = openGalpiChat(s0, day(0));
+    expect(s1.galpiMessages).toHaveLength(s0.galpiMessages.length + 1);
+    expect(lastText(s1)).toBe('편지를 쓸지 고민 중인 분이 있어요. 지은 님처럼 걷는 걸 좋아하는 분이에요.');
+    expect(openGalpiChat(s1, ctx(new Date(2026, 9, 11, 21, 0)))).toBe(s1);
+    expect(openGalpiChat(s1, day(1)).galpiOpeners).toEqual({ date: '2026-10-12', count: 1 });
+  });
+
+  it('오랜만에 오면 반가운 말을 건넨다', () => {
+    const s0: AppState = { ...emptyState(), previousVisitAt: addDays(now, -4).toISOString() };
+    expect(lastText(openGalpiChat(s0, day(0)))).toBe('지은 님! 반가워요 ☕');
+  });
+
+  it('더 높은 순위의 일이 있으면 낮은 순위의 말을 먼저 건네지 않는다', () => {
+    const s0: AppState = { ...SCENARIOS.letterOne(now), considering: { hint: '걷는 걸 좋아하는 분이에요.' } };
+    expect(openGalpiChat(s0, day(0))).toBe(s0);
+  });
+
+  it.each(['waiting', 'interviewMidway', 'letterOne', 'connected'] as const)('%s 에서는 먼저 건넬 말이 없다', (key) => {
+    const s0 = SCENARIOS[key](now);
+    expect(openGalpiChat(s0, day(0))).toBe(s0);
+  });
+
+  it('첫 만남 전에는 아무것도 하지 않는다', () => {
+    const s0 = SCENARIOS.firstRun(now);
+    expect(openGalpiChat(s0, day(0))).toBe(s0);
   });
 });
 

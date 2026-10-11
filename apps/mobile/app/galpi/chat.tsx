@@ -32,14 +32,17 @@ export default function GalpiChatScreen() {
   const firstRunDone = useAppStore((s) => s.firstRunDone);
   const interviewDone = useAppStore((s) => s.interview.completed);
   const startFirstRun = useAppStore((s) => s.startFirstRun);
+  const openGalpiChat = useAppStore((s) => s.openGalpiChat);
   const sendToGalpi = useAppStore((s) => s.sendToGalpi);
   const markGalpiRead = useAppStore((s) => s.markGalpiRead);
   const [draft, setDraft] = useState('');
   const scrollRef = useRef<ScrollView>(null);
 
+  // 어느 입구로 들어와도 같은 대화 — 갈피가 먼저 건넬 말이 있으면 그 말에 바로 답하는 상태로 열린다 (앱 IA 3.5)
   useEffect(() => {
     if (!firstRunDone) startFirstRun();
-  }, [firstRunDone, startFirstRun]);
+    else openGalpiChat();
+  }, [firstRunDone, startFirstRun, openGalpiChat]);
 
   useEffect(() => {
     markGalpiRead();

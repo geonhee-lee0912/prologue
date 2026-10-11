@@ -121,6 +121,8 @@ export interface Meeting {
   connectionId: string;
   date: string;
   feedbackGiven: boolean;
+  /** 갈피가 대화방에서 이 만남을 물어본 때. 답이 없어도 다시 묻지 않는다 (갈피 문서 3.6 ③) */
+  askedAt?: string;
 }
 
 /** 책장의 한 장 (IA 3.7) */
@@ -178,6 +180,8 @@ export interface AppState {
   considering: { hint: string } | null;
   /** 갈피가 만남 이야기를 물어본 연결 */
   askingMeetingFeedback: string | null;
+  /** 갈피가 대화방에서 먼저 건넨 말 — 하루(localDateKey)에 몇 번 */
+  galpiOpeners: { date: string; count: number };
   /** 서고에 이야기를 남긴 분 수 (대기 카운터) */
   archiveCount: number;
   me: MyProfile;

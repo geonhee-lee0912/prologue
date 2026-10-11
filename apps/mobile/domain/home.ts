@@ -1,13 +1,13 @@
 /**
  * 친구 탭 우선순위 — 앱 IA 3.2 "말로 알리고, 장면은 분위기만"
  *
- * 같은 순위가 중요한 일 카드, 갈피 상태메시지, 갈피 프로필의 말을 정한다.
+ * 같은 순위가 친구 탭의 중요한 일 카드, 갈피 상태메시지, 갈피 대화방의 첫 말을 정한다 (앱 IA 3.2).
  * 사건이 일상보다 먼저다. 갈피는 사용자가 안 와서 슬퍼하지 않는다.
  */
 import { POLICY } from '@prologue/shared/policy';
 import { expiryLabel, isAwaitingMyAnswer } from './letters';
 import { calendarDayDiff, pickByDay } from './time';
-import type { AppState } from './types';
+import type { AppState, Meeting } from './types';
 
 export type HomeEventKind =
   | 'mutualAccept'
@@ -55,6 +55,13 @@ export function everydayLine(now: Date): string {
   return pickByDay(EVERYDAY_LINES, now);
 }
 
+/** 만남 이야기를 기다리는 만남 — 아직 듣지 않았고, 만남 다음 날이나 이틀 뒤 */
+export function isMeetingPending(meeting: Meeting, now: Date): boolean {
+  if (meeting.feedbackGiven) return false;
+  const diff = calendarDayDiff(now, new Date(meeting.date));
+  return diff === 1 || diff === 2;
+}
+
 export function collectHomeEvents(state: AppState, now: Date): HomeEvent[] {
   const events: HomeEvent[] = [];
   const name = state.userName;
@@ -74,12 +81,8 @@ export function collectHomeEvents(state: AppState, now: Date): HomeEvent[] {
     });
   }
 
-  // 2. 만남 다음 날 (이틀 뒤까지)
-  const pendingMeeting = state.meetings.find((m) => {
-    if (m.feedbackGiven) return false;
-    const diff = calendarDayDiff(now, new Date(m.date));
-    return diff >= 1 && diff <= 2;
-  });
+  // 2. 만남 다음 날 (이틀 뒤까지). 갈피가 대화방에서 이미 물어봤으면 답이 없어도 다시 묻지 않는다
+  const pendingMeeting = state.meetings.find((m) => isMeetingPending(m, now) && !m.askedAt);
   if (pendingMeeting) {
     const yesterday = calendarDayDiff(now, new Date(pendingMeeting.date)) === 1;
     events.push({

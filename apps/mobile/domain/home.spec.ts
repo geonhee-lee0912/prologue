@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { emptyState, profile } from './fixtures';
-import { collectHomeEvents, selectHome } from './home';
+import { collectHomeEvents, isMeetingPending, selectHome } from './home';
 import { createLetter } from './letters';
 import type { AppState } from './types';
 
@@ -101,6 +101,28 @@ describe('친구 탭 우선순위', () => {
     const s = selectHome(st, now);
     expect(s.primary.kind).toBe('welcomeBack');
     expect(s.primary.galpiLine).toBe('지은 님! 반가워요 ☕');
+  });
+
+  it('갈피가 이미 물어본 만남은 다시 카드가 되지 않는다 — 답이 없어도 다시 묻지 않는다', () => {
+    const asked = { ...meeting(new Date(2026, 9, 10, 19, 0)), askedAt: now.toISOString() };
+    const st: AppState = { ...emptyState(), letters: [letter()], meetings: [asked] };
+    expect(collectHomeEvents(st, now).map((e) => e.kind)).not.toContain('meetingNextDay');
+    expect(selectHome(st, now).primary.kind).toBe('letterArrived');
+  });
+});
+
+describe('만남 이야기를 기다리는 때', () => {
+  const yesterday = meeting(new Date(2026, 9, 10, 19, 0));
+
+  it('만남 다음 날과 이틀 뒤에만 기다린다', () => {
+    expect(isMeetingPending(yesterday, new Date(2026, 9, 10, 23, 50))).toBe(false);
+    expect(isMeetingPending(yesterday, new Date(2026, 9, 11, 0, 10))).toBe(true);
+    expect(isMeetingPending(yesterday, new Date(2026, 9, 12, 23, 50))).toBe(true);
+    expect(isMeetingPending(yesterday, new Date(2026, 9, 13, 0, 10))).toBe(false);
+  });
+
+  it('이미 들은 만남은 기다리지 않는다', () => {
+    expect(isMeetingPending({ ...yesterday, feedbackGiven: true }, now)).toBe(false);
   });
 });
 

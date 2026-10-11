@@ -21,6 +21,7 @@ export function emptyState(): AppState {
     previousVisitAt: null,
     considering: null,
     askingMeetingFeedback: null,
+    galpiOpeners: { date: '', count: 0 },
     archiveCount: 312,
     me: {
       age: 29,
