@@ -46,7 +46,7 @@ corepack pnpm --filter shared build
 corepack pnpm --filter mobile web
 ```
 
-http://localhost:8081 — 처음엔 "첫 실행" 시나리오(갈피 대화방). 설정 탭 아래 "개발용" 패널에서 시나리오 8종과 팔레트 3종을 바꿀 수 있다. 휴대폰 프레임으로 보려면 `node scripts/device-frame.mjs` 후 http://localhost:8090. 규칙 테스트는 `corepack pnpm --filter mobile test`. 처음 한 번과 `packages/shared` 를 고친 뒤에는 먼저 shared 를 빌드한다(Metro 는 `packages/shared/dist` 를 읽는다).
+http://localhost:8081 — 처음엔 "첫 실행" 시나리오(갈피 대화방). 설정 탭 아래 "개발용" 패널에서 시나리오 8종을 바꿀 수 있다. 휴대폰 프레임으로 보려면 `node scripts/device-frame.mjs` 후 http://localhost:8090. 규칙 테스트는 `corepack pnpm --filter mobile test`. 처음 한 번과 `packages/shared` 를 고친 뒤에는 먼저 shared 를 빌드한다(Metro 는 `packages/shared/dist` 를 읽는다).
 
 ---
 
