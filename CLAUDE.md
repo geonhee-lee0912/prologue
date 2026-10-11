@@ -223,6 +223,8 @@ apps/mobile/app/(tabs)/home.tsx                   // D01
 apps/mobile/app/recommendation/[id]/card.tsx      // D02
 ```
 
+**2026-10 앱 IA v2 이후**: 한 화면이 여러 기존 화면 ID를 품는다(예: 갈피 대화방 = B1~B4·C2·D2·F2). 그래서 새 화면은 파일명 prefix 대신 **파일 맨 위 주석 `@screen`에 기존 ID를 적는다.** 라우트는 `app/(tabs)/friends.tsx`, `app/galpi/chat.tsx`, `app/letter/[id].tsx`처럼 뜻이 보이는 이름을 쓴다. ID가 어디로 갔는지는 `docs/superpowers/specs/2026-10-10-서비스-구성-위계-design.md` 3.5의 표.
+
 ### 8.2 백엔드 모듈 명명 규칙
 
 ```ts
@@ -391,17 +393,24 @@ export const POLICY = {
   introduction: {
     // 정기 배급 금지. 개수를 약속하지 않는다.
     // 후보 품질이 임계 미만이면 소개하지 않는다.
-    minQualityThreshold: /* TBD, 실측 후 확정 */ 0,
+    minQualityThreshold: null, // TBD, 실측 후 확정
     dailyCap: null,          // TBD. 상한은 되고 약속은 안 된다
     oneAtATime: true,        // 지금 편지에 답하기 전엔 다음 편지 없음
     letterExpiryDays: 7,     // 만료되면 닫히고 잠금이 풀린다
-    chooseByStoryWhenTwo: true, // 기준 넘는 후보가 둘이면 이야기로 고르기
+    maxStoryChoices: 2,      // 기준 넘는 후보가 둘이면 이야기 한 줄로 하나를 고른다
   },
   lightIntro: {
     // 가벼운 소개: 사진 중심 서브 소개, 취향 학습용
     exposureDefault: false,  // 본인이 켜야 나간다
     dailyCap: null,          // TBD
     expiresAt: 'midnight',
+  },
+  galpi: {
+    proactiveMessagesPerDay: 1, // 갈피가 먼저 거는 알림 (잠정). 나중에 고도화
+    welcomeBackAfterDays: 3,    // 오랜만에 왔다고 보는 기준 (일)
+  },
+  feed: {
+    maxItems: 5,             // 친구 탭 소식. 다른 사용자는 소식에 나오지 않는다
   },
   credit: {
     // 차감은 "대화 성립" 시점에만.
@@ -555,6 +564,7 @@ pnpm build
 ## 18. 변경 이력
 
 - 2026-05-10: v0.1 최초 작성. NestJS + 자체 AWS 인프라 기준.
+- 2026-10-10: v0.8 갱신. **8.1에 앱 IA v2 화면 파일 규칙 추가** — 새 화면은 파일 맨 위 `@screen` 주석으로 기존 화면 ID를 추적한다. 모바일 화면 골격(친구/대화/내 이야기/설정)이 mock 데이터로 섰다. 12장 `policy.ts` 예시를 코드 키에 맞춤(`maxStoryChoices`, `galpi`, `feed`).
 - 2026-10-10: v0.7 갱신. **앱 IA v2 반영** — 홈이 카톡형 "친구" 탭으로 바뀌며 소식이 생겨, 하드룰 1의 "피드"를 "다른 사용자를 보여주는 피드"로 정확히 하고 16장에 친구 목록 원칙 추가.
 - 2026-10-10: v0.6 갱신. **앱 IA v1 반영** (`docs/superpowers/specs/2026-10-10-서비스-구성-위계-design.md`). 하드룰 3에 가벼운 소개 허용 조건, 12장 정책에 편지 한 번에 한 통·만료 7일·이야기로 고르기·가벼운 소개 항목 추가, 16장에 편지함 금지 추가.
 - 2026-10-09: v0.5 갱신. **하드룰 6을 "사용자끼리의 압박 장치 금지"로 좁힘.** 읽음 확인·온라인 상태·답장 압박은 유지, 갈피와의 관계 장치(태엽 등)는 보상만 있고 벌이 없는 조건으로 허용. 16장 반영.

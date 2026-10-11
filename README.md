@@ -39,6 +39,14 @@
 
 코드 밖의 우선순위(커뮤니티 침투 경로, 남성 측 가치 명제, 법률 자문 등)는 컨셉 문서 11장에 있다.
 
+### 모바일 미리보기 (mock)
+
+```bash
+corepack pnpm --filter mobile web
+```
+
+http://localhost:8081 — 처음엔 "첫 실행" 시나리오(갈피 대화방). 설정 탭 아래 "개발용" 패널에서 시나리오 8종과 팔레트 3종을 바꿀 수 있다. 휴대폰 프레임으로 보려면 `node scripts/device-frame.mjs` 후 http://localhost:8090. 규칙 테스트는 `corepack pnpm --filter mobile test`.
+
 ---
 
 ## 아키텍처
