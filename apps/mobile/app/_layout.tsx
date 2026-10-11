@@ -22,6 +22,8 @@ export default function RootLayout() {
         <Stack.Screen name="galpi/chat" />
         <Stack.Screen name="letter/[id]" />
         <Stack.Screen name="light-intro" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="galpi/profile" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="me/letter-preview" options={{ presentation: 'modal' }} />
       </Stack>
     </>
   );
