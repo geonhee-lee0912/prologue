@@ -43,6 +43,21 @@ export function isAwaitingMyAnswer(letter: Letter, now: Date): boolean {
   return AWAITING.includes(letter.status) && !isExpired(letter, now);
 }
 
+/** 닫힌 편지인가 — 넘김·만료는 닫히고, 답을 기다리는 편지는 기한이 지나면 조용히 닫힌다. 연결된 편지는 시간으로 닫히지 않는다 (앱 IA 5장) */
+export function isLetterClosed(letter: Letter, now: Date): boolean {
+  switch (letter.status) {
+    case 'passed':
+    case 'expired':
+      return true;
+    case 'choosing':
+    case 'open':
+    case 'acceptedWaiting':
+      return isExpired(letter, now);
+    case 'connected':
+      return false;
+  }
+}
+
 /** "10월 17일 토요일까지 열려 있어요" — 사실만 말하고 재촉하지 않는다 (CLAUDE.md 9.1) */
 export function expiryLabel(letter: Letter): string {
   return `${untilLabel(new Date(letter.expiresAt))} 열려 있어요`;

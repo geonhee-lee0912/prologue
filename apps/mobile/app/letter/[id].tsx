@@ -8,7 +8,7 @@ import { type ReactNode, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LetterView } from '../../components/LetterView';
 import { Button, Empty, GalpiText, Header, Screen } from '../../components/ui';
-import { expiryLabel, isExpired, revealedProfile } from '../../domain/letters';
+import { expiryLabel, isLetterClosed, revealedProfile } from '../../domain/letters';
 import { useAppStore } from '../../state/app-store';
 import { RADIUS, SPACE } from '../../theme/tokens';
 import { useTheme } from '../../theme/use-theme';
@@ -38,10 +38,7 @@ export default function LetterScreen() {
   }
 
   const now = new Date();
-  const closed =
-    letter.status === 'passed' ||
-    letter.status === 'expired' ||
-    ((letter.status === 'open' || letter.status === 'choosing') && isExpired(letter, now));
+  const closed = isLetterClosed(letter, now);
   const profile = closed ? null : revealedProfile(letter);
   const connection = connections.find((c) => c.letterId === letter.id);
 
@@ -124,7 +121,7 @@ export default function LetterScreen() {
     }
     body = (
       <ScrollView contentContainerStyle={styles.pad}>
-        <LetterView profile={profile} footer={footer} />
+        <LetterView profile={profile} footer={footer} showPhoto={!connection?.ended} />
       </ScrollView>
     );
   } else {

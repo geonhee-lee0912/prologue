@@ -10,12 +10,21 @@ import { useTheme } from '../theme/use-theme';
 import { Photo } from './Photo';
 import { GalpiText } from './ui';
 
-export function LetterView({ profile, footer }: { profile: LetterProfile; footer?: ReactNode }) {
+export function LetterView({
+  profile,
+  footer,
+  showPhoto = true,
+}: {
+  profile: LetterProfile;
+  footer?: ReactNode;
+  /** 끝난 연결의 첫 장에는 사진이 남지 않는다 (앱 IA 6장) */
+  showPhoto?: boolean;
+}) {
   const t = useTheme();
   const chips = [`${profile.age} · ${profile.area}`, ...profile.practical, ...profile.badges, ...profile.allowedConditions];
   return (
     <View style={[styles.paper, { backgroundColor: t.card }]}>
-      <Photo uri={profile.photoUri} name={profile.name} height={240} />
+      {showPhoto ? <Photo uri={profile.photoUri} name={profile.name} height={240} /> : null}
       <Text style={[styles.name, { color: t.ink }]}>{profile.name} 님</Text>
       <View style={styles.chips}>
         {chips.map((c) => (

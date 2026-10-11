@@ -9,9 +9,11 @@ import {
   expiryLabel,
   isAwaitingMyAnswer,
   isExpired,
+  isLetterClosed,
   passLetter,
   revealedProfile,
 } from './letters';
+import { addDays } from './time';
 import type { Letter } from './types';
 
 const sentAt = new Date(2026, 9, 10, 10, 0); // 토요일
@@ -94,6 +96,36 @@ describe('만료', () => {
   it('이미 답한 편지는 만료 처리로 바뀌지 않는다', () => {
     const l = passLetter(one());
     expect(applyExpiry([l], new Date(l.expiresAt))[0].status).toBe('passed');
+  });
+});
+
+describe('닫힌 편지', () => {
+  it('넘긴 편지는 기한 안이어도 닫혀 있다', () => {
+    expect(isLetterClosed(passLetter(one()), sentAt)).toBe(true);
+  });
+
+  it('만료된 편지는 기한 안이어도 닫혀 있다', () => {
+    const l: Letter = { ...one(), status: 'expired' };
+    expect(isLetterClosed(l, sentAt)).toBe(true);
+  });
+
+  const waitingForAnswer: [string, () => Letter][] = [
+    ['고르는 중인', two],
+    ['열린', one],
+    ['상대 답을 기다리는', () => acceptLetter(one())],
+  ];
+  it.each(waitingForAnswer)('%s 편지는 기한 1ms 전까지 열려 있고, 기한 그 순간부터 닫힌다', (_name, make) => {
+    const l = make();
+    const exp = new Date(l.expiresAt).getTime();
+    expect(isLetterClosed(l, new Date(exp - 1))).toBe(false);
+    expect(isLetterClosed(l, new Date(exp))).toBe(true);
+  });
+
+  it('연결된 편지는 기한이 한참 지나도 닫히지 않는다', () => {
+    const l: Letter = { ...chooseCandidate(two(), 'b'), status: 'connected' };
+    const exp = new Date(l.expiresAt);
+    expect(isLetterClosed(l, exp)).toBe(false);
+    expect(isLetterClosed(l, addDays(exp, 30))).toBe(false);
   });
 });
 
