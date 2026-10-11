@@ -57,6 +57,8 @@ export default function StoryTab() {
               말보다 시간을 함께 보내는 걸로 가까워지는 편이고요.
             </GalpiText>
             <GalpiText style={[styles.sign, { color: t.sub }]}>갈피 드림</GalpiText>
+            {/* AI가 만든 글임을 알린다 (CLAUDE.md 13장, AI 기본법 투명성) */}
+            <Text style={[styles.aiNote, { color: t.sub }]}>이 편지는 AI가 썼어요</Text>
           </Card>
         ) : (
           <Empty text="이야기를 끝까지 들려주면 갈피가 편지를 써요." />
@@ -101,6 +103,7 @@ const styles = StyleSheet.create({
   body: { fontSize: 14, lineHeight: 20 },
   collected: { fontSize: 12, paddingHorizontal: SPACE.l, lineHeight: 18 },
   sign: { textAlign: 'right', marginTop: SPACE.s },
+  aiNote: { fontSize: 11, textAlign: 'right', marginTop: SPACE.xs },
   memoryRow: { flexDirection: 'row', alignItems: 'center', gap: SPACE.s },
   link: { fontSize: 12, textDecorationLine: 'underline' },
   danger: { fontSize: 12, fontWeight: '700' },

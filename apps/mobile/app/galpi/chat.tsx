@@ -89,7 +89,7 @@ export default function GalpiChatScreen() {
           onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
         >
           <Text style={[styles.disclosure, { color: t.sub }]}>
-            갈피는 AI예요. 들려주신 이야기는 소개를 위해서만 쓰이고, 누구에게도 보여주지 않아요.
+            갈피는 AI예요. 들려주신 이야기는 소개를 위해서만 쓰이고, 다른 사용자에게 보여주지 않아요.
           </Text>
           {messages.map((m) => (
             <GalpiMessageView

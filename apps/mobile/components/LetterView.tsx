@@ -35,6 +35,8 @@ export function LetterView({
       </View>
       <GalpiText style={styles.why}>{profile.why}</GalpiText>
       <GalpiText style={[styles.sign, { color: t.sub }]}>갈피 드림</GalpiText>
+      {/* AI가 만든 글임을 알린다 (CLAUDE.md 13장, AI 기본법 투명성) */}
+      <Text style={[styles.aiNote, { color: t.sub }]}>이 편지는 AI가 썼어요</Text>
       {footer}
     </View>
   );
@@ -47,4 +49,5 @@ const styles = StyleSheet.create({
   chip: { fontSize: 12, borderRadius: 10, paddingVertical: 3, paddingHorizontal: SPACE.s, overflow: 'hidden' },
   why: { fontSize: 16, lineHeight: 26 },
   sign: { textAlign: 'right' },
+  aiNote: { fontSize: 11, textAlign: 'right', marginTop: -SPACE.s },
 });

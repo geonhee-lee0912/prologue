@@ -17,7 +17,9 @@ describe('갈피 대본', () => {
   it('첫 만남 — 자기소개, 서고 규칙, 첫 질문', () => {
     const ms = texts(firstMeetingMessages(ctx));
     expect(ms[0]).toContain('갈피예요');
-    expect(ms.some((t) => t.includes('저만 읽어요'))).toBe(true);
+    expect(ms.some((t) => t.includes('다른 사용자에게는 보여주지 않아요'))).toBe(true);
+    // AI 처리·신고 시 열람·설명 요청 응대가 있으니 "누구에게도", "저만"이라고 약속하지 않는다 (CLAUDE.md 10.2c·10.2d)
+    expect(ms.some((t) => t.includes('누구에게도') || t.includes('저만 읽어요'))).toBe(false);
     expect(ms[ms.length - 1]).toBe(INTERVIEW_QUESTIONS[0]);
   });
 

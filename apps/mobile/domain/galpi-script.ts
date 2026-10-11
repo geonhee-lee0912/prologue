@@ -58,7 +58,7 @@ export function firstMeetingMessages(ctx: ScriptContext): GalpiMessage[] {
       id: ctx.newId(),
       kind: 'text',
       from: 'galpi',
-      text: '여기서 들려주시는 이야기는 저만 읽어요. 누구에게도 보여주지 않아요.',
+      text: '여기서 들려주시는 이야기는 소개를 위해서만 써요. 다른 사용자에게는 보여주지 않아요.',
       at,
     },
     { id: ctx.newId(), kind: 'text', from: 'galpi', text: INTERVIEW_QUESTIONS[0], at },
