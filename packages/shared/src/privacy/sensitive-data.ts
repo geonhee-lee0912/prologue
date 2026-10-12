@@ -61,13 +61,19 @@ const KEYWORDS: Record<SensitiveCategory, readonly string[]> = {
   RACE_ETHNICITY: ['인종', '혼혈', '한국계', '흑인', '백인', '조선족', '탈북', '고려인'],
 };
 
+// 띄어쓰기는 쓰는 사람마다 다르다(복용 중 / 복용중). 낱말 안의 공백은 있어도 없어도, 여럿이어도 같은 낱말로 본다.
+// 그래서 긴 낱말부터 찾는 순서와 범주를 되짚는 열쇠도 공백을 뺀 꼴로 센다.
 const ENTRIES = CATEGORIES.flatMap((category) => KEYWORDS[category].map((keyword) => ({ keyword, category }))).sort(
-  (a, b) => b.keyword.length - a.keyword.length,
+  (a, b) => keyOf(b.keyword).length - keyOf(a.keyword).length,
 );
-const CATEGORY_OF = new Map(ENTRIES.map((e) => [e.keyword.toLowerCase(), e.category]));
-const KEYWORD_RE = new RegExp(ENTRIES.map((e) => escapeRegExp(e.keyword)).join('|'), 'gi');
-/** 이미 가린 자리 — 두 번 돌려도 다시 가리지 않게 나눠 둔다 */
-const PLACEHOLDER_RE = /(\[민감정보:[^\]]+\])/;
+const CATEGORY_OF = new Map(ENTRIES.map((e) => [keyOf(e.keyword), e.category]));
+const KEYWORD_RE = new RegExp(ENTRIES.map((e) => escapeRegExp(e.keyword).replace(/ /g, '\\s*')).join('|'), 'gi');
+/**
+ * 이미 가린 자리 — 두 번 돌려도 다시 가리지 않게 나눠 둔다.
+ * 우리가 만드는 이름표만 인정한다. 사용자가 비슷하게 쓴 글(`[민감정보:우울증이 있어요]`)은 자리표시자로 치지 않아 안의 낱말도 가려진다.
+ * 닫힌 목록이라 닫히지 않은 `[민감정보:` 가 길게 이어져도 훑는 시간이 늘지 않는다.
+ */
+const PLACEHOLDER_RE = new RegExp(`(\\[민감정보:(?:${Object.values(LABEL).map(escapeRegExp).join('|')})\\])`);
 
 export interface MaskSensitiveResult {
   masked: string;
@@ -85,10 +91,15 @@ export function maskSensitive(text: string): MaskSensitiveResult {
 
 function maskPart(part: string, found: Set<SensitiveCategory>): string {
   return part.replace(KEYWORD_RE, (keyword) => {
-    const category = CATEGORY_OF.get(keyword.toLowerCase()) ?? SensitiveCategory.HEALTH;
+    const category = CATEGORY_OF.get(keyOf(keyword)) ?? SensitiveCategory.HEALTH;
     found.add(category);
     return `[민감정보:${LABEL[category]}]`;
   });
+}
+
+/** 낱말을 견주는 열쇠 — 공백과 영문 대소문자를 없앤다 */
+function keyOf(text: string): string {
+  return text.replace(/\s+/g, '').toLowerCase();
 }
 
 function escapeRegExp(text: string): string {

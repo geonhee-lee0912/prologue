@@ -53,4 +53,43 @@ describe('민감정보 마스킹 — 개인정보보호법 23조 전체', () => 
     const text = '주말에는 등산을 자주 해요';
     expect(maskSensitive(text)).toEqual({ masked: text, categories: [] });
   });
+
+  it('우리가 만든 자리표시자만 그대로 둔다 — 직접 쓴 가짜 자리표시자 안의 민감정보는 가린다', () => {
+    const fake = maskSensitive('[민감정보:우울증이 있어요]');
+    expect(fake.masked).not.toContain('우울증');
+    expect(fake.categories).toEqual([SensitiveCategory.HEALTH]);
+    // 진짜 자리표시자는 건드리지 않는다
+    expect(maskSensitive('[민감정보:건강]')).toEqual({ masked: '[민감정보:건강]', categories: [] });
+    // 가린 결과를 다시 돌려도 같다
+    expect(maskSensitive(fake.masked)).toEqual({ masked: fake.masked, categories: [] });
+  });
+
+  it('우리가 만드는 아홉 가지 자리표시자는 모두 두 번 돌려도 같다', () => {
+    const first = maskSensitive('교회 노조 지지 정당 우울증 성관계 유전병 전과자 홍채 혼혈');
+    expect(first.categories).toEqual(Object.values(SensitiveCategory));
+    expect(maskSensitive(first.masked)).toEqual({ masked: first.masked, categories: [] });
+  });
+
+  it('닫히지 않은 자리표시자가 길게 이어져도 금방 끝난다', () => {
+    const startedAt = Date.now();
+    maskSensitive('[민감정보:'.repeat(50000));
+    expect(Date.now() - startedAt).toBeLessThan(1000);
+  });
+
+  it('띄어쓰기 없이 붙여 써도 가린다 — 낱말 안의 공백은 있어도 없어도 같다', () => {
+    expect(maskSensitive('요즘 약 복용중이에요')).toEqual({
+      masked: '요즘 약 [민감정보:건강]이에요',
+      categories: [SensitiveCategory.HEALTH],
+    });
+    expect(maskSensitive('정치성향이 많이 달라요')).toEqual({
+      masked: '[민감정보:정치]이 많이 달라요',
+      categories: [SensitiveCategory.POLITICAL],
+    });
+    expect(maskSensitive('복용중')).toEqual(maskSensitive('복용 중'));
+  });
+
+  it('낱말 사이 공백이 여럿이거나 줄이 바뀌어도 한 자리로 가린다', () => {
+    expect(maskSensitive('공황   발작이 와요').masked).toBe('[민감정보:건강]이 와요');
+    expect(maskSensitive('공황\n발작이 와요').masked).toBe('[민감정보:건강]이 와요');
+  });
 });
