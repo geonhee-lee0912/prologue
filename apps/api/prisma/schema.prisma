@@ -91,6 +91,13 @@ model User {
   blocksMade                  Block[]                 @relation("BlockerUser")
   blocksReceived              Block[]                 @relation("BlockedUser")
   refreshTokens               RefreshToken[]
+  // 갈피 AI 엔진 (10절)
+  galpiState                  GalpiState?
+  galpiMessages               GalpiMessage[]
+  wikiClaims                  WikiClaim[]
+  profileFacts                ProfileFact[]
+  selfReports                 SelfReport[]
+  pushToken                   PushToken?
 
   @@index([status, gender, targetGender])
   @@map("users")
@@ -115,7 +122,7 @@ model UserConsent {
   id          String   @id @default(cuid())
   userId      String   @map("user_id") @db.Uuid
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  consentType String   @map("consent_type") // terms_of_service, privacy, marketing, location, ...
+  consentType String   @map("consent_type") // terms_of_service, privacy_policy, marketing, location, ...
   required    Boolean
   agreed      Boolean
   version     String
@@ -196,6 +203,8 @@ model Profile {
   intro         String?  @db.Text
   // 라이프스타일 키워드 (배열)
   lifestyleTags String[] @map("lifestyle_tags")
+  // 호칭·리포트에 쓰는 이름. 본인이 정한 이름이다(실명 아님) — 갈피 AI 엔진 1단계
+  displayName   String?  @map("display_name")
 
   // 운영 검수
   reviewStatus ReviewStatus @default(pending) @map("review_status")
@@ -583,4 +592,192 @@ model AdminAuditLog {
   @@index([adminId, createdAt])
   @@index([action, createdAt])
   @@map("admin_audit_logs")
+}
+
+// =====================================================================
+// 10. 갈피 AI 엔진 1단계 — docs/superpowers/specs/2026-10-11-갈피-AI-엔진-design.md
+// 모바일은 이 테이블을 직접 읽지 않는다. 전부 NestJS 경유 (supabase/policies/galpi.sql)
+// =====================================================================
+
+enum GalpiSpeechLevel {
+  mixed // 반존대 (기본)
+  casual // 말을 놓은 뒤
+}
+
+model GalpiState {
+  userId              String           @id @map("user_id") @db.Uuid
+  user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstMeetingAt      DateTime         @default(now()) @map("first_meeting_at")
+  // 사용자가 보낸 말 수 (건너뛰기·버튼 제외)
+  userTurns           Int              @default(0) @map("user_turns")
+  turnsSinceIngest    Int              @default(0) @map("turns_since_ingest")
+  // "소개할 만큼 알게 됨" (스펙 5.4)
+  knownAt             DateTime?        @map("known_at")
+  speechLevel         GalpiSpeechLevel @default(mixed) @map("speech_level")
+  // 말 놓기를 한 번 꺼낸 때 — 다시 꺼내지 않는다 (스펙 5.2)
+  casualOfferedAt     DateTime?        @map("casual_offered_at")
+  lastUserMessageAt   DateTime?        @map("last_user_message_at")
+  lastProactiveAt     DateTime?        @map("last_proactive_at")
+  // 답 없는 먼저 말 걸기 수 (스펙 7장)
+  unansweredProactive Int              @default(0) @map("unanswered_proactive")
+  // 서고에 정리한 마지막 메시지의 시각
+  lastIngestAt        DateTime?        @map("last_ingest_at")
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+
+  @@index([lastUserMessageAt])
+  @@map("galpi_states")
+}
+
+enum GalpiSender {
+  galpi
+  user
+}
+
+enum GalpiMessageKind {
+  text
+  emoticon
+}
+
+model GalpiMessage {
+  id                  String           @id @default(cuid())
+  userId              String           @map("user_id") @db.Uuid
+  user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sender              GalpiSender
+  kind                GalpiMessageKind @default(text)
+  // 사용자 말은 저장 전에 연락처를 지우고 민감정보를 가린다(CLAUDE.md 10.2b). 갈피 말은 {name} 자리표시자 그대로
+  content             String           @db.Text
+  // 갈피 표정 (GALPI_EXPRESSIONS)
+  expression          String?
+  // 갈피가 건넨 버튼 { type, fact? }
+  quickReply          Json?            @map("quick_reply")
+  // 버튼에 답한 key — 한 번만 받는다
+  answeredKey         String?          @map("answered_key")
+  skipped             Boolean          @default(false)
+  // 갈피가 먼저 건 말
+  proactive           Boolean          @default(false)
+  // 위기 신호에 답한 안전 안내
+  safety              Boolean          @default(false)
+  // 가린 민감정보 범주만. 내용이 아니다
+  sensitiveCategories String[]         @default([]) @map("sensitive_categories")
+  createdAt           DateTime         @default(now()) @map("created_at")
+
+  claimSources WikiClaimSource[]
+
+  @@index([userId, createdAt])
+  @@map("galpi_messages")
+}
+
+enum WikiPage {
+  now
+  people
+  relationship
+  met
+  attraction
+  next_topics
+}
+
+// 갈피의 서고 — 사용자별 위키의 문장 하나 (스펙 3장)
+model WikiClaim {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  page      WikiPage
+  text      String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sources WikiClaimSource[]
+
+  @@index([userId, page])
+  @@map("wiki_claims")
+}
+
+// 문장의 출처 — 원문이 지워지면 출처도 지워진다 (갈피 빼기, 스펙 3.6)
+model WikiClaimSource {
+  claimId   String       @map("claim_id")
+  claim     WikiClaim    @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  messageId String       @map("message_id")
+  message   GalpiMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@id([claimId, messageId])
+  @@index([messageId])
+  @@map("wiki_claim_sources")
+}
+
+enum ProfileFactKey {
+  school
+  income_band
+  housing
+  company
+  smoking
+  marriage_intent
+  children_intent
+}
+
+// 구조화 칸 (스펙 3.4)
+model ProfileFact {
+  id            String         @id @default(cuid())
+  userId        String         @map("user_id") @db.Uuid
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key           ProfileFactKey
+  value         String?
+  // 조건 정보만 쓴다. null = 아직 묻지 않음, false = 서고에만 (하드룰 8)
+  letterAllowed Boolean?       @map("letter_allowed")
+  // 증빙은 편지(D1) 설계 때 (AI 엔진 문서 10장)
+  verified      Boolean        @default(false)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  @@unique([userId, key])
+  @@map("profile_facts")
+}
+
+// 나에 대한 리포트 "제가 읽은 당신" (스펙 6장)
+model SelfReport {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // 해요체 편지. {name} 자리표시자 포함
+  body      String   @db.Text
+  // 첫 리포트는 무료
+  paid      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@map("self_reports")
+}
+
+enum LlmPurpose {
+  reply
+  ingest
+  report
+  proactive
+  eval
+}
+
+// LLM 사용량 — 1인 월 원가 감시 (컨셉 6.7). 탈퇴 뒤에도 통계로 남도록 사용자와 잇지 않는다
+model LlmUsage {
+  id                String     @id @default(cuid())
+  userId            String?    @map("user_id") @db.Uuid
+  purpose           LlmPurpose
+  inputTokens       Int        @map("input_tokens")
+  cachedInputTokens Int        @default(0) @map("cached_input_tokens")
+  outputTokens      Int        @map("output_tokens")
+  createdAt         DateTime   @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@map("llm_usages")
+}
+
+// 갈피가 먼저 건 말을 알림으로 보낼 Expo 푸시 토큰
+model PushToken {
+  userId    String   @id @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // 한 기기에서 다른 사람이 로그인하면 앞사람의 토큰을 지운다 (push-token.service.ts)
+  @@index([token])
+  @@map("push_tokens")
 }
