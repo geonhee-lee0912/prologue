@@ -1,7 +1,10 @@
-/** 동의 종류 — UserConsent.consentType 값 (CLAUDE.md 10.2b·10.2c) */
+/**
+ * 동의 종류 — UserConsent.consentType 값 (CLAUDE.md 10.2b·10.2c)
+ * terms_of_service·privacy_policy 는 가입 화면이 보내 서버가 그대로 저장하는 값이다. 바꾸면 이미 저장된 행을 못 찾는다
+ */
 export const CONSENT_TYPES = {
   TERMS_OF_SERVICE: 'terms_of_service',
-  PRIVACY: 'privacy',
+  PRIVACY: 'privacy_policy',
   SENSITIVE_INFO: 'sensitive_info',
   CROSS_BORDER_TRANSFER: 'cross_border_transfer',
 } as const;
