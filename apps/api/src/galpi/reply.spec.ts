@@ -39,6 +39,16 @@ describe('갈피 답 해석 (리뷰 1)', () => {
     ]);
   });
 
+  it('300자 상한은 코드 포인트로 센다 — 300번째 글자가 이모지여도 반으로 가르지 않는다', () => {
+    // 😌 는 UTF-16 으로 두 칸이다. 300칸에서 자르면 앞 절반만 남아 깨진 문자열이 된다
+    const long = `${'a'.repeat(299)}😌 끝`;
+    const text = parseReply(reply({ messages: [{ text: long }] }))?.bubbles[0].text ?? '';
+    const points = Array.from(text);
+    expect(text).not.toMatch(/\p{Surrogate}/u);
+    expect(points.length).toBeLessThanOrEqual(300);
+    expect(points.at(-1)).toBe('😌');
+  });
+
   it('말 놓기 버튼과 맞지 않는 칸의 버튼은 버린다 — 말 놓기는 서버만 건넨다', () => {
     expect(parseReply(reply({ messages: [{ text: 'a' }], quickReply: { type: 'speech_level' } }))?.quickReply).toBeNull();
     expect(parseReply(reply({ messages: [{ text: 'a' }], quickReply: { type: 'practical', fact: 'company' } }))?.quickReply).toBeNull();

@@ -18,6 +18,7 @@ export interface ParsedReply {
 }
 
 const MAX_BUBBLES = 2;
+/** 말풍선 길이 상한 — 코드 포인트로 센다. UTF-16 칸으로 자르면 이모지(두 칸)를 반으로 갈라 깨진 문자열이 남는다 */
 const MAX_BUBBLE_LENGTH = 300;
 
 /** 갈피 답(JSON)을 읽는다. 읽을 수 없으면 null — 부르는 쪽이 대체 문장을 쓴다 (리뷰 1) */
@@ -50,7 +51,7 @@ function toBubble(value: unknown): ReplyBubble | null {
   const { text, expression } = value as Record<string, unknown>;
   if (typeof text !== 'string' || !text.trim()) return null;
   const known = typeof expression === 'string' && (GALPI_EXPRESSIONS as readonly string[]).includes(expression);
-  return { text: text.trim().slice(0, MAX_BUBBLE_LENGTH), expression: known ? (expression as GalpiExpression) : null };
+  return { text: Array.from(text.trim()).slice(0, MAX_BUBBLE_LENGTH).join(''), expression: known ? (expression as GalpiExpression) : null };
 }
 
 /** 말 놓기 버튼은 서버만 건넨다 — 갈피가 내면 버린다 */
