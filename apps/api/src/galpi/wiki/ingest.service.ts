@@ -78,16 +78,18 @@ export class IngestService {
       orderBy: { createdAt: 'asc' },
       take: BATCH_LIMIT,
     });
+    if (batch.length === 0) return false;
     const userMessages = batch.filter((m) => m.sender === 'user' && !m.skipped);
-    if (userMessages.length === 0) return false;
 
-    // 이 묶음을 먼저 차지한다 — 같은 대화를 두 곳에서 정리하지 않게 (리뷰 4)
+    // 이 묶음을 먼저 차지한다 — 같은 대화를 두 곳에서 정리하지 않게 (리뷰 4).
+    // 정리할 사용자 말이 없는 묶음(건너뛴 말·갈피 말뿐)도 끝까지 넘긴다 — 그대로 두면 창(BATCH_LIMIT 줄)이 그 줄들로 가득 차
+    // 뒤에 온 말이 영영 닿지 못한다. 넘긴 줄 가운데 갈피의 질문은 다음 수집의 [바로 앞 대화] 로 따라간다. LLM 은 부르지 않는다
     const batchEnd = batch[batch.length - 1].createdAt;
     const claimed = await this.prisma.galpiState.updateMany({
       where: { userId, lastIngestAt: state.lastIngestAt },
       data: { lastIngestAt: batchEnd },
     });
-    if (claimed.count === 0) return false;
+    if (claimed.count === 0 || userMessages.length === 0) return false;
 
     try {
       await this.ingestBatch(userId, batch, userMessages, state.lastIngestAt);

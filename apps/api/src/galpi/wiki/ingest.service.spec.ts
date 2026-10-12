@@ -98,23 +98,29 @@ describe('서고 수집 실행', () => {
     expect(db.galpiStates[0].lastIngestAt).toEqual(T(2));
   });
 
-  it('서고에는 [이름] 을 벗긴 문장이 남는다 — 문장도 조건 정보 값도', async () => {
+  it('서고에는 이름 자리표시자를 벗기고 가려진 말을 따라 쓴 글을 뺀 문장이 남는다 — 문장도 조건 정보 값도', async () => {
     const llm = new MockLlmProvider({
       responses: [
         JSON.stringify({
           claims: [
             { op: 'add', page: 'now', text: '[이름]은 퇴근 뒤에 걷는다', sources: [userMessageId] },
+            { op: 'add', page: 'people', text: '{name}의 친구들은 차분하다고 한다', sources: [userMessageId] },
             { op: 'add', page: 'people', text: '[이름]이라고 불리는 걸 좋아한다', sources: [userMessageId] },
+            { op: 'add', page: 'relationship', text: '연락은 [연락처] 로 한다', sources: [userMessageId] },
           ],
-          facts: [{ key: 'housing', value: '[이름]의 전세 아파트' }],
+          facts: [
+            { key: 'housing', value: '[이름]의 전세 아파트' },
+            { key: 'school', value: '[민감정보:사상·신념] 부설 대학교' },
+          ],
         }),
       ],
     });
     await service(llm).runForUser('u1', T(30));
-    // 말이 깨지는 둘째 문장은 남기지 않는다
-    expect(db.wikiClaims.map((c) => c.text)).toEqual(['퇴근 뒤에 걷는다']);
-    expect(db.profileFacts[0]).toMatchObject({ key: 'housing', value: '전세 아파트' });
-    expect(JSON.stringify([db.wikiClaims, db.profileFacts])).not.toContain('[이름]');
+    // 말이 깨지는 셋째 문장과 연락처 이름표가 든 넷째 문장, 민감정보 이름표가 든 값은 남기지 않는다
+    expect(db.wikiClaims.map((c) => c.text)).toEqual(['퇴근 뒤에 걷는다', '친구들은 차분하다고 한다']);
+    expect(db.profileFacts.map((f) => [f.key, f.value])).toEqual([['housing', '전세 아파트']]);
+    const stored = JSON.stringify([db.wikiClaims, db.profileFacts]);
+    for (const left of ['[이름]', '{name}', '[연락처]', '[민감정보:']) expect(stored).not.toContain(left);
   });
 
   describe('바로 앞 대화 (묶음 사이의 흐름)', () => {
@@ -193,15 +199,87 @@ describe('서고 수집 실행', () => {
     expect(llm.calls).toHaveLength(1);
   });
 
-  it('갈피 말과 건너뛴 말뿐이어도 LLM 을 부르지 않는다', async () => {
+  it('갈피 말과 건너뛴 말뿐이어도 LLM 을 부르지 않는다 — 수집 시각만 끝까지 넘긴다', async () => {
     db.galpiStates[0].lastIngestAt = T(1);
     const llm = new MockLlmProvider({ respond: addReply });
-    await service(llm).runForUser('u1', T(30));
+    const svc = service(llm);
+    await svc.runForUser('u1', T(30));
+    expect(db.galpiStates[0].lastIngestAt).toEqual(T(2)); // 건너뛴 말(T(2))까지
     await db.galpiMessage.create({ data: { userId: 'u1', sender: 'galpi', content: '그럼 다음에 얘기해요', createdAt: T(3) } });
-    await service(llm).runForUser('u1', T(31));
+    await svc.runForUser('u1', T(31));
+    expect(db.galpiStates[0].lastIngestAt).toEqual(T(3));
     expect(llm.calls).toHaveLength(0);
     expect(db.wikiClaims).toEqual([]);
     expect(known.checkAndMarkKnown).not.toHaveBeenCalled();
+  });
+
+  describe('정리할 사용자 말이 없는 묶음', () => {
+    const at = (i: number) => new Date(T(0).getTime() + i * 1000);
+    const stateOf = (userId: string) => db.galpiStates.find((s) => s.userId === userId);
+
+    // 건너뛴 말·갈피 말 41줄 뒤에 진짜 말 하나 — 창(40줄)이 앞 줄들로 가득 차 뒤의 말에 닿지 못하던 모양
+    async function stalled(): Promise<string> {
+      db.galpiStates[0].lastIngestAt = T(2); // u1 은 정리를 마쳤다
+      db.addUser({ id: 'u2' });
+      await db.galpiState.create({ data: { userId: 'u2', lastUserMessageAt: at(41) } });
+      for (let i = 0; i < 41; i += 1) {
+        await db.galpiMessage.create({
+          data:
+            i % 2 === 0
+              ? { userId: 'u2', sender: 'galpi', content: `질문 ${i}`, createdAt: at(i) }
+              : { userId: 'u2', sender: 'user', content: '다른 얘기 할래요', skipped: true, createdAt: at(i) },
+        });
+      }
+      return (await db.galpiMessage.create({ data: { userId: 'u2', sender: 'user', content: '이제 진짜 이야기예요', createdAt: at(41) } })).id;
+    }
+
+    it('건너뛴 말·갈피 말이 창을 채워도 수집 시각을 넘겨 뒤의 말에 닿는다 — LLM 없이 넘기고 세지 않는다', async () => {
+      const realId = await stalled();
+      const llm = new MockLlmProvider({ respond: () => EMPTY });
+      const svc = service(llm);
+
+      // 첫 수집: 창의 40줄이 모두 건너뛴 말과 갈피 말이다 — LLM 을 부르지 않고 40번째 줄까지 넘긴다
+      expect(await svc.sweep(new Date(at(41).getTime() + 11 * 60_000))).toBe(0);
+      expect(llm.calls).toHaveLength(0);
+      expect(stateOf('u2')?.lastIngestAt).toEqual(at(39));
+      expect(known.checkAndMarkKnown).not.toHaveBeenCalled();
+
+      // 다음 수집: 뒤의 진짜 말에 닿아 정리한다
+      expect(await svc.sweep(new Date(at(41).getTime() + 22 * 60_000))).toBe(1);
+      expect(llm.calls).toHaveLength(1);
+      expect(llm.calls[0].messages[1].content).toContain(`[${realId}] 나: 이제 진짜 이야기예요`);
+      expect(stateOf('u2')?.lastIngestAt).toEqual(at(41));
+    });
+
+    it('넘긴 줄 가운데 갈피의 질문은 다음 수집의 바로 앞 대화로 따라간다 — 나중에 한 대답을 이해하게', async () => {
+      db.galpiStates[0].lastIngestAt = T(2);
+      await db.galpiMessage.create({ data: { userId: 'u1', sender: 'galpi', content: '그럼 주말에는 뭐 해요?', createdAt: T(3) } });
+      await db.galpiMessage.create({ data: { userId: 'u1', sender: 'user', content: '다른 얘기 할래요', skipped: true, createdAt: T(4) } });
+      const llm = new MockLlmProvider({ respond: () => EMPTY });
+      const svc = service(llm);
+      await svc.runForUser('u1', T(30));
+      expect(llm.calls).toHaveLength(0);
+      expect(db.galpiStates[0].lastIngestAt).toEqual(T(4));
+
+      const answer = await db.galpiMessage.create({ data: { userId: 'u1', sender: 'user', content: '주말에는 산에 가요', createdAt: T(40) } });
+      await svc.runForUser('u1', T(50));
+      expect(llm.calls[0].messages[1].content).toContain(
+        `[바로 앞 대화]\n나: 저는 [이름]이고 퇴근하고 걸어요\n갈피: 그럼 주말에는 뭐 해요?\n\n[새 대화]\n[${answer.id}] 나: 주말에는 산에 가요`,
+      );
+    });
+
+    it('다른 곳이 이미 차지했으면 수집 시각을 건드리지 않는다', async () => {
+      db.galpiStates[0].lastIngestAt = T(1); // 건너뛴 말(T(2)) 하나가 남아 있다
+      const claimedElsewhere = service(new MockLlmProvider({ respond: () => EMPTY }));
+      // 읽은 뒤 차지하기 전에 다른 서버가 수집 시각을 옮긴 것을 흉내 낸다
+      const original = db.galpiState.updateMany;
+      db.galpiState.updateMany = async (args) => {
+        db.galpiStates[0].lastIngestAt = T(9);
+        return original(args);
+      };
+      await claimedElsewhere.runForUser('u1', T(30));
+      expect(db.galpiStates[0].lastIngestAt).toEqual(T(9));
+    });
   });
 
   it('두 곳에서 동시에 돌려도 한 번만 정리한다 (리뷰 4)', async () => {

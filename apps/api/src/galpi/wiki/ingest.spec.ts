@@ -1,4 +1,4 @@
-import type { WikiPageKey } from '@prologue/shared';
+import { maskSensitive, redactContacts, type WikiPageKey } from '@prologue/shared';
 import { describe, expect, it } from 'vitest';
 import { type IngestContext, parseIngest } from './ingest';
 
@@ -75,6 +75,7 @@ describe('서고 수집 결과 검증', () => {
           { op: 'update', id: 'c1', text: '주말마다 교회에 간다', sources: ['m1'] },
           { op: 'update', id: 'c1', text: '[민감정보:건강] 이야기를 했다', sources: ['m1'] },
           { op: 'update', id: 'c1', text: 'hello@example.com 으로 연락한다', sources: ['m1'] },
+          { op: 'update', id: 'c1', text: '연락은 [연락처] 로 한다', sources: ['m1'] },
         ],
       }),
       ctx(),
@@ -234,8 +235,9 @@ describe('서고 수집 결과 검증', () => {
     expect(crooked).toEqual(NOTHING);
   });
 
-  // 가명처리가 사용자의 이름 자리에 넣은 [이름] 은 서고에 남기지 않는다 — 서고 문장은 사용자에게 그대로 보이고 리포트의 재료가 된다
-  describe('이름 자리표시자 [이름]', () => {
+  // 사용자 말에는 가명처리가 이름 자리에 넣은 [이름] 이, 갈피 말에는 서버가 이름으로 바꾸는 {name} 이 들어 있고 모델이 그대로 따라 쓸 수 있다.
+  // 서고 문장은 사용자에게 그대로 보이고 리포트의 재료가 되므로 남기지 않는다
+  describe('이름 자리표시자 [이름]·{name}', () => {
     const addText = (text: string) => parseIngest(json({ claims: [{ op: 'add', page: 'now', text, sources: ['m1'] }] }), ctx()).adds.map((a) => a.text);
 
     it('"[이름]은 …" 꼴 — 자리표시자와 조사를 빼고 주어 없이 남긴다', () => {
@@ -264,6 +266,12 @@ describe('서고 수집 결과 검증', () => {
       expect(addText('  [이름]은   퇴근 뒤에   걷는다  ')).toEqual(['퇴근 뒤에 걷는다']);
       // 앞 말에 붙어 있어도 낱말이 달라붙지 않는다
       expect(addText('친구들은[이름]을 믿음직하다고 본다')).toEqual(['친구들은 믿음직하다고 본다']);
+    });
+
+    it('조사 없이 선 자리표시자도 뺀다', () => {
+      expect(addText('[이름] 퇴근 뒤에 걷는다')).toEqual(['퇴근 뒤에 걷는다']);
+      expect(addText('{name} 퇴근 뒤에 걷는다')).toEqual(['퇴근 뒤에 걷는다']);
+      expect(addText('친구들은 [이름] 얘기를 자주 한다')).toEqual(['친구들은 얘기를 자주 한다']);
     });
 
     it('벗기고 나면 아무것도 남지 않는 문장은 버린다', () => {
@@ -314,6 +322,84 @@ describe('서고 수집 결과 검증', () => {
         { key: 'housing', value: '전세 아파트' },
         { key: 'income_band', value: '5천만원대' },
       ]);
+    });
+
+    it('갈피 말에 든 {name} 도 같은 식으로 벗긴다 — 문장도 조건 정보 값도', () => {
+      expect(addText('{name}은 퇴근 뒤에 걷는다')).toEqual(['퇴근 뒤에 걷는다']);
+      expect(addText('{name}의 친구들은 차분하다고 한다')).toEqual(['친구들은 차분하다고 한다']);
+      expect(addText('친구들은 {name}을 믿음직하다고 본다')).toEqual(['친구들은 믿음직하다고 본다']);
+      expect(addText('{name}은 [이름]의 친구와 자주 지낸다')).toEqual(['친구와 자주 지낸다']);
+      // 비거나, 바로 뒤에 다른 말이 붙어 말이 깨지는 글은 버린다
+      for (const text of ['{name}', '{name}은', '{name}님은 걷는다', '{name}이라고 불린다']) expect(addText(text)).toEqual([]);
+      const ops = parseIngest(
+        json({
+          facts: [
+            { key: 'housing', value: '{name}의 전세 아파트' },
+            { key: 'company', value: '{name}' },
+          ],
+        }),
+        ctx(),
+      );
+      expect(ops.facts).toEqual([{ key: 'housing', value: '전세 아파트' }]);
+    });
+  });
+
+  // 사용자 말은 저장할 때 민감정보가 [민감정보:…] 로, 연락처가 [연락처]·[이메일]·[주민번호] 로 가려진다. 모델은 그 이름표를 그대로 따라 쓴다.
+  // 문장과 조건 정보 값은 같은 검사를 쓰고, 검사는 글자 수 한도로 자르기 전의 글 전체에 한다
+  describe('서고에 둘 수 없는 글', () => {
+    const claims = (...texts: string[]) =>
+      parseIngest(json({ claims: texts.map((text) => ({ op: 'add', page: 'now', text, sources: ['m1'] })) }), ctx()).adds.map((a) => a.text);
+    const facts = (...values: string[]) => parseIngest(json({ facts: values.map((value) => ({ key: 'company', value })) }), ctx()).facts.map((f) => f.value);
+
+    it('가려진 민감정보 자리표시자가 든 조건 정보 값은 버린다', () => {
+      // maskSensitive 는 자기 자리표시자를 이미 가린 것으로 보고 넘긴다 — 그래서 자리표시자 자체를 따로 거른다
+      expect(maskSensitive('[민감정보:사상·신념] 부설 대학교').categories).toEqual([]);
+      const ops = parseIngest(
+        json({
+          facts: [
+            { key: 'company', value: '[민감정보:사상·신념]' },
+            { key: 'school', value: '[민감정보:사상·신념] 부설 대학교' },
+            { key: 'housing', value: '전세 [민감정보:건강] 요양 아파트' },
+            { key: 'income_band', value: '5천만원대' },
+          ],
+        }),
+        ctx(),
+      );
+      expect(ops.facts).toEqual([{ key: 'income_band', value: '5천만원대' }]);
+    });
+
+    it('연락처가 가려진 자리표시자가 든 글은 버린다 — redactContacts 가 만드는 이름표 전부, 문장도 조건 정보 값도', () => {
+      // redactContacts 는 자기 이름표를 다시 바꾸지 않아서 이름표를 그대로 따라 쓴 글이 지나갔다. 새 이름표가 생기면 여기서 걸린다
+      const tokens = redactContacts('010-1234-5678 a@b.com 900101-1234567').match(/\[[^\]]+\]/g) ?? [];
+      expect(tokens).toHaveLength(3);
+      for (const token of tokens) {
+        expect(redactContacts(token)).toBe(token);
+        expect(claims(`연락은 ${token} 로 한다`, token)).toEqual([]);
+        expect(facts(token, `${token} 회사`)).toEqual([]);
+      }
+    });
+
+    it('자르기 전의 글 전체를 검사한다 — 자르는 자리에 걸친 전화번호는 잘린 앞부분만 보면 지나간다', () => {
+      const claim = `${'가'.repeat(185)} 제 번호는 010-1234-5678 입니다`;
+      const cutClaim = Array.from(claim).slice(0, 200).join('');
+      // 준비: 앞 200자만 보면 번호가 반쯤 남아 검사에 걸리지 않는 글이다
+      expect(cutClaim.endsWith('010-1234')).toBe(true);
+      expect(redactContacts(cutClaim)).toBe(cutClaim);
+      expect(claims(claim)).toEqual([]);
+
+      // 조건 정보 값(40자)도 같다
+      const value = `${'가'.repeat(30)} 010-1234-5678`;
+      const cutValue = Array.from(value).slice(0, 40).join('');
+      expect(redactContacts(cutValue)).toBe(cutValue);
+      expect(facts(value)).toEqual([]);
+    });
+
+    it('자르는 자리에 걸친 민감 낱말도 같다', () => {
+      const claim = `${'가'.repeat(199)}교회에 간다`;
+      const cutClaim = Array.from(claim).slice(0, 200).join('');
+      expect(cutClaim.endsWith('가교')).toBe(true);
+      expect(maskSensitive(cutClaim).categories).toEqual([]);
+      expect(claims(claim)).toEqual([]);
     });
   });
 });
