@@ -4,3 +4,4 @@ export * from './face-verification.provider';
 export * from './photo-moderation.provider';
 export * from './push.provider';
 export * from './payment.provider';
+export * from './llm.provider';
