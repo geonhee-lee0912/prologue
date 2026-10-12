@@ -51,4 +51,54 @@ describe('OpenAiLlmService', () => {
     const error = await llm.complete({ purpose: 'reply', messages: [] }).catch((e: Error) => e);
     expect((error as Error).message).toBe(`LLM 호출 실패 (429): ${'x'.repeat(200)}`);
   });
+
+  describe('시간 제한', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    type FetchInit = { signal?: AbortSignal };
+
+    /** 중단 신호가 울릴 때만 끝나는 약속 — 진짜 fetch 처럼 신호의 사유로 거절한다 */
+    const neverUnlessAborted = (init: FetchInit) =>
+      new Promise<never>((_resolve, reject) => {
+        init.signal?.addEventListener('abort', () => reject(init.signal?.reason));
+      });
+
+    it('기본은 30초이고 세 번째 인자로 바꿀 수 있다', async () => {
+      const timeout = vi.spyOn(AbortSignal, 'timeout');
+      fetchMock.mockResolvedValue(ok({ choices: [{ message: { content: '응' } }], usage: {} }));
+
+      await new OpenAiLlmService('test-key', 'gpt-5.6-luna').complete({ purpose: 'reply', messages: [] });
+      expect(timeout).toHaveBeenLastCalledWith(30_000);
+      expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+
+      await new OpenAiLlmService('test-key', 'gpt-5.6-luna', 5_000).complete({ purpose: 'reply', messages: [] });
+      expect(timeout).toHaveBeenLastCalledWith(5_000);
+    });
+
+    it('응답이 오지 않으면 시간 초과로 거절한다 — 요청 내용은 메시지에 담지 않는다', async () => {
+      fetchMock.mockImplementation((_url: string, init: FetchInit) => neverUnlessAborted(init));
+      const llm = new OpenAiLlmService('test-key', 'gpt-5.6-luna', 20);
+      const error = await llm
+        .complete({ purpose: 'reply', userId: 'u1', messages: [{ role: 'user', content: '남에게 말 못 할 이야기' }] })
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toBe('LLM 호출 시간 초과 (20ms)');
+    });
+
+    it('헤더는 왔는데 본문이 오지 않아도 시간 초과로 거절한다', async () => {
+      fetchMock.mockImplementation(async (_url: string, init: FetchInit) => ({ ok: true, json: () => neverUnlessAborted(init) }));
+      const llm = new OpenAiLlmService('test-key', 'gpt-5.6-luna', 20);
+      const error = await llm.complete({ purpose: 'reply', messages: [] }).catch((e: unknown) => e);
+      expect((error as Error).message).toBe('LLM 호출 시간 초과 (20ms)');
+    });
+
+    it('시간 초과가 아닌 실패는 시간 초과로 바꾸지 않고 그대로 던진다', async () => {
+      fetchMock.mockRejectedValue(new TypeError('fetch failed'));
+      const llm = new OpenAiLlmService('test-key', 'gpt-5.6-luna');
+      const error = await llm.complete({ purpose: 'reply', messages: [] }).catch((e: unknown) => e);
+      expect((error as Error).message).toBe('fetch failed');
+    });
+  });
 });
