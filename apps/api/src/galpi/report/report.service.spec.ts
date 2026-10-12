@@ -107,4 +107,26 @@ describe('첫 리포트 (스펙 6장)', () => {
     expect(logged).not.toContain('걷는');
     expect(logged).not.toContain('지은');
   });
+
+  it('대화방 알림은 같은 시각에 놓이는 버튼 답 안내(now+1)보다 뒤에 놓인다 — 리포트는 now, 이모티콘 now+2, 안내 now+3', async () => {
+    const { db, reports } = await setup(['{name}, 들려준 이야기를 천천히 읽었어요.']);
+    await reports.generateFirst('u1', NOW);
+
+    const at = (ms: number) => new Date(NOW.getTime() + ms);
+    expect(db.selfReports[0].createdAt).toEqual(NOW);
+    expect(db.galpiMessages.map((m) => [m.kind, m.createdAt])).toEqual([
+      ['emoticon', at(2)],
+      ['text', at(3)],
+    ]);
+  });
+
+  it('이름이 없는 사용자의 편지는 앞 빈 줄 없이 시작하고, 이름이 있으면 문단 나눔까지 그대로다', async () => {
+    const { db, reports } = await setup([]);
+    db.addUser({ id: 'u2', displayName: null });
+    const body = '{name},\n\n들려준 이야기를 읽었어요.';
+    for (const userId of ['u1', 'u2']) await db.selfReport.create({ data: { userId, body, paid: false, createdAt: NOW } });
+
+    expect((await reports.latest('u2'))?.body).toBe('들려준 이야기를 읽었어요.');
+    expect((await reports.latest('u1'))?.body).toBe('지은 님,\n\n들려준 이야기를 읽었어요.');
+  });
 });

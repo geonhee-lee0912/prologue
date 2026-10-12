@@ -41,11 +41,12 @@ export class ReportService {
     const body = await this.write(userId, buildReportMessages(pages));
     await this.prisma.$transaction(async (tx) => {
       await tx.selfReport.create({ data: { userId, body, paid: false, createdAt: now } });
+      // 알림은 now+2·now+3 에 놓는다 — 같은 now 로 부르는 버튼 답이 갈피의 답을 now+1 에 놓으므로, 알림이 그 답 뒤에 온다
       await tx.galpiMessage.create({
-        data: { userId, sender: 'galpi', kind: 'emoticon', content: 'proud', expression: 'proud', createdAt: new Date(now.getTime() + 1) },
+        data: { userId, sender: 'galpi', kind: 'emoticon', content: 'proud', expression: 'proud', createdAt: new Date(now.getTime() + 2) },
       });
       await tx.galpiMessage.create({
-        data: { userId, sender: 'galpi', kind: 'text', content: GALPI_COPY.firstReportDelivered, createdAt: new Date(now.getTime() + 2) },
+        data: { userId, sender: 'galpi', kind: 'text', content: GALPI_COPY.firstReportDelivered, createdAt: new Date(now.getTime() + 3) },
       });
     });
     this.logger.log(`first report written user=${userId}`);
@@ -59,7 +60,8 @@ export class ReportService {
     if (!report) return null;
     return {
       id: report.id,
-      body: renderName(report.body, user?.profile?.displayName ?? null, 'letter'),
+      // 이름이 없으면 "{name}," 만 지워져 뒤의 줄바꿈이 남는다 — 편지는 앞 빈 줄 없이 시작한다
+      body: renderName(report.body, user?.profile?.displayName ?? null, 'letter').trimStart(),
       aiNotice: AI_LETTER_NOTICE,
       createdAt: report.createdAt.toISOString(),
     };
