@@ -55,12 +55,42 @@ export const POLICY = {
     expiresAt: 'midnight',
   } as const,
 
-  /** 갈피 — 앱 IA 3.11, 갈피 문서 3.6 */
+  /** 갈피 — 앱 IA 3.11, 갈피 문서 3.6, AI 엔진 문서 5·7장 */
   galpi: {
-    /** 갈피가 먼저 거는 알림 (잠정). 나중에 고도화 */
+    /** 갈피가 먼저 거는 말 — 하루 한 번 이하 */
     proactiveMessagesPerDay: 1,
     /** 오랜만에 왔다고 보는 기준 (일) */
     welcomeBackAfterDays: 3,
+    /** 먼저 말 걸지 않는 시간 — 한국 시간 21시부터 다음 날 8시 전까지 */
+    quietHours: { startHour: 21, endHour: 8 },
+    /** 답 없는 먼저 말 걸기가 이만큼 이어지면 사용자가 돌아올 때까지 멈춘다 */
+    maxUnansweredProactive: 2,
+    /** 사용자가 이 시간 안에 말했으면 먼저 말 걸지 않는다 (시간) */
+    quietAfterUserMessageHours: 6,
+    /** 안전 안내 뒤 이 시간 동안은 먼저 말 걸지 않는다 (시간) */
+    quietAfterSafetyHours: 24,
+    /** 먼저 말 거는 시각을 정할 대화 기록이 없을 때 (한국 시간, 시) */
+    defaultProactiveHour: 20,
+    /** 사용자 말 한 번의 최대 글자 수 */
+    maxUserMessageLength: 1000,
+    /** 프롬프트에 넣는 최근 대화 수 */
+    historyWindow: 20,
+    /** 첫 리포트를 건넨 뒤 이만큼 지나 다시 말하면 "다음 대화"로 보고 말 놓기를 꺼낸다 (분) */
+    casualOfferDelayMinutes: 60,
+    /** "소개할 만큼 알게 됨" (스펙 5.4). 턴 수 바닥은 interview.minTurns */
+    known: {
+      minClaimsPerVisiblePage: 2,
+      requiredPracticalFacts: ['smoking', 'marriage_intent'],
+    },
+    /** 서고 수집 (스펙 3.5) */
+    ingest: {
+      /** 알아가는 동안 사용자 답이 이만큼 쌓이면 바로 수집한다 */
+      userTurnsPerChunk: 4,
+      /** 대화가 이만큼 멈추면 수집한다 (분) */
+      idleMinutes: 10,
+      /** 장 하나에 담는 문장 수 */
+      maxClaimsPerPage: 15,
+    },
   } as const,
 
   /** 친구 탭 소식 — 앱 IA 3.3. 다른 사용자는 소식에 나오지 않는다 */
