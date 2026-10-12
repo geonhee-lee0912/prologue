@@ -6,6 +6,7 @@ import {
   isPracticalFact,
   isVisibleWikiPage,
   PRACTICAL_FACTS,
+  type QuickReplySpec,
   quickReplyOptions,
   VISIBLE_WIKI_PAGES,
   WIKI_PAGE_TITLES,
@@ -53,6 +54,21 @@ describe('버튼', () => {
   it('칸이 없거나 맞지 않는 실용 정보 버튼은 선택지가 없다', () => {
     expect(quickReplyOptions({ type: 'practical' })).toEqual([]);
     expect(quickReplyOptions({ type: 'practical', fact: 'company' })).toEqual([]);
+  });
+
+  it('돌려준 선택지를 바꿔도 다음 호출에는 영향이 없다', () => {
+    const specs: QuickReplySpec[] = [
+      { type: 'condition_permission', fact: 'company' },
+      { type: 'speech_level' },
+      ...PRACTICAL_FACTS.map((fact): QuickReplySpec => ({ type: 'practical', fact })),
+    ];
+    for (const spec of specs) {
+      const before = JSON.parse(JSON.stringify(quickReplyOptions(spec)));
+      const returned = quickReplyOptions(spec);
+      returned[0].label = '바꿔 버렸다';
+      returned.pop();
+      expect(quickReplyOptions(spec)).toEqual(before);
+    }
   });
 });
 

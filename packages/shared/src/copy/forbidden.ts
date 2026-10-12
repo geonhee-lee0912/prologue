@@ -40,6 +40,28 @@ export const FORBIDDEN_EXPRESSIONS: readonly string[] = [
   '소장',
 ];
 
+/** CLAUDE.md 9.1 이 막는 것은 사람을 상품처럼 다루는 말과 결과를 약속하는 말이지, 이 평범한 낱말들이 아니다 — 검사 전에 지운다. */
+export const FORBIDDEN_ALLOWED_COMPOUNDS: readonly string[] = [
+  // 대출
+  '전세대출',
+  '주택담보대출',
+  '신용대출',
+  '학자금 대출',
+  '학자금대출',
+  '대출금',
+  '대출 이자',
+  // 완벽
+  '완벽주의',
+  // 보장
+  '보장성',
+  '사회보장',
+  // 소장
+  '소장님',
+  '연구소장',
+];
+
 export function findForbidden(text: string): string[] {
-  return FORBIDDEN_EXPRESSIONS.filter((word) => text.includes(word));
+  // 지운 자리는 공백으로 메운다 — 양옆 글자가 이어 붙어 없던 금지 표현이 생기지 않게
+  const scanned = FORBIDDEN_ALLOWED_COMPOUNDS.reduce((rest, compound) => rest.split(compound).join(' '), text);
+  return FORBIDDEN_EXPRESSIONS.filter((word) => scanned.includes(word));
 }

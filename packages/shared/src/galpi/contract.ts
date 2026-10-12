@@ -98,7 +98,10 @@ export function quickReplyOptions(spec: QuickReplySpec): QuickReplyOption[] {
         { key: 'keep', label: '지금이 좋아요' },
       ];
     case 'practical':
-      return spec.fact && isPracticalFact(spec.fact) ? PRACTICAL_OPTIONS[spec.fact] : [];
+      // 표를 그대로 내주면 받은 쪽이 고칠 때 다음 호출에도 번진다 — 다른 갈래처럼 매번 새로 만든다
+      return spec.fact && isPracticalFact(spec.fact)
+        ? PRACTICAL_OPTIONS[spec.fact].map((option) => ({ ...option }))
+        : [];
   }
 }
 
