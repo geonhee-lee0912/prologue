@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
@@ -9,6 +10,7 @@ import { ContactExchangesModule } from './contact-exchanges/contact-exchanges.mo
 import { AllExceptionsFilter } from './common/exceptions/all-exceptions.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { LoggerModule } from './common/logger/logger.module';
+import { GalpiModule } from './galpi/galpi.module';
 import { HealthModule } from './health/health.module';
 import { InfraModule } from './infra/infra.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
@@ -25,6 +27,7 @@ import { VerificationModule } from './verification/verification.module';
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     LoggerModule,
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
+    ScheduleModule.forRoot(),
     PrismaModule,
     SupabaseModule,
     InfraModule,
@@ -37,6 +40,7 @@ import { VerificationModule } from './verification/verification.module';
     OnboardingModule,
     ContactExchangesModule,
     SafetyModule,
+    GalpiModule,
     AdminModule,
   ],
   providers: [
