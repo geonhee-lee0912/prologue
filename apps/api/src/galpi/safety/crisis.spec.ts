@@ -13,6 +13,15 @@ describe('위기 신호 — 낱말 규칙 (갈피 문서 3.6 ③)', () => {
     expect(detectCrisis('인생 정리 다 끝내고 싶어')).toBe('self_harm');
   });
 
+  it('때를 말하는 표현은 장소 예외에서 빼지 않는다 — 요즘엔 살고 싶지 않아요', () => {
+    expect(detectCrisis('요즘엔 살고 싶지 않아요')).toBe('self_harm');
+    expect(detectCrisis('요즘에는 살고 싶지 않아요')).toBe('self_harm');
+    expect(detectCrisis('요즘에 살고 싶지 않아요')).toBe('self_harm');
+    expect(detectCrisis('아침엔 살고 싶지 않아요')).toBe('self_harm');
+    expect(detectCrisis('밤에는 살고 싶지 않다는 생각이 들어요')).toBe('self_harm');
+    expect(detectCrisis('최근에는 살고 싶지 않아졌어요')).toBe('self_harm');
+  });
+
   it('폭력·스토킹 신호', () => {
     expect(detectCrisis('전 남친한테 협박 문자가 와요')).toBe('danger');
     expect(detectCrisis('누가 스토킹하는 것 같아요')).toBe('danger');
@@ -34,6 +43,8 @@ describe('위기 신호 — 낱말 규칙 (갈피 문서 3.6 ③)', () => {
       '오늘 일 다 끝내고 싶어요',
       '과제를 다 끝내고 싶어',
       '몰래 찍은 사진이 예쁘게 나왔어요',
+      '이 땅에서 살고 싶지 않아요',
+      '신세계에서 살고 싶지 않아요',
     ]) {
       expect(detectCrisis(text)).toBe('none');
     }
