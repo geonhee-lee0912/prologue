@@ -12,6 +12,9 @@ import { buildIngestMessages } from './ingest.prompt';
 /** 한 번에 정리하는 메시지 수. 넘치면 다음 수집이 이어서 한다 */
 const BATCH_LIMIT = 40;
 
+/** 묶음 바로 앞에서 참고로 함께 보내는 대화 줄 수 — 새 대화가 무엇에 대한 답인지 알게 한다 */
+const CONTEXT_LIMIT = 2;
+
 /**
  * 서고 수집 — 대화가 한 덩이 끝날 때 돈다 (AI 엔진 문서 3.5)
  * 말이 LLM(국외)으로 가므로 갈피와 이야기할 수 있는 사람만 정리한다 — 동의를 철회했거나 정지·탈퇴한 사람은 건너뛴다 (CLAUDE.md 10.2c)
@@ -87,7 +90,7 @@ export class IngestService {
     if (claimed.count === 0) return false;
 
     try {
-      await this.ingestBatch(userId, batch, userMessages);
+      await this.ingestBatch(userId, batch, userMessages, state.lastIngestAt);
     } catch (error) {
       await this.prisma.galpiState.updateMany({ where: { userId, lastIngestAt: batchEnd }, data: { lastIngestAt: state.lastIngestAt } });
       this.logger.warn(`ingest failed user=${userId}`);
@@ -116,19 +119,36 @@ export class IngestService {
     }
   }
 
-  private async ingestBatch(userId: string, batch: GalpiMessage[], userMessages: GalpiMessage[]): Promise<void> {
-    const [claims, facts, user] = await Promise.all([
+  /**
+   * 이 묶음 바로 앞의 대화 몇 줄 — 앞 묶음이 갈피의 질문으로 끝났다면, 나중에 한 대답을 이해하게 그 질문을 따라 보낸다.
+   * 앞 묶음의 끝(그때의 lastIngestAt)까지의 글로 나눈 말만, 건너뛴 말·이모티콘·안전 안내는 뺀다. 오래된 것부터 돌려준다.
+   * 처음 정리하는 사람(앞 묶음이 없다)은 없다
+   */
+  private async loadContext(userId: string, previousEnd: Date | null): Promise<GalpiMessage[]> {
+    if (!previousEnd) return [];
+    const recent = await this.prisma.galpiMessage.findMany({
+      where: { userId, kind: 'text', safety: false, skipped: false, createdAt: { lte: previousEnd } },
+      orderBy: { createdAt: 'desc' },
+      take: CONTEXT_LIMIT,
+    });
+    return recent.reverse();
+  }
+
+  private async ingestBatch(userId: string, batch: GalpiMessage[], userMessages: GalpiMessage[], previousEnd: Date | null): Promise<void> {
+    const [claims, facts, user, before] = await Promise.all([
       this.prisma.wikiClaim.findMany({ where: { userId }, orderBy: { createdAt: 'asc' }, select: { id: true, page: true, text: true } }),
       this.prisma.profileFact.findMany({ where: { userId }, select: { key: true, value: true } }),
       this.prisma.user.findUnique({ where: { id: userId }, select: { profile: { select: { displayName: true } } } }),
+      this.loadContext(userId, previousEnd),
     ]);
     const name = user?.profile?.displayName ?? null;
+    // 사용자 말은 가명처리해서 보낸다. 갈피 말은 저장된 그대로({name} 자리표시자)
+    const text = (m: GalpiMessage) => (m.sender === 'user' ? pseudonymize(m.content, { name }) : m.content);
     const messages = buildIngestMessages({
       claims: claims.map((c) => ({ id: c.id, page: c.page, text: c.text })),
       facts: facts.map((f) => ({ key: f.key, value: f.value })),
-      batch: batch
-        .filter((m) => !m.skipped)
-        .map((m) => ({ id: m.id, sender: m.sender, text: m.sender === 'user' ? pseudonymize(m.content, { name }) : m.content })),
+      context: before.map((m) => ({ sender: m.sender, text: text(m) })),
+      batch: batch.filter((m) => !m.skipped).map((m) => ({ id: m.id, sender: m.sender, text: text(m) })),
     });
     const result = await this.llm.complete({ purpose: 'ingest', userId, messages, responseFormat: 'json', maxOutputTokens: 1200 });
     const ops = parseIngest(result.content, {

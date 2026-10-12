@@ -17,8 +17,10 @@ export const INGEST_SYSTEM_PROMPT = [
   '',
   '[쓰는 법]',
   '- 문장 하나에 사실 하나. 해석해서 짧게 쓴다 (예: "퇴근 뒤에는 혼자 걸으며 하루를 정리하는 편이다").',
+  '- 사용자를 가리킬 때 이름이나 [이름] 을 쓰지 않고 주어 없이 쓴다.',
   '- 사용자가 한 말에서만 쓴다. 갈피가 한 말은 근거가 아니다. 지어내지 않는다.',
   '- sources 에는 근거가 된 사용자 말의 id 만 쓴다. [새 대화]의 [id] 를 그대로 쓴다.',
+  '- [바로 앞 대화]가 있으면 [새 대화]를 이해하는 참고일 뿐이다. 이미 정리한 말이라 거기서 문장을 새로 쓰거나 sources 로 대지 않는다.',
   '- 이미 있는 문장과 겹치면 add 대신 update 로 고친다. 이제 맞지 않는 문장은 시간 순으로 고치거나("예전엔 자주 걸었는데 요즘은 바빠서 못 걷는다") remove 한다.',
   `- 장 하나에 문장은 ${POLICY.galpi.ingest.maxClaimsPerPage}개까지. 넘치면 비슷한 문장을 합친다.`,
   '- 쓰지 않는 것: 민감정보(종교 등 사상·신념, 노동조합·정당, 정치적 견해, 건강, 성생활, 유전·범죄경력·생체·인종·민족), [민감정보:…]로 가려진 내용, 다른 사람을 알아볼 수 있는 이름과 연락처.',
@@ -32,20 +34,35 @@ export const INGEST_SYSTEM_PROMPT = [
 export interface IngestPromptInput {
   claims: { id: string; page: string; text: string }[];
   facts: { key: string; value: string | null }[];
+  /**
+   * 이 묶음 바로 앞의 대화 몇 줄 (오래된 것부터, 가명처리를 마친 것) — 새 대화가 무엇에 대한 답인지 알게 하는 참고다.
+   * id 가 없어 근거로 댈 수 없다. 처음 정리하는 사람은 없고, 없으면 이 장을 넣지 않는다
+   */
+  context?: { sender: 'galpi' | 'user'; text: string }[];
   /** 가명처리를 마친 새 대화 (오래된 것부터) */
   batch: { id: string; sender: 'galpi' | 'user'; text: string }[];
 }
 
+function speaker(sender: 'galpi' | 'user'): string {
+  return sender === 'user' ? '나' : '갈피';
+}
+
 export function formatBatchLine(id: string, sender: 'galpi' | 'user', text: string): string {
-  return `[${id}] ${sender === 'user' ? '나' : '갈피'}: ${text}`;
+  return `[${id}] ${speaker(sender)}: ${text}`;
+}
+
+/** 바로 앞 대화의 한 줄 — [id] 가 없다 */
+export function formatContextLine(sender: 'galpi' | 'user', text: string): string {
+  return `${speaker(sender)}: ${text}`;
 }
 
 export function buildIngestMessages(input: IngestPromptInput): LlmMessage[] {
   const claims = input.claims.length ? input.claims.map((c) => `- (${c.id}) [${c.page}] ${c.text}`).join('\n') : '(없음)';
   const facts = input.facts.length ? input.facts.map((f) => `- ${f.key}: ${f.value ?? '(모름)'}`).join('\n') : '(없음)';
+  const context = input.context?.length ? `[바로 앞 대화]\n${input.context.map((m) => formatContextLine(m.sender, m.text)).join('\n')}\n\n` : '';
   const batch = input.batch.map((m) => formatBatchLine(m.id, m.sender, m.text)).join('\n');
   return [
     { role: 'system', content: INGEST_SYSTEM_PROMPT },
-    { role: 'user', content: `[지금 서고]\n${claims}\n\n[알고 있는 조건 정보]\n${facts}\n\n[새 대화]\n${batch}` },
+    { role: 'user', content: `[지금 서고]\n${claims}\n\n[알고 있는 조건 정보]\n${facts}\n\n${context}[새 대화]\n${batch}` },
   ];
 }

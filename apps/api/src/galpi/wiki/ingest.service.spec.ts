@@ -98,6 +98,94 @@ describe('서고 수집 실행', () => {
     expect(db.galpiStates[0].lastIngestAt).toEqual(T(2));
   });
 
+  it('서고에는 [이름] 을 벗긴 문장이 남는다 — 문장도 조건 정보 값도', async () => {
+    const llm = new MockLlmProvider({
+      responses: [
+        JSON.stringify({
+          claims: [
+            { op: 'add', page: 'now', text: '[이름]은 퇴근 뒤에 걷는다', sources: [userMessageId] },
+            { op: 'add', page: 'people', text: '[이름]이라고 불리는 걸 좋아한다', sources: [userMessageId] },
+          ],
+          facts: [{ key: 'housing', value: '[이름]의 전세 아파트' }],
+        }),
+      ],
+    });
+    await service(llm).runForUser('u1', T(30));
+    // 말이 깨지는 둘째 문장은 남기지 않는다
+    expect(db.wikiClaims.map((c) => c.text)).toEqual(['퇴근 뒤에 걷는다']);
+    expect(db.profileFacts[0]).toMatchObject({ key: 'housing', value: '전세 아파트' });
+    expect(JSON.stringify([db.wikiClaims, db.profileFacts])).not.toContain('[이름]');
+  });
+
+  describe('바로 앞 대화 (묶음 사이의 흐름)', () => {
+    it('처음 정리할 때는 앞 대화가 없고, 다음 수집부터 앞 묶음의 끝이 따라간다', async () => {
+      const llm = new MockLlmProvider({ respond: () => EMPTY });
+      const svc = service(llm);
+      await svc.runForUser('u1', T(30));
+      expect(llm.calls[0].messages[1].content).not.toContain('[바로 앞 대화]');
+
+      await db.galpiMessage.create({ data: { userId: 'u1', sender: 'user', content: '아침에도 걸어요', createdAt: T(40) } });
+      await svc.runForUser('u1', T(50));
+      // 첫 묶음은 T(2) 에서 끝났다 — 건너뛴 말(T(2))은 빠지고 그 앞 두 줄이 따라간다
+      expect(llm.calls[1].messages[1].content).toContain('[바로 앞 대화]\n갈피: 요즘 퇴근하고 뭐 해요?\n나: 저는 [이름]이고 퇴근하고 걸어요\n\n[새 대화]\n');
+    });
+
+    it('앞 묶음이 갈피의 질문으로 끝났으면 그 질문이 따라간다 — 나중에 한 대답을 이해하게', async () => {
+      await db.galpiMessage.create({ data: { userId: 'u1', sender: 'galpi', content: '그럼 주말에는 뭐 해요?', createdAt: T(3) } });
+      db.galpiStates[0].lastIngestAt = T(3); // 앞 묶음은 이 질문에서 끝났다
+      const answer = await db.galpiMessage.create({ data: { userId: 'u1', sender: 'user', content: '주말에는 산에 가요', createdAt: T(40) } });
+      const llm = new MockLlmProvider({ respond: () => EMPTY });
+      await service(llm).runForUser('u1', T(50));
+      expect(llm.calls[0].messages[1].content).toContain(
+        `[바로 앞 대화]\n나: 저는 [이름]이고 퇴근하고 걸어요\n갈피: 그럼 주말에는 뭐 해요?\n\n[새 대화]\n[${answer.id}] 나: 주말에는 산에 가요`,
+      );
+    });
+
+    it('앞 대화에도 다른 사람의 말은 들어가지 않는다', async () => {
+      db.addUser({ id: 'u2', displayName: '민수' });
+      await db.galpiState.create({ data: { userId: 'u2', lastUserMessageAt: T(2) } });
+      await db.galpiMessage.create({ data: { userId: 'u2', sender: 'galpi', content: '남의 질문: 새벽엔 뭐 해요?', createdAt: T(-1) } });
+      await db.galpiMessage.create({ data: { userId: 'u2', sender: 'user', content: '남의 대답: 한강을 달려요', createdAt: T(0) } });
+      db.galpiStates[0].lastIngestAt = T(0);
+      const llm = new MockLlmProvider({ respond: () => EMPTY });
+      await service(llm).runForUser('u1', T(30));
+      const prompt = llm.calls[0].messages[1].content;
+      // u1 의 앞 대화는 자기 질문 하나뿐이다
+      expect(prompt).toContain('[바로 앞 대화]\n갈피: 요즘 퇴근하고 뭐 해요?\n\n[새 대화]\n');
+      for (const others of ['남의 질문', '남의 대답', '한강', '민수']) expect(prompt).not.toContain(others);
+    });
+
+    it('가장 가까운 두 줄만, 글로 나눈 것만 — 건너뛴 말·이모티콘·안전 안내는 빠지고 가명처리하며, 근거로는 댈 수 없다', async () => {
+      const line = (data: Record<string, unknown>) => db.galpiMessage.create({ data: { userId: 'u1', ...data } });
+      await line({ sender: 'galpi', content: '오래전 질문이에요', createdAt: T(-8) });
+      const contextUser = await line({ sender: 'user', content: '지은이라고 불러 주세요', createdAt: T(-6) });
+      await line({ sender: 'user', content: '다른 얘기 할래요', skipped: true, createdAt: T(-4) });
+      await line({ sender: 'galpi', kind: 'emoticon', content: 'proud', expression: 'proud', createdAt: T(-3) });
+      await line({ sender: 'galpi', content: '많이 힘들 때 도움받을 곳을 알려 드릴게요', safety: true, createdAt: T(-2) });
+      db.galpiStates[0].lastIngestAt = T(0);
+      const llm = new MockLlmProvider({
+        responses: [
+          JSON.stringify({
+            claims: [
+              { op: 'add', page: 'now', text: '앞 대화를 근거로 댔다', sources: [contextUser.id] },
+              { op: 'add', page: 'now', text: '새 말이 근거다', sources: [contextUser.id, userMessageId] },
+            ],
+            facts: [],
+          }),
+        ],
+      });
+      await service(llm).runForUser('u1', T(30));
+
+      const prompt = llm.calls[0].messages[1].content;
+      // 앞 대화는 가까운 두 줄(오래된 것부터)이고, 새 대화는 그 뒤의 것이다 — 겹치지 않는다
+      expect(prompt).toContain(`[바로 앞 대화]\n나: [이름]이라고 불러 주세요\n갈피: 요즘 퇴근하고 뭐 해요?\n\n[새 대화]\n[${userMessageId}] 나: 저는 [이름]이고 퇴근하고 걸어요`);
+      for (const left of ['오래전 질문', '다른 얘기', 'proud', '도움받을 곳', '지은', contextUser.id]) expect(prompt).not.toContain(left);
+      // 앞 대화의 말은 id 가 없어 근거가 될 수 없다 — 지어서 대도 버린다
+      expect(db.wikiClaims.map((c) => c.text)).toEqual(['새 말이 근거다']);
+      expect(db.wikiClaimSources).toEqual([{ claimId: db.wikiClaims[0].id, messageId: userMessageId }]);
+    });
+  });
+
   it('새 사용자 말이 없으면 LLM 을 부르지 않는다', async () => {
     const llm = new MockLlmProvider({ responses: [addReply(), addReply()] });
     await service(llm).runForUser('u1', T(30));

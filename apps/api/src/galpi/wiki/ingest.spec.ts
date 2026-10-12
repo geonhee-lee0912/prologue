@@ -233,4 +233,87 @@ describe('서고 수집 결과 검증', () => {
     );
     expect(crooked).toEqual(NOTHING);
   });
+
+  // 가명처리가 사용자의 이름 자리에 넣은 [이름] 은 서고에 남기지 않는다 — 서고 문장은 사용자에게 그대로 보이고 리포트의 재료가 된다
+  describe('이름 자리표시자 [이름]', () => {
+    const addText = (text: string) => parseIngest(json({ claims: [{ op: 'add', page: 'now', text, sources: ['m1'] }] }), ctx()).adds.map((a) => a.text);
+
+    it('"[이름]은 …" 꼴 — 자리표시자와 조사를 빼고 주어 없이 남긴다', () => {
+      expect(addText('[이름]은 퇴근 뒤에 걷는다')).toEqual(['퇴근 뒤에 걷는다']);
+    });
+
+    it('"[이름]의 …" 꼴', () => {
+      expect(addText('[이름]의 친구들은 차분하다고 한다')).toEqual(['친구들은 차분하다고 한다']);
+    });
+
+    it.each([
+      ['[이름]는 혼자 걷는 편이다', '혼자 걷는 편이다'],
+      ['[이름]이 걷기를 좋아한다', '걷기를 좋아한다'],
+      ['[이름]가 걷기를 좋아한다', '걷기를 좋아한다'],
+      ['[이름]을 편하게 부르길 원한다', '편하게 부르길 원한다'],
+      ['[이름]를 편하게 부르길 원한다', '편하게 부르길 원한다'],
+      ['[이름]에게 가족은 중요하다', '가족은 중요하다'],
+      ['[이름]도 비슷하게 생각한다', '비슷하게 생각한다'],
+    ])('조사 %s', (text, expected) => {
+      expect(addText(text)).toEqual([expected]);
+    });
+
+    it('문장 가운데에 있어도 빼고, 남은 띄어쓰기를 다듬는다', () => {
+      expect(addText('친구들은 [이름]을 믿음직하다고 본다')).toEqual(['친구들은 믿음직하다고 본다']);
+      expect(addText('[이름]은 [이름]의 친구와 자주 지낸다')).toEqual(['친구와 자주 지낸다']);
+      expect(addText('  [이름]은   퇴근 뒤에   걷는다  ')).toEqual(['퇴근 뒤에 걷는다']);
+      // 앞 말에 붙어 있어도 낱말이 달라붙지 않는다
+      expect(addText('친구들은[이름]을 믿음직하다고 본다')).toEqual(['친구들은 믿음직하다고 본다']);
+    });
+
+    it('벗기고 나면 아무것도 남지 않는 문장은 버린다', () => {
+      for (const text of ['[이름]', '[이름]은', '  [이름]이  ', '[이름] [이름]도']) expect(addText(text)).toEqual([]);
+    });
+
+    it('자리표시자 바로 뒤에 다른 말이 붙어 벗겨도 말이 깨지는 문장은 버린다 — 남기지 않는다', () => {
+      // "[이름]이라고" 의 "이" 는 조사가 아니라 이라고 의 일부다. 벗기면 "라고 불리는 …" 이 남는다
+      for (const text of ['[이름]이라고 불리는 걸 좋아한다', '[이름]처럼 걷는 사람이 좋다', '[이름]와 친구들은 차분하다', '[이름]이다']) expect(addText(text)).toEqual([]);
+    });
+
+    it('자리표시자가 없는 글은 건드리지 않는다', () => {
+      expect(addText('친구들이 이름을 자주 부른다')).toEqual(['친구들이 이름을 자주 부른다']);
+      expect(addText('은행에 다니고 도서관에 자주 간다')).toEqual(['은행에 다니고 도서관에 자주 간다']);
+    });
+
+    it('벗긴 문장에도 같은 검사를 한다 — 길이는 벗긴 뒤의 글로 센다', () => {
+      expect(addText('[이름]은 주말마다 교회에 간다')).toEqual([]);
+      expect(addText(`[이름]은 ${'가'.repeat(200)}`)).toEqual(['가'.repeat(200)]);
+    });
+
+    it('고치는 문장도 같다 — 벗기고 나서 비면 고치지 않고 기존 문장을 그대로 둔다', () => {
+      const ops = parseIngest(
+        json({
+          claims: [
+            { op: 'update', id: 'c1', text: '[이름]은 요즘 바빠서 덜 걷는다', sources: ['m1'] },
+            { op: 'update', id: 'c1', text: '[이름]은', sources: ['m2'] },
+          ],
+        }),
+        ctx(),
+      );
+      expect(ops.updates).toEqual([{ id: 'c1', text: '요즘 바빠서 덜 걷는다', sources: ['m1'] }]);
+    });
+
+    it('조건 정보 값도 같다 — 벗기고 나서 비거나 말이 깨지면 버린다', () => {
+      const ops = parseIngest(
+        json({
+          facts: [
+            { key: 'housing', value: '[이름]의 전세 아파트' },
+            { key: 'company', value: '[이름]' },
+            { key: 'school', value: '[이름]고등학교' },
+            { key: 'income_band', value: '5천만원대' },
+          ],
+        }),
+        ctx(),
+      );
+      expect(ops.facts).toEqual([
+        { key: 'housing', value: '전세 아파트' },
+        { key: 'income_band', value: '5천만원대' },
+      ]);
+    });
+  });
 });
