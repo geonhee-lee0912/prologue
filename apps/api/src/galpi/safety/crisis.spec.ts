@@ -22,6 +22,16 @@ describe('위기 신호 — 낱말 규칙 (갈피 문서 3.6 ③)', () => {
     expect(detectCrisis('최근에는 살고 싶지 않아졌어요')).toBe('self_harm');
   });
 
+  it('살고 싶지 않다는 말은 때·사람·상황 뒤에서도 자해 신호다', () => {
+    expect(detectCrisis('너 때문에 살고 싶지 않아')).toBe('self_harm');
+    expect(detectCrisis('직장 때문에 살고 싶지 않아요')).toBe('self_harm');
+    expect(detectCrisis('외로움에 살고 싶지 않아졌어요')).toBe('self_harm');
+    expect(detectCrisis('이런 상황에선 살고 싶지 않아요')).toBe('self_harm');
+    expect(detectCrisis('오늘엔 살고 싶지 않아요')).toBe('self_harm');
+    expect(detectCrisis('헤어진 후에는 살고 싶지 않아요')).toBe('self_harm');
+    expect(detectCrisis('그 일 이후엔 살고 싶지 않아요')).toBe('self_harm');
+  });
+
   it('폭력·스토킹 신호', () => {
     expect(detectCrisis('전 남친한테 협박 문자가 와요')).toBe('danger');
     expect(detectCrisis('누가 스토킹하는 것 같아요')).toBe('danger');
@@ -45,6 +55,11 @@ describe('위기 신호 — 낱말 규칙 (갈피 문서 3.6 ③)', () => {
       '몰래 찍은 사진이 예쁘게 나왔어요',
       '이 땅에서 살고 싶지 않아요',
       '신세계에서 살고 싶지 않아요',
+      '시골에도 살고 싶지 않아요',
+      '시골은 살고 싶지 않아요',
+      '이 동네엔 살고 싶지 않아요',
+      '여기서 살고 싶지 않아',
+      '여기 살고 싶지 않아',
     ]) {
       expect(detectCrisis(text)).toBe('none');
     }
