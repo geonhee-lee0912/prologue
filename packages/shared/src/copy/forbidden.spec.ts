@@ -33,6 +33,13 @@ describe('일상 복합어 허용 목록', () => {
     expect(findForbidden('연구소장님이세요')).toEqual([]);
   });
 
+  it('띄어 쓴 대출 복합어도 걸리지 않는다', () => {
+    expect(findForbidden('전세 대출 갚는 중이에요')).toEqual([]);
+    expect(findForbidden('신용 대출 이자가 올랐어요')).toEqual([]);
+    expect(findForbidden('주택담보 대출이 좀 남았어요')).toEqual([]);
+    expect(findForbidden('주택 담보 대출 받았어요')).toEqual([]);
+  });
+
   it('같은 문장에 진짜 금지된 쓰임이 있으면 그쪽은 걸린다', () => {
     expect(findForbidden('전세대출 얘기 말고, 사람을 대출하듯')).toEqual(['대출']);
     expect(findForbidden('사회보장 말고, 만남을 보장해요')).toEqual(['보장']);

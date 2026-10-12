@@ -44,8 +44,12 @@ export const FORBIDDEN_EXPRESSIONS: readonly string[] = [
 export const FORBIDDEN_ALLOWED_COMPOUNDS: readonly string[] = [
   // 대출
   '전세대출',
+  '전세 대출',
   '주택담보대출',
+  '주택담보 대출',
+  '주택 담보 대출',
   '신용대출',
+  '신용 대출',
   '학자금 대출',
   '학자금대출',
   '대출금',
