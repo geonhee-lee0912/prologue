@@ -19,7 +19,7 @@ import { type GalpiLine, loadRenderContext, saveGalpiLine, stripUnstorableChars,
 import { buildReplyMessages, type ReplyPromptInput } from './prompt/reply-prompt';
 import type { ParsedReply } from './reply';
 import { completeReply, loadReplyInput } from './reply-llm';
-import { detectCrisis, safetyMessage } from './safety/crisis';
+import { type CrisisKind, detectCrisis, safetyMessage } from './safety/crisis';
 import { truncateCodePoints } from './text';
 import { IngestService } from './wiki/ingest.service';
 import { WikiService, type WikiSnapshot } from './wiki/wiki.service';
@@ -28,12 +28,17 @@ import { WikiService, type WikiSnapshot } from './wiki/wiki.service';
 const HISTORY_PAGE_DEFAULT = 50;
 const HISTORY_PAGE_MAX = 100;
 
-/** LLM 이 실패하거나 읽을 수 없는 답을 두 번 냈을 때 (리뷰 1) */
-const FALLBACK_REPLY: ParsedReply = {
-  bubbles: [{ text: GALPI_COPY.fallback, expression: 'thinking' }],
-  quickReply: null,
-  signals: { userUsedCasual: false, crisis: 'none' },
-};
+/**
+ * LLM 이 실패하거나 쓸 수 없는 답을 두 번 냈을 때의 대체 답 (리뷰 1).
+ * 버려진 답이 알린 위기 신호(crisis)는 그대로 실어, 대체 문장 뒤에도 안전 안내가 붙게 한다
+ */
+function fallbackReply(crisis: CrisisKind): ParsedReply {
+  return {
+    bubbles: [{ text: GALPI_COPY.fallback, expression: 'thinking' }],
+    quickReply: null,
+    signals: { userUsedCasual: false, crisis },
+  };
+}
 
 /** 갈피와 말 주고받기 — 첫 만남, 알아가기, 매일 대화 (AI 엔진 문서 5장) */
 @Injectable()
@@ -179,9 +184,9 @@ export class ConversationService {
     flags: ReplyPromptInput['flags'],
   ): Promise<ParsedReply> {
     const { input, snapshot } = await loadReplyInput({ prisma: this.prisma, wiki: this.wiki }, userId, state, displayName, flags);
-    const parsed = await completeReply(this.llm, { userId, purpose: 'reply', messages: buildReplyMessages(input) });
-    if (!parsed) return FALLBACK_REPLY;
-    return { ...parsed, quickReply: validQuickReply(parsed.quickReply, snapshot) };
+    const { reply, crisis } = await completeReply(this.llm, { userId, purpose: 'reply', messages: buildReplyMessages(input) });
+    if (!reply) return fallbackReply(crisis);
+    return { ...reply, quickReply: validQuickReply(reply.quickReply, snapshot) };
   }
 }
 
