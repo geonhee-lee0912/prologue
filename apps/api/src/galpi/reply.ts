@@ -1,5 +1,6 @@
 import { GALPI_EXPRESSIONS, type GalpiExpression, isConditionFact, isPracticalFact, type QuickReplySpec } from '@prologue/shared';
 import type { CrisisKind } from './safety/crisis';
+import { truncateCodePoints } from './text';
 
 export interface ReplyBubble {
   text: string;
@@ -51,7 +52,7 @@ function toBubble(value: unknown): ReplyBubble | null {
   const { text, expression } = value as Record<string, unknown>;
   if (typeof text !== 'string' || !text.trim()) return null;
   const known = typeof expression === 'string' && (GALPI_EXPRESSIONS as readonly string[]).includes(expression);
-  return { text: Array.from(text.trim()).slice(0, MAX_BUBBLE_LENGTH).join(''), expression: known ? (expression as GalpiExpression) : null };
+  return { text: truncateCodePoints(text.trim(), MAX_BUBBLE_LENGTH), expression: known ? (expression as GalpiExpression) : null };
 }
 
 /** 말 놓기 버튼은 서버만 건넨다 — 갈피가 내면 버린다 */
