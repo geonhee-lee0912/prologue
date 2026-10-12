@@ -6,16 +6,35 @@ describe('위기 신호 — 낱말 규칙 (갈피 문서 3.6 ③)', () => {
   it('자해 신호', () => {
     expect(detectCrisis('요즘 그냥 죽고 싶어요')).toBe('self_harm');
     expect(detectCrisis('다 끝내고 싶어')).toBe('self_harm');
+    expect(detectCrisis('더 이상 살고 싶지 않아요')).toBe('self_harm');
+    expect(detectCrisis('자해를 했어요')).toBe('self_harm');
+    // 존재를 말하는 표현은 장소·업무 예외에서 빼지 않는다
+    expect(detectCrisis('이 세상에 살고 싶지 않아요')).toBe('self_harm');
+    expect(detectCrisis('인생 정리 다 끝내고 싶어')).toBe('self_harm');
   });
 
   it('폭력·스토킹 신호', () => {
     expect(detectCrisis('전 남친한테 협박 문자가 와요')).toBe('danger');
     expect(detectCrisis('누가 스토킹하는 것 같아요')).toBe('danger');
     expect(detectCrisis('위협을 받았어요')).toBe('danger');
+    expect(detectCrisis('몰래 찍혔어요')).toBe('danger');
+    expect(detectCrisis('불법 촬영을 당했어요')).toBe('danger');
   });
 
   it('흔한 말은 걸지 않는다', () => {
-    for (const text of ['자살예방 교육을 받았어요', '웃겨 죽겠어요', '공을 세게 때렸어요', '정답 맞았어요', '강아지가 졸졸 따라다녀요']) {
+    for (const text of [
+      '자살예방 교육을 받았어요',
+      '웃겨 죽겠어요',
+      '공을 세게 때렸어요',
+      '정답 맞았어요',
+      '강아지가 졸졸 따라다녀요',
+      '자해 예방 교육을 받았어요',
+      '시골에는 살고 싶지 않아요',
+      '서울에서 살고 싶지 않아',
+      '오늘 일 다 끝내고 싶어요',
+      '과제를 다 끝내고 싶어',
+      '몰래 찍은 사진이 예쁘게 나왔어요',
+    ]) {
       expect(detectCrisis(text)).toBe('none');
     }
   });
