@@ -1,7 +1,12 @@
 /**
  * 테스트용 메모리 Prisma — 갈피 서비스가 쓰는 질의 모양만 흉내 낸다.
+ * - 흉내 내지 않는 질의 모양은 조용히 넘기지 않고 `FakePrisma: unsupported …` 오류를 던진다:
+ *   모르는 연산자·중첩 not·OR/AND/NOT, sources: { none: {} } 밖의 관계 필터, 배열이나 여러 키 orderBy,
+ *   skip·cursor·distinct, 0 이하 take, 적용하지 않는 메서드에 넘긴 take·orderBy 같은 인자,
+ *   중첩 sources 쓰기 중 create 와 빈 deleteMany 밖의 것.
+ *   계획 밖 질의를 쓴 서비스가 거짓으로 통과하지 않게 한다. 그런 질의가 정말 필요하면 여기에 흉내를 더하고 spec 으로 고정한다
  * - select 는 무시하고 행 전체를 돌려준다. 서비스는 select 한 필드만 읽어야 한다(실제 Prisma 타입이 지킨다)
- * - $transaction 은 되돌리기(rollback)를 하지 않는다
+ * - $transaction 은 되돌리기(rollback)도 격리(isolation)도 하지 않는다 — 콜백이 같은 메모리에서 바로 돈다
  * 실제 DB 테스트(RLS pgTAP·통합)는 출시 전 최종 점검에서 한다 (BACKLOG 9절)
  */
 import { randomUUID } from 'node:crypto';
@@ -32,34 +37,144 @@ function same(a: unknown, b: unknown): boolean {
   return time(a ?? null) === time(b ?? null);
 }
 
+/** 흉내 내지 않는 모양은 조용히 넘기지 않고 던진다. 메시지에는 연산자·칸·인자 이름만 쓴다 — 값(본문·이름)은 쓰지 않는다 */
+function unsupported(what: string): never {
+  throw new Error(`FakePrisma: unsupported ${what}`);
+}
+
+function isPlainObject(value: unknown): value is Row {
+  return typeof value === 'object' && value !== null && !Array.isArray(value) && !(value instanceof Date);
+}
+
+/** 메서드가 읽는 인자만 받는다. select 만 무시한다 — skip·cursor·distinct 나 적용하지 않는 take·orderBy 는 말없이 넘기지 않는다 */
+function checkArgs(method: string, args: Row, allowed: readonly string[]): void {
+  for (const [key, value] of Object.entries(args)) {
+    if (value !== undefined && key !== 'select' && !allowed.includes(key)) unsupported(`argument "${key}" on ${method}`);
+  }
+}
+
+const COMPARISONS: Record<string, (a: any, b: any) => boolean> = {
+  lt: (a, b) => a < b,
+  lte: (a, b) => a <= b,
+  gt: (a, b) => a > b,
+  gte: (a, b) => a >= b,
+};
+
+/** 한 칸의 조건이 흉내 낼 수 있는 모양인지 본다 — 등호(null·Date 포함)와 in·not(스칼라·null)·lt·lte·gt·gte */
+function checkFilter(field: string, cond: unknown): void {
+  if (cond === null || cond instanceof Date || typeof cond !== 'object') return;
+  if (Array.isArray(cond)) unsupported(`array filter on "${field}"`);
+  for (const [op, operand] of Object.entries(cond as Row)) {
+    // Prisma 처럼 undefined 인 연산자는 없는 것으로 본다
+    if (operand === undefined) continue;
+    if (op === 'in') {
+      if (!Array.isArray(operand)) unsupported(`"in" operand on "${field}" (an array is required)`);
+    } else if (op === 'not') {
+      if (typeof operand === 'object' && operand !== null && !(operand instanceof Date)) unsupported(`nested "not" filter on "${field}"`);
+    } else if (Object.hasOwn(COMPARISONS, op)) {
+      if (!(operand instanceof Date || typeof operand === 'number' || typeof operand === 'string')) {
+        unsupported(`"${op}" operand on "${field}" (a number, string or Date is required)`);
+      }
+    } else {
+      unsupported(`filter operator "${op}" on "${field}"`);
+    }
+  }
+}
+
+/** where 의 모양을 본다. 행이 하나도 없어도 흉내 내지 않는 모양은 드러나도록 질의 앞에서 부른다 */
+function checkWhere(where: Where = {}): void {
+  for (const [key, cond] of Object.entries(where)) {
+    if (cond === undefined) continue;
+    if (key === 'OR' || key === 'AND' || key === 'NOT') unsupported(`where key "${key}"`);
+    checkFilter(key, cond);
+  }
+}
+
 function fieldMatches(value: unknown, cond: unknown): boolean {
   if (cond === null || cond instanceof Date || typeof cond !== 'object') return same(value, cond);
   const c = cond as Row;
-  if ('in' in c) return (c.in as unknown[]).some((x) => same(value, x));
-  if ('not' in c) return !same(value, c.not);
+  if (c.in !== undefined && !(c.in as unknown[]).some((x) => same(value, x))) return false;
+  if (c.not !== undefined && same(value, c.not)) return false;
   const v = time(value);
-  if (v === null || v === undefined) return false;
-  const n = v as number;
-  if ('lt' in c && !(n < (time(c.lt) as number))) return false;
-  if ('lte' in c && !(n <= (time(c.lte) as number))) return false;
-  if ('gt' in c && !(n > (time(c.gt) as number))) return false;
-  if ('gte' in c && !(n >= (time(c.gte) as number))) return false;
+  for (const [op, compare] of Object.entries(COMPARISONS)) {
+    if (c[op] === undefined) continue;
+    if (v === null || v === undefined || !compare(v, time(c[op]))) return false;
+  }
   return true;
 }
 
-export function matches(row: Row, where: Where = {}): boolean {
+function evaluate(row: Row, where: Where): boolean {
   return Object.entries(where).every(([key, cond]) => cond === undefined || fieldMatches(row[key], cond));
 }
 
-function sortRows(rows: Row[], orderBy?: Row): Row[] {
-  if (!orderBy) return rows;
-  const [key, dir] = Object.entries(orderBy)[0];
+/** 한 칸에 연산자가 여럿이면 모두 맞아야 한다 */
+export function matches(row: Row, where: Where = {}): boolean {
+  checkWhere(where);
+  return evaluate(row, where);
+}
+
+function filterRows(rows: Row[], where: Where = {}): Row[] {
+  checkWhere(where);
+  return rows.filter((row) => evaluate(row, where));
+}
+
+/** orderBy 는 키 하나에 asc·desc 만 흉내 낸다 (배열·여러 키·{ sort, nulls } 는 던진다) */
+function sortRows(rows: Row[], orderBy?: unknown): Row[] {
+  if (orderBy === undefined) return rows;
+  const keys = isPlainObject(orderBy) ? Object.entries(orderBy).filter(([, d]) => d !== undefined) : [];
+  if (keys.length !== 1) unsupported('orderBy (exactly one key is supported; an array or several keys are not)');
+  const [[key, dir]] = keys;
+  if (dir !== 'asc' && dir !== 'desc') unsupported(`orderBy direction on "${key}" (only "asc" or "desc")`);
   const sign = dir === 'desc' ? -1 : 1;
   return [...rows].sort((a, b) => {
     const x = time(a[key]) as number;
     const y = time(b[key]) as number;
     return x < y ? -sign : x > y ? sign : 0;
   });
+}
+
+/** take 는 양수만 흉내 낸다 (Prisma 의 음수 take 는 뒤에서부터 센다) */
+function checkTake(method: string, take: unknown): number | undefined {
+  if (take === undefined) return undefined;
+  if (typeof take !== 'number' || !Number.isInteger(take) || take <= 0) unsupported(`take on ${method} (only a positive integer is supported)`);
+  return take;
+}
+
+/** include 는 { sources: true } 만 흉내 낸다 */
+function includesSources(method: string, include: unknown): boolean {
+  if (include === undefined) return false;
+  if (!isPlainObject(include)) unsupported(`include on ${method}`);
+  for (const [key, value] of Object.entries(include)) {
+    if (value !== undefined && (key !== 'sources' || typeof value !== 'boolean')) {
+      unsupported(`include "${key}" on ${method} (only { sources: true } is supported)`);
+    }
+  }
+  return include.sources === true;
+}
+
+/**
+ * 문장을 쓸 때 딸린 sources — create: [{ messageId }] 만 흉내 낸다. update 에서는 빈 deleteMany: {}(그 문장의 출처를 모두 지운다)도 된다.
+ * 조건이 있는 deleteMany 나 set·connect·createMany 같은 다른 중첩 연산은 던진다. 아무것도 바꾸기 전에 모양부터 본다
+ */
+function readSourceWrites(sources: unknown, allowDeleteAll: boolean): { deleteAll: boolean; messageIds: string[] } {
+  if (sources === undefined) return { deleteAll: false, messageIds: [] };
+  if (!isPlainObject(sources)) unsupported('nested "sources" write (an object is required)');
+  let deleteAll = false;
+  for (const [op, operand] of Object.entries(sources)) {
+    if (operand === undefined || op === 'create') continue;
+    if (op !== 'deleteMany' || !allowDeleteAll) unsupported(`nested "sources" operation "${op}"`);
+    if (!isPlainObject(operand) || Object.keys(operand).length > 0) unsupported('nested "sources.deleteMany" with a filter (only {} is supported)');
+    deleteAll = true;
+  }
+  const items = sources.create === undefined ? [] : sources.create;
+  if (!Array.isArray(items)) unsupported('nested "sources.create" (an array is required)');
+  const messageIds = items.map((item: unknown) => {
+    if (!isPlainObject(item) || Object.keys(item).length !== 1 || typeof item.messageId !== 'string') {
+      unsupported('nested "sources.create" item (only { messageId: string } is supported)');
+    }
+    return item.messageId as string;
+  });
+  return { deleteAll, messageIds };
 }
 
 function applyData(row: Row, data: Row): void {
@@ -104,8 +219,9 @@ export class FakePrisma {
   }
 
   user = {
-    findUnique: async ({ where }: { where: { id: string }; select?: Row }) => {
-      const u = this.users.find((x) => x.id === where.id);
+    findUnique: async (args: { where: { id: string }; select?: Row }) => {
+      checkArgs('user.findUnique', args, ['where']);
+      const u = this.users.find((x) => x.id === args.where.id);
       if (!u) return null;
       return clone({
         id: u.id,
@@ -118,10 +234,17 @@ export class FakePrisma {
   };
 
   galpiState = {
-    findUnique: async ({ where }: { where: { userId: string } }) =>
-      clone(this.galpiStates.find((s) => s.userId === where.userId) ?? null) as Row | null,
-    findMany: async ({ where }: { where?: Where } = {}) => this.galpiStates.filter((s) => matches(s, where)).map(clone),
-    create: async ({ data }: { data: Row }) => {
+    findUnique: async (args: { where: { userId: string } }) => {
+      checkArgs('galpiState.findUnique', args, ['where']);
+      return clone(this.galpiStates.find((s) => s.userId === args.where.userId) ?? null) as Row | null;
+    },
+    findMany: async (args: { where?: Where } = {}) => {
+      checkArgs('galpiState.findMany', args, ['where']);
+      return filterRows(this.galpiStates, args.where).map(clone);
+    },
+    create: async (args: { data: Row }) => {
+      checkArgs('galpiState.create', args, ['data']);
+      const { data } = args;
       if (this.galpiStates.some((s) => s.userId === data.userId)) {
         throw new Error('Unique constraint failed on the fields: (`user_id`)');
       }
@@ -144,21 +267,24 @@ export class FakePrisma {
       this.galpiStates.push(row);
       return clone(row);
     },
-    update: async ({ where, data }: { where: { userId: string }; data: Row }) => {
-      const row = this.galpiStates.find((s) => s.userId === where.userId);
+    update: async (args: { where: { userId: string }; data: Row }) => {
+      checkArgs('galpiState.update', args, ['where', 'data']);
+      const row = this.galpiStates.find((s) => s.userId === args.where.userId);
       if (!row) throw new Error('Record to update not found: galpi_states');
-      applyData(row, data);
+      applyData(row, args.data);
       return clone(row);
     },
-    updateMany: async ({ where, data }: { where: Where; data: Row }) => {
-      const rows = this.galpiStates.filter((s) => matches(s, where));
-      rows.forEach((r) => applyData(r, data));
+    updateMany: async (args: { where: Where; data: Row }) => {
+      checkArgs('galpiState.updateMany', args, ['where', 'data']);
+      const rows = filterRows(this.galpiStates, args.where);
+      rows.forEach((r) => applyData(r, args.data));
       return { count: rows.length };
     },
   };
 
   galpiMessage = {
-    create: async ({ data }: { data: Row }) => {
+    create: async (args: { data: Row }) => {
+      checkArgs('galpiMessage.create', args, ['data']);
       const row = {
         id: randomUUID(),
         kind: 'text',
@@ -170,26 +296,31 @@ export class FakePrisma {
         safety: false,
         sensitiveCategories: [],
         createdAt: new Date(),
-        ...data,
+        ...args.data,
       };
       this.galpiMessages.push(row);
       return clone(row);
     },
-    findMany: async ({ where, orderBy, take }: { where?: Where; orderBy?: Row; take?: number; select?: Row } = {}) => {
-      const rows = sortRows(this.galpiMessages.filter((m) => matches(m, where)), orderBy);
-      return (take ? rows.slice(0, take) : rows).map(clone);
+    findMany: async (args: { where?: Where; orderBy?: Row; take?: number; select?: Row } = {}) => {
+      checkArgs('galpiMessage.findMany', args, ['where', 'orderBy', 'take']);
+      const take = checkTake('galpiMessage.findMany', args.take);
+      const rows = sortRows(filterRows(this.galpiMessages, args.where), args.orderBy);
+      return (take === undefined ? rows : rows.slice(0, take)).map(clone);
     },
-    findFirst: async ({ where, orderBy }: { where?: Where; orderBy?: Row; select?: Row } = {}) => {
-      const rows = sortRows(this.galpiMessages.filter((m) => matches(m, where)), orderBy);
+    findFirst: async (args: { where?: Where; orderBy?: Row; select?: Row } = {}) => {
+      checkArgs('galpiMessage.findFirst', args, ['where', 'orderBy']);
+      const rows = sortRows(filterRows(this.galpiMessages, args.where), args.orderBy);
       return rows[0] ? clone(rows[0]) : null;
     },
-    updateMany: async ({ where, data }: { where: Where; data: Row }) => {
-      const rows = this.galpiMessages.filter((m) => matches(m, where));
-      rows.forEach((r) => applyData(r, data));
+    updateMany: async (args: { where: Where; data: Row }) => {
+      checkArgs('galpiMessage.updateMany', args, ['where', 'data']);
+      const rows = filterRows(this.galpiMessages, args.where);
+      rows.forEach((r) => applyData(r, args.data));
       return { count: rows.length };
     },
-    deleteMany: async ({ where }: { where: Where }) => {
-      const ids = new Set(this.galpiMessages.filter((m) => matches(m, where)).map((m) => m.id));
+    deleteMany: async (args: { where: Where }) => {
+      checkArgs('galpiMessage.deleteMany', args, ['where']);
+      const ids = new Set(filterRows(this.galpiMessages, args.where).map((m) => m.id));
       this.galpiMessages = this.galpiMessages.filter((m) => !ids.has(m.id));
       this.wikiClaimSources = this.wikiClaimSources.filter((s) => !ids.has(s.messageId));
       return { count: ids.size };
@@ -197,36 +328,46 @@ export class FakePrisma {
   };
 
   wikiClaim = {
-    findMany: async ({ where, orderBy, include }: { where?: Where; orderBy?: Row; include?: { sources?: boolean }; select?: Row } = {}) =>
-      sortRows(this.wikiClaims.filter((c) => this.claimMatches(c, where)), orderBy).map((c) => this.withSources(c, include)),
-    findFirst: async ({ where, include }: { where?: Where; include?: { sources?: boolean } } = {}) => {
-      const claim = this.wikiClaims.find((c) => this.claimMatches(c, where));
+    findMany: async (args: { where?: Where; orderBy?: Row; include?: { sources?: boolean }; select?: Row } = {}) => {
+      checkArgs('wikiClaim.findMany', args, ['where', 'orderBy', 'include']);
+      const include = includesSources('wikiClaim.findMany', args.include);
+      return sortRows(this.claimRows(args.where), args.orderBy).map((c) => this.withSources(c, include));
+    },
+    findFirst: async (args: { where?: Where; include?: { sources?: boolean } } = {}) => {
+      checkArgs('wikiClaim.findFirst', args, ['where', 'include']);
+      const include = includesSources('wikiClaim.findFirst', args.include);
+      const claim = this.claimRows(args.where)[0];
       return claim ? this.withSources(claim, include) : null;
     },
-    create: async ({ data }: { data: Row }) => {
-      const { sources, ...rest } = data;
+    create: async (args: { data: Row }) => {
+      checkArgs('wikiClaim.create', args, ['data']);
+      const { sources, ...rest } = args.data;
+      const { messageIds } = readSourceWrites(sources, false);
       const now = new Date();
       const row = { id: randomUUID(), createdAt: now, updatedAt: now, ...rest };
       this.wikiClaims.push(row);
-      for (const s of sources?.create ?? []) this.wikiClaimSources.push({ claimId: row.id, messageId: s.messageId });
+      for (const messageId of messageIds) this.wikiClaimSources.push({ claimId: row.id, messageId });
       return clone(row);
     },
-    update: async ({ where, data }: { where: { id: string }; data: Row }) => {
-      const row = this.wikiClaims.find((c) => c.id === where.id);
+    update: async (args: { where: { id: string }; data: Row }) => {
+      checkArgs('wikiClaim.update', args, ['where', 'data']);
+      const { sources, ...rest } = args.data;
+      const { deleteAll, messageIds } = readSourceWrites(sources, true);
+      const row = this.wikiClaims.find((c) => c.id === args.where.id);
       if (!row) throw new Error('Record to update not found: wiki_claims');
-      const { sources, ...rest } = data;
       applyData(row, rest);
-      if (sources?.deleteMany) this.wikiClaimSources = this.wikiClaimSources.filter((s) => s.claimId !== row.id);
-      for (const s of sources?.create ?? []) {
-        if (this.wikiClaimSources.some((x) => x.claimId === row.id && x.messageId === s.messageId)) {
+      if (deleteAll) this.wikiClaimSources = this.wikiClaimSources.filter((s) => s.claimId !== row.id);
+      for (const messageId of messageIds) {
+        if (this.wikiClaimSources.some((x) => x.claimId === row.id && x.messageId === messageId)) {
           throw new Error('Unique constraint failed on the fields: (`claim_id`,`message_id`)');
         }
-        this.wikiClaimSources.push({ claimId: row.id, messageId: s.messageId });
+        this.wikiClaimSources.push({ claimId: row.id, messageId });
       }
       return clone(row);
     },
-    deleteMany: async ({ where }: { where: Where }) => {
-      const ids = new Set(this.wikiClaims.filter((c) => this.claimMatches(c, where)).map((c) => c.id));
+    deleteMany: async (args: { where: Where }) => {
+      checkArgs('wikiClaim.deleteMany', args, ['where']);
+      const ids = new Set(this.claimRows(args.where).map((c) => c.id));
       this.wikiClaims = this.wikiClaims.filter((c) => !ids.has(c.id));
       this.wikiClaimSources = this.wikiClaimSources.filter((s) => !ids.has(s.claimId));
       return { count: ids.size };
@@ -234,58 +375,73 @@ export class FakePrisma {
   };
 
   profileFact = {
-    findMany: async ({ where }: { where?: Where; select?: Row } = {}) => this.profileFacts.filter((f) => matches(f, where)).map(clone),
-    upsert: async ({ where, create, update }: { where: { userId_key: { userId: string; key: string } }; create: Row; update: Row }) => {
-      const { userId, key } = where.userId_key;
+    findMany: async (args: { where?: Where; select?: Row } = {}) => {
+      checkArgs('profileFact.findMany', args, ['where']);
+      return filterRows(this.profileFacts, args.where).map(clone);
+    },
+    upsert: async (args: { where: { userId_key: { userId: string; key: string } }; create: Row; update: Row }) => {
+      checkArgs('profileFact.upsert', args, ['where', 'create', 'update']);
+      const { userId, key } = args.where.userId_key;
       const row = this.profileFacts.find((f) => f.userId === userId && f.key === key);
       if (row) {
-        applyData(row, update);
+        applyData(row, args.update);
         return clone(row);
       }
       const now = new Date();
-      const created = { id: randomUUID(), value: null, letterAllowed: null, verified: false, createdAt: now, updatedAt: now, ...create };
+      const created = { id: randomUUID(), value: null, letterAllowed: null, verified: false, createdAt: now, updatedAt: now, ...args.create };
       this.profileFacts.push(created);
       return clone(created);
     },
   };
 
   selfReport = {
-    count: async ({ where }: { where?: Where } = {}) => this.selfReports.filter((r) => matches(r, where)).length,
-    create: async ({ data }: { data: Row }) => {
-      const row = { id: randomUUID(), paid: false, createdAt: new Date(), ...data };
+    count: async (args: { where?: Where } = {}) => {
+      checkArgs('selfReport.count', args, ['where']);
+      return filterRows(this.selfReports, args.where).length;
+    },
+    create: async (args: { data: Row }) => {
+      checkArgs('selfReport.create', args, ['data']);
+      const row = { id: randomUUID(), paid: false, createdAt: new Date(), ...args.data };
       this.selfReports.push(row);
       return clone(row);
     },
-    findFirst: async ({ where, orderBy }: { where?: Where; orderBy?: Row } = {}) => {
-      const rows = sortRows(this.selfReports.filter((r) => matches(r, where)), orderBy);
+    findFirst: async (args: { where?: Where; orderBy?: Row } = {}) => {
+      checkArgs('selfReport.findFirst', args, ['where', 'orderBy']);
+      const rows = sortRows(filterRows(this.selfReports, args.where), args.orderBy);
       return rows[0] ? clone(rows[0]) : null;
     },
   };
 
   llmUsage = {
-    create: async ({ data }: { data: Row }) => {
-      const row = { id: randomUUID(), cachedInputTokens: 0, createdAt: new Date(), ...data };
+    create: async (args: { data: Row }) => {
+      checkArgs('llmUsage.create', args, ['data']);
+      const row = { id: randomUUID(), cachedInputTokens: 0, createdAt: new Date(), ...args.data };
       this.llmUsages.push(row);
       return clone(row);
     },
   };
 
   pushToken = {
-    findUnique: async ({ where }: { where: { userId: string } }) => clone(this.pushTokens.find((t) => t.userId === where.userId) ?? null) as Row | null,
-    upsert: async ({ where, create, update }: { where: { userId: string }; create: Row; update: Row }) => {
-      const row = this.pushTokens.find((t) => t.userId === where.userId);
+    findUnique: async (args: { where: { userId: string } }) => {
+      checkArgs('pushToken.findUnique', args, ['where']);
+      return clone(this.pushTokens.find((t) => t.userId === args.where.userId) ?? null) as Row | null;
+    },
+    upsert: async (args: { where: { userId: string }; create: Row; update: Row }) => {
+      checkArgs('pushToken.upsert', args, ['where', 'create', 'update']);
+      const row = this.pushTokens.find((t) => t.userId === args.where.userId);
       if (row) {
-        applyData(row, update);
+        applyData(row, args.update);
         return clone(row);
       }
-      const created = { updatedAt: new Date(), ...create };
+      const created = { updatedAt: new Date(), ...args.create };
       this.pushTokens.push(created);
       return clone(created);
     },
-    deleteMany: async ({ where }: { where: Where }) => {
-      const before = this.pushTokens.length;
-      this.pushTokens = this.pushTokens.filter((t) => !matches(t, where));
-      return { count: before - this.pushTokens.length };
+    deleteMany: async (args: { where: Where }) => {
+      checkArgs('pushToken.deleteMany', args, ['where']);
+      const doomed = filterRows(this.pushTokens, args.where);
+      this.pushTokens = this.pushTokens.filter((t) => !doomed.includes(t));
+      return { count: doomed.length };
     },
   };
 
@@ -293,15 +449,21 @@ export class FakePrisma {
     return fn(this);
   }
 
-  private claimMatches(claim: Row, where: Where = {}): boolean {
+  /** 조건에 맞는 문장. 관계 필터는 sources: { none: {} } 하나만 흉내 낸다 */
+  private claimRows(where: Where = {}): Row[] {
     const { sources, ...rest } = where;
-    if (sources && 'none' in sources && this.wikiClaimSources.some((s) => s.claimId === claim.id)) return false;
-    return matches(claim, rest);
+    if (sources !== undefined) {
+      const keys = isPlainObject(sources) ? Object.keys(sources) : [];
+      if (keys.length !== 1 || keys[0] !== 'none' || !isPlainObject(sources.none) || Object.keys(sources.none).length > 0) {
+        unsupported('relation filter on "sources" (only { none: {} } is supported)');
+      }
+    }
+    return filterRows(this.wikiClaims, rest).filter((claim) => sources === undefined || !this.wikiClaimSources.some((s) => s.claimId === claim.id));
   }
 
-  private withSources(claim: Row, include?: { sources?: boolean }): Row {
+  private withSources(claim: Row, include: boolean): Row {
     const row = clone(claim);
-    if (include?.sources) row.sources = this.wikiClaimSources.filter((s) => s.claimId === claim.id).map(clone);
+    if (include) row.sources = this.wikiClaimSources.filter((s) => s.claimId === claim.id).map(clone);
     return row;
   }
 }
