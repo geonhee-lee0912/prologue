@@ -9,6 +9,7 @@ import {
   PUSH_PROVIDER,
   SMS_PROVIDER,
 } from '@prologue/shared';
+import { galpiMockRespond } from '../galpi/mock-responder';
 import { PrismaService } from '../prisma/prisma.service';
 import { createLlmProvider } from './llm-provider.factory';
 import { MockFaceVerificationService } from './mock-face-verification.service';
@@ -41,9 +42,12 @@ import { MockSmsService } from './mock-sms.service';
       provide: LLM_PROVIDER,
       inject: [ConfigService, PrismaService],
       useFactory: (config: ConfigService, prisma: PrismaService) =>
-        createLlmProvider((key) => config.get<string>(key), {
-          llmUsage: { create: (args) => prisma.llmUsage.create(args) },
-        }),
+        createLlmProvider(
+          (key) => config.get<string>(key),
+          { llmUsage: { create: (args) => prisma.llmUsage.create(args) } },
+          // mock 일 때 갈피 대화가 첫 리포트까지 돌게 한다 (운영에서는 mock 자체가 막힌다)
+          { mockRespond: galpiMockRespond },
+        ),
     },
   ],
   exports: [
