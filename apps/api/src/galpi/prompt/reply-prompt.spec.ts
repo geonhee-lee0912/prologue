@@ -35,6 +35,13 @@ describe('갈피 고정 시스템 프롬프트', () => {
     for (const word of FORBIDDEN_EXPRESSIONS) expect(GALPI_SYSTEM_PROMPT).toContain(word);
   });
 
+  it('외모 조언은 사용자가 먼저 물을 때만 한다 — 평가하지 않는다는 규칙 1 곁에 (갈피 문서 3.6 ②, AI 엔진 문서 4.1)', () => {
+    const line = '외모에 관한 조언(사진·옷차림·생김새)은 사용자가 먼저 물을 때만 한다';
+    expect(GALPI_SYSTEM_PROMPT).toContain(line);
+    const lines = GALPI_SYSTEM_PROMPT.split('\n');
+    expect(lines[lines.findIndex((l) => l.startsWith('1. 사람을 평가하거나 비교하지 않는다')) + 1]).toContain(line);
+  });
+
   it('캐시가 걸릴 만큼 길다', () => {
     expect(GALPI_SYSTEM_PROMPT.length).toBeGreaterThan(2000);
   });
