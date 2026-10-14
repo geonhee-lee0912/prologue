@@ -96,6 +96,21 @@ describe('먼저 말 걸 때 쓰지 않는 말', () => {
     expect(findProactiveBanned('소개팅 준비는 잘 돼요?')).toEqual(['소개팅']);
     expect(findProactiveBanned('{name}, 금요일 발표는 잘 끝났어요?')).toEqual([]);
   });
+
+  it('"서운"은 갈피가 자기 서운함을 말할 때만 막는다 — 상대의 서운함을 묻는 말은 스펙 5.3 의 여는 말이다', () => {
+    for (const asking of ['친구한테 서운했을 땐 어떻게 했어요?', '서운할 때 보통 말하는 편이에요, 참는 편이에요?', '친구한테 서운했던 적 있어요?', '친구가 늦으면 서운해요?']) {
+      expect(findProactiveBanned(asking), asking).toEqual([]);
+    }
+    for (const guilt of ['요즘 안 와서 서운해', '나 좀 서운했어', '갈피 서운해요', '연락이 없어서 서운하다']) {
+      expect(findProactiveBanned(guilt), guilt).not.toEqual([]);
+    }
+  });
+
+  it('"서운"이 든 문장이 물음표로 끝나야 묻는 말로 본다 — 뒤 문장의 물음표는 앞 문장을 덮지 않는다', () => {
+    expect(findProactiveBanned('나 좀 서운했어. 요즘 바빴어요?')).toEqual(['서운했어']);
+    expect(findProactiveBanned('서운했잖아요~ 잘 지냈어요?')).toEqual(['서운했잖']);
+    expect(findProactiveBanned('친구가 늦으면 서운해요? 🙂')).toEqual([]);
+  });
 });
 
 const emptyPages = (): Record<WikiPageKey, string[]> => ({ now: [], people: [], relationship: [], met: [], attraction: [], next_topics: [] });

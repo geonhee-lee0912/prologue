@@ -55,9 +55,21 @@ export function preferredHour(userMessageTimes: Date[]): number {
   return best;
 }
 
-/** 먼저 말 걸 때 쓰지 않는 말 — 죄책감 문구(스펙 7장, CLAUDE.md 9.1)와, 잠금화면에 보일 수 있어 "소개팅"(IA 3.11) */
-export const PROACTIVE_BANNED: readonly string[] = ['왜 안 와', '왜 안 왔', '기다리고 있', '기다렸', '서운', '어디 갔', '소개팅'];
+/** 먼저 말 걸 때 쓰지 않는 말 — 죄책감 문구(스펙 7장, CLAUDE.md 9.1)와, 잠금화면에 보일 수 있어 "소개팅"(IA 3.11). '서운'은 아래 SEOUN_STATEMENT 가 본다 */
+export const PROACTIVE_BANNED: readonly string[] = ['왜 안 와', '왜 안 왔', '기다리고 있', '기다렸', '어디 갔', '소개팅'];
+
+/**
+ * 갈피 자신의 서운함 — 서운해·서운하·서운했어·서운했잖 (요즘 안 와서 서운해, 서운하다, 서운했잖아요)은 죄책감 문구다.
+ * 그 말이 든 문장이 물음표로 끝나면 상대에게 묻는 말이라 둔다(친구가 늦으면 서운해요?). 서운했을·서운할·서운했던 처럼
+ * 상대의 서운함을 묻는 말은 스펙 5.3 의 여는 말이다(친구한테 서운했을 땐 어떻게 했어요?).
+ * 문장은 . ! ? … ~ 과 줄바꿈에서 끝난다 — 1 은 걸린 말, 2 는 그 문장의 끝(글 끝이면 빈 글)
+ */
+const SEOUN_STATEMENT = /(서운(?:해|하|했어|했잖))[^.!?…~\n。！？～]*([.!?…~\n。！？～]|$)/g;
 
 export function findProactiveBanned(text: string): string[] {
-  return PROACTIVE_BANNED.filter((word) => text.includes(word));
+  const found = PROACTIVE_BANNED.filter((word) => text.includes(word));
+  for (const [, word, end] of text.matchAll(SEOUN_STATEMENT)) {
+    if (end !== '?' && end !== '？' && !found.includes(word)) found.push(word);
+  }
+  return found;
 }
