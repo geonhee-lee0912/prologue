@@ -133,7 +133,7 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: '로그아웃 — 사용자의 모든 refresh token 무효화',
+    summary: '로그아웃 — 사용자의 모든 refresh token 무효화, 푸시 토큰 삭제',
   })
   async logout(@CurrentUser() user: CurrentUserData): Promise<{ revokedCount: number }> {
     return this.authService.logout(user.userId);

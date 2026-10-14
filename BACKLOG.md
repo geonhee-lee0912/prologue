@@ -219,7 +219,6 @@
 - [ ] `prisma/seed.ts`가 지운 모델(`userAction`)을 불러 깨져 있다
 - [ ] `ThrottlerGuard` 가 `req.ip` 로 세고 `main.ts` 에 trust proxy 가 없다 — Railway 프록시 뒤에서는 모든 사용자가 한 통을 나눠 써 전역 60/분과 갈피 말하기 20/분이 서비스 전체 상한이 된다. 사용자 기준 tracker(JWT sub) 또는 trust proxy 홉 수 확인 — **배포를 막는 항목**
 - [ ] `AllExceptionsFilter` 가 평범한 Error 메시지를 응답에 싣고 스택을 로그에 남긴다 — Prisma 검증 오류 메시지는 쓰려던 데이터(사용자 말)를 담을 수 있다. 응답은 일반 문구, 로그는 오류 이름·코드만(CLAUDE.md 10.3)
-- [ ] 서버 로그아웃(`AuthService.logout`)이 푸시 토큰을 지우지 않는다 — 앱이 `DELETE /me/push-token` 을 빠뜨리면 로그아웃한 기기 잠금화면에 갈피 말이 계속 뜬다
 
 **관리자**
 - [ ] `apps/admin/.env.example`에 service role 키 자리가 있다 — NestJS 에만 둔다(CLAUDE.md 10.4)
@@ -253,7 +252,7 @@
 **모바일 연결 (다음 계획)**
 - [ ] mock 대본(`apps/mobile/domain/galpi-script.ts`)을 API 로 — 첫 만남 `POST /api/v1/galpi/start`, 말하기, 버튼 답, 기록 이어 보기
 - [ ] 첫 리포트는 비동기로 도착한다 — 대화방이 보일 때 새 메시지를 가져온다
-- [ ] 푸시 토큰 등록(`PUT /api/v1/me/push-token`)과 로그아웃 때 지우기, 알림을 누르면 갈피 대화방(`data.screen === 'galpi'`)
+- [ ] 푸시 토큰 등록(`PUT /api/v1/me/push-token`)은 앱이 한다 — 로그아웃 때는 서버(`POST /api/v1/auth/logout`)가 지운다. 알림을 누르면 갈피 대화방(`data.screen === 'galpi'`)
 - [ ] 갈피가 기억하는 것을 `GET·DELETE /api/v1/galpi/memories` 로, 리포트를 `GET /api/v1/galpi/report` 로
 - [ ] 버튼에 이미 답했으면 409 가 온다(응답을 잃고 다시 보낸 경우 포함) — 오류를 띄우지 말고 기록을 다시 가져온다
 - [ ] `PUT·DELETE /api/v1/me/push-token` 과 `DELETE /api/v1/galpi/memories/:id` 는 204 빈 본문이다 — JSON 으로 읽지 않는다

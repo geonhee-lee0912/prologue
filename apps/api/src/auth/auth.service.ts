@@ -193,7 +193,8 @@ export class AuthService {
   }
 
   /**
-   * 로그아웃: 해당 사용자의 모든 활성 refresh token 을 revoke.
+   * 로그아웃: 해당 사용자의 모든 활성 refresh token 을 revoke 하고 푸시 토큰을 지운다.
+   * 푸시 토큰을 남기면 앱이 지우기를 빠뜨렸을 때 로그아웃한(또는 넘겨준) 기기 잠금화면에 갈피의 말이 계속 뜬다.
    * (단일 디바이스만 로그아웃하려면 특정 refresh token 만 revoke 하도록 확장 가능)
    */
   async logout(userId: string): Promise<{ revokedCount: number }> {
@@ -201,6 +202,7 @@ export class AuthService {
       where: { userId, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+    await this.prisma.pushToken.deleteMany({ where: { userId } });
     return { revokedCount: result.count };
   }
 
