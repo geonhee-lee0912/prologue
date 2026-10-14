@@ -123,6 +123,18 @@ describe('말 주고받기', () => {
     expect(db.galpiMessages.find((m) => m.safety)).toBeTruthy();
   });
 
+  it('자모를 풀어 쓴 한글(NFD)로 와도 위기 신호를 잡고, 붙인 꼴(NFC)로 가려 저장한다', async () => {
+    const { db, llm, service } = await started();
+    const result = await service.send('u1', { text: '요즘 우울증 때문에 죽고 싶어요'.normalize('NFD') }, later(1));
+    expect(llm.calls).toHaveLength(0);
+    expect(db.galpiMessages.find((m) => m.sender === 'user')).toMatchObject({
+      content: '요즘 [민감정보:건강] 때문에 죽고 싶어요',
+      sensitiveCategories: ['HEALTH'],
+    });
+    expect(result.messages.map((m) => m.text)).toEqual([`요즘 ${MASKED_TEXT_DISPLAY} 때문에 죽고 싶어요`, GALPI_COPY.crisis.selfHarm]);
+    expect(db.galpiMessages.filter((m) => m.safety).map((m) => m.content)).toEqual([GALPI_COPY.crisis.selfHarm]);
+  });
+
   it('갈피가 위험을 알아채면 답 뒤에 안전 안내를 붙이고 버튼은 버린다', async () => {
     const { service } = await started([
       reply('많이 무서웠겠어요.', { signals: { userUsedCasual: false, crisis: 'danger' }, quickReply: { type: 'practical', fact: 'smoking' } }),
@@ -445,6 +457,13 @@ describe('깨진 글자 (리뷰 1 — 저장이 거절돼 500 이 나지 않는�
     const saved = db.galpiMessages.find((m) => m.sender === 'user')?.content ?? '';
     expect([...saved]).toHaveLength(1000);
     expect(wellFormed(saved)).toBe(true);
+  });
+
+  it('풀어 쓴 한글(NFD)은 붙인 꼴로 바꾼 뒤에 1000자를 센다 — 자모 수로 세어 반만 남기지 않는다', async () => {
+    const { db, service } = await started([reply('와.')]);
+    // 풀어 쓰면 '가' 한 글자가 코드 포인트 둘이다
+    await service.send('u1', { text: '가'.repeat(1000).normalize('NFD') }, later(1));
+    expect(db.galpiMessages.find((m) => m.sender === 'user')?.content).toBe('가'.repeat(1000));
   });
 
   it('갈피 답 말풍선의 짝 없는 서로게이트는 빼고 저장한다', async () => {

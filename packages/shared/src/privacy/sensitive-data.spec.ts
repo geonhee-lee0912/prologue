@@ -92,4 +92,11 @@ describe('민감정보 마스킹 — 개인정보보호법 23조 전체', () => 
     expect(maskSensitive('공황   발작이 와요').masked).toBe('[민감정보:건강]이 와요');
     expect(maskSensitive('공황\n발작이 와요').masked).toBe('[민감정보:건강]이 와요');
   });
+
+  it('자모를 풀어 쓴 한글(NFD)로 와도 가린다 — 붙인 꼴(NFC)로 맞춰 보고, 가린 글도 붙인 꼴이다', () => {
+    const result = maskSensitive('요즘 우울증 약 먹어요'.normalize('NFD'));
+    expect(result).toEqual({ masked: '요즘 [민감정보:건강] 약 먹어요', categories: [SensitiveCategory.HEALTH] });
+    // 풀어 쓴 자리표시자도 우리가 만든 것으로 알아본다 — 두 번 돌려도 같다
+    expect(maskSensitive(result.masked.normalize('NFD'))).toEqual({ masked: result.masked, categories: [] });
+  });
 });

@@ -49,9 +49,11 @@ const DANGER: readonly RegExp[] = [
   /불법\s*촬영/,
 ];
 
+/** 자모를 풀어 쓴 한글(NFD)은 낱말 규칙에 걸리지 않는다 — 붙인 꼴(NFC)로 맞춘 뒤에 본다 */
 export function detectCrisis(text: string): CrisisKind {
-  if (SELF_HARM.some((re) => re.test(text))) return 'self_harm';
-  if (DANGER.some((re) => re.test(text))) return 'danger';
+  const nfc = text.normalize('NFC');
+  if (SELF_HARM.some((re) => re.test(nfc))) return 'self_harm';
+  if (DANGER.some((re) => re.test(nfc))) return 'danger';
   return 'none';
 }
 

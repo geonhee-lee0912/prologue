@@ -90,11 +90,12 @@ export class ConversationService {
     if (!state) throw new AppException(ErrorCode.GALPI_NOT_STARTED, '갈피와 첫인사를 먼저 나눠 주세요.', HttpStatus.CONFLICT);
 
     const skipped = input.skipped === true;
+    // 자모를 풀어 쓴 한글(NFD)은 붙인 꼴(NFC)로 맞춘다 — 위기·민감정보 낱말 규칙에 걸리고, 저장도 붙인 꼴로 한다.
     // 짝 없는 서로게이트·널 문자는 저장이 거절돼 500 이 날 수 있으니 먼저 뺀다(뺀 뒤에 다듬어야 가려져 있던 공백도 걷힌다).
     // 글자 수 한도는 코드 포인트로 자른다 — UTF-16 칸으로 자르면 이모지를 반으로 갈라 깨진 글자가 남는다
     const raw = skipped
       ? GALPI_SKIP_TEXT
-      : truncateCodePoints(stripUnstorableChars(input.text ?? '').trim(), POLICY.galpi.maxUserMessageLength);
+      : truncateCodePoints(stripUnstorableChars((input.text ?? '').normalize('NFC')).trim(), POLICY.galpi.maxUserMessageLength);
     if (!raw) throw new AppException(ErrorCode.VALIDATION_ERROR, '할 말을 적어 주세요.', HttpStatus.BAD_REQUEST);
 
     const crisis = skipped ? 'none' : detectCrisis(raw);

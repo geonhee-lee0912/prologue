@@ -83,6 +83,12 @@ describe('위기 신호 — 낱말 규칙 (갈피 문서 3.6 ③)', () => {
     }
   });
 
+  it('자모를 풀어 쓴 한글(NFD)로 와도 잡는다 — 붙인 꼴(NFC)로 맞춰 본다', () => {
+    expect(detectCrisis('죽고 싶어요'.normalize('NFD'))).toBe('self_harm');
+    expect(detectCrisis('시골에는 살고 싶지 않아요'.normalize('NFD'))).toBe('none');
+    expect(detectCrisis('요즘 스토킹을 당해요'.normalize('NFD'))).toBe('danger');
+  });
+
   it('안전 안내는 고정 문구다 — 세계관을 거두고 담백하게', () => {
     expect(safetyMessage('self_harm')).toBe(GALPI_COPY.crisis.selfHarm);
     expect(safetyMessage('danger')).toBe(GALPI_COPY.crisis.danger);

@@ -80,9 +80,14 @@ export interface MaskSensitiveResult {
   categories: SensitiveCategory[];
 }
 
+/**
+ * 자모를 풀어 쓴 한글(NFD)은 낱말 규칙에 걸리지 않는다 — 붙인 꼴(NFC)로 맞춘 뒤에 본다. 돌려주는 글도 붙인 꼴이다.
+ * 사용자 말뿐 아니라 LLM 이 쓴 글(서고 수집의 저장 검사)에도 돈다
+ */
 export function maskSensitive(text: string): MaskSensitiveResult {
   const found = new Set<SensitiveCategory>();
   const masked = text
+    .normalize('NFC')
     .split(PLACEHOLDER_RE)
     .map((part, i) => (i % 2 === 1 ? part : maskPart(part, found)))
     .join('');
