@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { GalpiMessage, GalpiState } from '@prisma/client';
 import { LLM_PROVIDER, type LlmProvider, POLICY, PUSH_PROVIDER, type PushProvider } from '@prologue/shared';
+import { describeError } from '../../common/describe-error';
 import { AppException } from '../../common/exceptions/app.exception';
 import { PrismaService } from '../../prisma/prisma.service';
 import { GalpiAccessService } from '../access.service';
@@ -42,9 +43,9 @@ export class ProactiveService {
     for (const state of states) {
       try {
         if (await this.sendTo(state, now)) sent += 1;
-      } catch {
-        // 오류 내용은 남기지 않는다 — 사용자 말이 담길 수 있다 (CLAUDE.md 10.3)
-        this.logger.warn(`proactive failed user=${state.userId}`);
+      } catch (error) {
+        // 오류 내용은 남기지 않는다 — 사용자 말이 담길 수 있다 (CLAUDE.md 10.3). 원인(상태·code·시간 초과, DB 오류 code)만
+        this.logger.warn(`proactive failed user=${state.userId} error=${describeError(error)}`);
       }
     }
     return sent;

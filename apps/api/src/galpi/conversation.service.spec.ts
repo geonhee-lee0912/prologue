@@ -9,6 +9,7 @@ import {
   MockLlmProvider,
 } from '@prologue/shared';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { OpenAiLlmService } from '../infra/openai-llm.service';
 import type { PrismaService } from '../prisma/prisma.service';
 import { GalpiAccessService } from './access.service';
 import { ConversationService } from './conversation.service';
@@ -554,6 +555,20 @@ describe('말 주고받기 — 더 살펴볼 것', () => {
     expect(warned()).not.toContain('quota');
     expect(warned()).not.toContain('퇴근하고');
     expect(warned()).not.toContain('010');
+  });
+
+  it('LLM 실패 로그에는 원인을 가를 칸(상태·code)만 남는다 — OpenAI 응답 본문은 로그에 없다', async () => {
+    const body = JSON.stringify({ error: { message: 'Rate limit reached for org-SENTINEL on tokens', type: 'requests', code: 'rate_limit_exceeded' } });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 429, text: async () => body }));
+    try {
+      const { service } = await started([], {}, new OpenAiLlmService('test-key', 'gpt-5.6-luna'));
+      const result = await service.send('u1', { text: '퇴근하고 걸어요' }, later(1));
+      expect(result.messages[1].text).toBe(GALPI_COPY.fallback);
+      expect(warn.mock.calls).toEqual([['reply llm failed user=u1 error=LlmError status=429 code=rate_limit_exceeded']]);
+      expect(warned()).not.toMatch(/SENTINEL|Rate limit|퇴근하고/);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('답을 준비하다 오류가 나도 내 말은 이미 저장돼 있고 한 턴으로 센다', async () => {

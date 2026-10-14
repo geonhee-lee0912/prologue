@@ -695,7 +695,7 @@ describe('서고 수집 실행', () => {
     await addChat(db, { id: 'u2', displayName: '수지' });
     const leaky = { complete: () => Promise.reject(new Error('오류: 저는 수지이고 퇴근하고 걸어요')) };
     await expect(service(leaky).runForUser('u2', T(31))).rejects.toThrow();
-    expect(warn.mock.calls).toEqual([['ingest failed user=u2']]);
+    expect(warn.mock.calls).toEqual([['ingest failed user=u2 error=Error']]);
 
     const everything = JSON.stringify([log.mock.calls, warn.mock.calls, debug.mock.calls]);
     for (const secret of ['걸어요', '지은', '수지', '퇴근', '010']) expect(everything).not.toContain(secret);
@@ -739,6 +739,6 @@ describe('서고 수집 실행', () => {
     expect(db.galpiStates.find((s) => s.userId === 'u1')?.lastIngestAt).toBeNull();
     expect(db.galpiStates.find((s) => s.userId === 'u2')?.lastIngestAt).toEqual(T(1));
     expect(known.checkAndMarkKnown.mock.calls).toEqual([['u2', now]]);
-    expect(warn.mock.calls).toEqual([['ingest failed user=u1'], ['sweep ingest failed user=u1']]);
+    expect(warn.mock.calls).toEqual([['ingest failed user=u1 error=Error'], ['sweep ingest failed user=u1']]);
   });
 });

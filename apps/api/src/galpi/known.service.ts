@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { type ProfileFactKey, WIKI_PAGES, type WikiPageKey } from '@prologue/shared';
+import { describeError } from '../common/describe-error';
 import { PrismaService } from '../prisma/prisma.service';
 import { isKnown } from './known';
 import { ReportService } from './report/report.service';
@@ -47,7 +48,8 @@ export class KnownService {
       if (first) this.logger.log(`first report written user=${userId}`);
       return first;
     } catch (error) {
-      this.logger.warn(`first report failed user=${userId}`);
+      // 원인(상태·code·시간 초과, DB 오류 code)만 남긴다 — 오류 메시지는 쓰지 않는다 (CLAUDE.md 10.3)
+      this.logger.warn(`first report failed user=${userId} error=${describeError(error)}`);
       throw error;
     }
   }

@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { GalpiMessage } from '@prisma/client';
 import { LLM_PROVIDER, type LlmProvider, POLICY, pseudonymize, type WikiPageKey } from '@prologue/shared';
+import { describeError } from '../../common/describe-error';
 import { AppException } from '../../common/exceptions/app.exception';
 import { PrismaService } from '../../prisma/prisma.service';
 import { GalpiAccessService } from '../access.service';
@@ -95,7 +96,8 @@ export class IngestService {
       await this.ingestBatch(userId, batch, userMessages, state.lastIngestAt);
     } catch (error) {
       await this.prisma.galpiState.updateMany({ where: { userId, lastIngestAt: batchEnd }, data: { lastIngestAt: state.lastIngestAt } });
-      this.logger.warn(`ingest failed user=${userId}`);
+      // 원인(상태·code·시간 초과, DB 오류 code)만 남긴다 — 오류 메시지는 쓰지 않는다 (CLAUDE.md 10.3)
+      this.logger.warn(`ingest failed user=${userId} error=${describeError(error)}`);
       throw error;
     }
 

@@ -191,7 +191,7 @@ describe('알게 된 순간 (스펙 5.4)', () => {
     await expect(known.checkAndMarkKnown('u1', NOW)).rejects.toThrow('llm down');
 
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn).toHaveBeenCalledWith('first report failed user=u1');
+    expect(warn).toHaveBeenCalledWith('first report failed user=u1 error=Error');
     const logged = JSON.stringify([...log.mock.calls, ...warn.mock.calls]);
     expect(logged).not.toContain('llm down');
     expect(logged).not.toContain('지은');

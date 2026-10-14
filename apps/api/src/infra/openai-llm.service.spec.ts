@@ -1,3 +1,4 @@
+import { LlmError } from '@prologue/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OpenAiLlmService } from './openai-llm.service';
 
@@ -45,11 +46,39 @@ describe('OpenAiLlmService', () => {
     expect(body.max_completion_tokens).toBe(1200);
   });
 
-  it('실패하면 상태 코드와 짧게 자른 사유만 담아 던진다', async () => {
-    fetchMock.mockResolvedValue({ ok: false, status: 429, text: async () => 'x'.repeat(500) });
-    const llm = new OpenAiLlmService('test-key', 'gpt-5.6-luna');
-    const error = await llm.complete({ purpose: 'reply', messages: [] }).catch((e: Error) => e);
-    expect((error as Error).message).toBe(`LLM 호출 실패 (429): ${'x'.repeat(200)}`);
+  describe('실패 — 상태 코드와 오류 code 만 담은 LlmError, 응답 본문은 담지 않는다 (CLAUDE.md 10.3)', () => {
+    const failWith = (status: number, body: string) => fetchMock.mockResolvedValue({ ok: false, status, text: async () => body });
+    const fail = () => new OpenAiLlmService('test-key', 'gpt-5.6-luna').complete({ purpose: 'reply', messages: [] }).catch((e: unknown) => e);
+    const openAiError = (error: Record<string, unknown>) => JSON.stringify({ error: { message: 'Incorrect API key provided: sk-SENTINEL***abcd', param: null, ...error } });
+
+    it('상태 코드와 OpenAI 오류의 code 를 담고, 메시지에는 본문을 담지 않는다', async () => {
+      failWith(401, openAiError({ type: 'invalid_request_error', code: 'invalid_api_key' }));
+      const error = await fail();
+      expect(error).toBeInstanceOf(LlmError);
+      expect(error).toMatchObject({ name: 'LlmError', status: 401, code: 'invalid_api_key', timeout: false });
+      expect((error as Error).message).toBe('LLM 호출 실패 (401)');
+      // 본문의 어떤 글도 오류에 남지 않는다 — 메시지에도, 칸에도
+      expect(JSON.stringify({ ...(error as object), message: (error as Error).message })).not.toMatch(/SENTINEL|Incorrect|sk-/);
+    });
+
+    it('code 가 없으면 type 을 쓴다', async () => {
+      failWith(500, openAiError({ type: 'server_error', code: null }));
+      expect(await fail()).toMatchObject({ status: 500, code: 'server_error', timeout: false });
+    });
+
+    it('code·type 이 식별자 모양이 아니면(글) 담지 않는다', async () => {
+      failWith(429, openAiError({ type: 'quota exceeded for sk-SENTINEL', code: 'Rate limit reached for org-SENTINEL' }));
+      const error = await fail();
+      expect(error).toMatchObject({ status: 429, code: undefined });
+      expect(JSON.stringify({ ...(error as object), message: (error as Error).message })).not.toContain('SENTINEL');
+    });
+
+    it('본문이 JSON 이 아니면 상태 코드만 담는다', async () => {
+      failWith(502, 'x'.repeat(500));
+      const error = await fail();
+      expect(error).toMatchObject({ status: 502, code: undefined, timeout: false });
+      expect((error as Error).message).toBe('LLM 호출 실패 (502)');
+    });
   });
 
   describe('시간 제한', () => {
@@ -83,7 +112,8 @@ describe('OpenAiLlmService', () => {
       const error = await llm
         .complete({ purpose: 'reply', userId: 'u1', messages: [{ role: 'user', content: '남에게 말 못 할 이야기' }] })
         .catch((e: unknown) => e);
-      expect(error).toBeInstanceOf(Error);
+      expect(error).toBeInstanceOf(LlmError);
+      expect(error).toMatchObject({ timeout: true, status: undefined, code: undefined });
       expect((error as Error).message).toBe('LLM 호출 시간 초과 (20ms)');
     });
 
@@ -91,6 +121,8 @@ describe('OpenAiLlmService', () => {
       fetchMock.mockImplementation(async (_url: string, init: FetchInit) => ({ ok: true, json: () => neverUnlessAborted(init) }));
       const llm = new OpenAiLlmService('test-key', 'gpt-5.6-luna', 20);
       const error = await llm.complete({ purpose: 'reply', messages: [] }).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(LlmError);
+      expect(error).toMatchObject({ timeout: true });
       expect((error as Error).message).toBe('LLM 호출 시간 초과 (20ms)');
     });
 

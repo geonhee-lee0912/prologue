@@ -1,10 +1,11 @@
-import type { LlmCompletionRequest, LlmCompletionResult, LlmProvider } from '@prologue/shared';
+import { type LlmCompletionRequest, type LlmCompletionResult, LlmError, type LlmProvider } from '@prologue/shared';
 
 /**
  * OpenAI GPT-5.6 Luna 구현체 (CLAUDE.md 13장)
  * - 여기에 오는 텍스트는 이미 가명처리돼 있어야 한다 (CLAUDE.md 10.2c). 사용자 ID 는 보내지 않는다
  * - 프롬프트 캐시는 OpenAI 가 같은 앞부분(1024 토큰 이상)에 자동으로 건다 — 고정 시스템 프롬프트를 맨 앞에 둔다
- * - 실패 메시지에 요청 내용을 담지 않는다 (CLAUDE.md 10.3)
+ * - 실패는 LlmError(상태·오류 code·시간 초과)로 던진다. 메시지에 요청 내용도 응답 본문도 담지 않는다 (CLAUDE.md 10.3) —
+ *   OpenAI 오류 본문에는 가린 키 조각 같은 글이 있을 수 있어 본문에서는 오류의 code(없으면 type)만 읽는다
  * - 응답이 timeoutMs(기본 30초) 안에 끝나지 않으면 중단하고 실패로 던진다. 호출한 쪽이 다른 실패와 같게 받아 대체 문장 등으로 이어 간다
  */
 export class OpenAiLlmService implements LlmProvider {
@@ -33,8 +34,7 @@ export class OpenAiLlmService implements LlmProvider {
         signal,
       });
       if (!response.ok) {
-        const detail = (await response.text()).slice(0, 200);
-        throw new Error(`LLM 호출 실패 (${response.status}): ${detail}`);
+        throw new LlmError(`LLM 호출 실패 (${response.status})`, { status: response.status, code: await readErrorCode(response) });
       }
 
       const json = (await response.json()) as {
@@ -49,8 +49,18 @@ export class OpenAiLlmService implements LlmProvider {
       };
     } catch (error) {
       // 헤더를 기다리던 중이든 본문을 읽던 중이든, 시간 제한이 울린 뒤의 실패는 시간 초과다. 요청 내용은 메시지에 담지 않는다
-      if (signal.aborted) throw new Error(`LLM 호출 시간 초과 (${this.timeoutMs}ms)`);
+      if (signal.aborted) throw new LlmError(`LLM 호출 시간 초과 (${this.timeoutMs}ms)`, { timeout: true });
       throw error;
     }
+  }
+}
+
+/** OpenAI 오류 본문({ error: { code, type, message } })에서 code, 그것이 없거나 글이면 type 만 꺼낸다. 읽을 수 없으면 undefined */
+async function readErrorCode(response: Response): Promise<string | undefined> {
+  try {
+    const body = JSON.parse(await response.text()) as { error?: { code?: unknown; type?: unknown } } | null;
+    return [body?.error?.code, body?.error?.type].find(LlmError.isCode);
+  } catch {
+    return undefined;
   }
 }

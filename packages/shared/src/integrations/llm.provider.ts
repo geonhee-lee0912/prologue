@@ -37,6 +37,34 @@ export interface LlmProvider {
   complete(request: LlmCompletionRequest): Promise<LlmCompletionResult>;
 }
 
+/** LlmError.code 로 받는 값 — 제공자 오류의 code·type 같은 식별자(invalid_api_key, rate_limit_exceeded …)만 */
+const LLM_ERROR_CODE = /^[A-Za-z0-9_.-]{1,64}$/;
+
+/**
+ * LLM 호출 실패 — 로그에서 원인을 가를 칸만 담는다 (CLAUDE.md 10.3).
+ * - status: HTTP 상태(401·429·500 …), code: 제공자 오류의 code 또는 type, timeout: 시간 초과로 끊었는지
+ * - message 에는 응답 본문을 넣지 않는다 — OpenAI 오류 본문에는 가린 키 조각 같은 글이 담길 수 있다
+ * - code 는 식별자 모양일 때만 담는다. 글이 오면 버린다
+ */
+export class LlmError extends Error {
+  readonly status?: number;
+  readonly code?: string;
+  readonly timeout: boolean;
+
+  constructor(message: string, details: { status?: number; code?: string | null; timeout?: boolean } = {}) {
+    super(message);
+    this.name = 'LlmError';
+    this.status = details.status;
+    this.code = LlmError.isCode(details.code) ? details.code : undefined;
+    this.timeout = details.timeout === true;
+  }
+
+  /** 오류 code 로 담을 수 있는 값인가 — 식별자 모양의 짧은 글만 */
+  static isCode(value: unknown): value is string {
+    return typeof value === 'string' && LLM_ERROR_CODE.test(value);
+  }
+}
+
 export interface MockLlmOptions {
   /** 차례로 돌려줄 응답 */
   responses?: string[];

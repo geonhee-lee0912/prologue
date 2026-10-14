@@ -11,6 +11,7 @@ import {
   WIKI_PAGES,
   type WikiPageKey,
 } from '@prologue/shared';
+import { describeError } from '../common/describe-error';
 import type { PrismaService } from '../prisma/prisma.service';
 import { pageGaps } from './known';
 import { stripUnstorableChars } from './messages';
@@ -99,8 +100,9 @@ export async function completeReply(
         maxOutputTokens: 400,
       });
       raw = result.content;
-    } catch {
-      logger.warn(`${request.purpose} llm failed user=${request.userId}`);
+    } catch (error) {
+      // 원인(상태·code·시간 초과)만 남긴다 — 오류 메시지는 쓰지 않는다 (CLAUDE.md 10.3)
+      logger.warn(`${request.purpose} llm failed user=${request.userId} error=${describeError(error)}`);
       return { reply: null, crisis };
     }
     const parsed = parseReply(raw);

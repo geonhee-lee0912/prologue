@@ -415,7 +415,7 @@ describe('잠금화면 알림과 로그', () => {
 
     expect(warn.mock.calls).toEqual([
       ['proactive push failed user=u1'],
-      ['proactive failed user=u1'],
+      ['proactive failed user=u1 error=Error'],
       ['proactive reply unusable user=u1'],
     ]);
     const everything = JSON.stringify([log.mock.calls, warn.mock.calls]);
