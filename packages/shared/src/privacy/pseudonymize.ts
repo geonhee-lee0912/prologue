@@ -18,24 +18,28 @@ const PHONE = /01[016789][-\s.]?\d{3,4}[-\s.]?\d{4}/g;
 // 국제 갈래가 '+82 10 010-1234' 까지만 먹고 꼬리 '-5678' 을 남긴다
 const PHONE_INTL = /\+?82[-\s.]?(?:\(0\))?[-\s.]?1[016789][-\s.]?\d{3,4}[-\s.]?\d{4}/g;
 // 휴대폰 — 하이픈·점을 공백으로 감싼 꼴: 010 - 1234 - 5678 · +82 - 10 - 1234 - 5678. 모양은 PHONE·PHONE_INTL 과 같고 구분자만 넓다.
-// 그 두 판 뒤의 판이다: PHONE·PHONE_INTL 이 잡던 것은 전과 똑같이 먼저 지워지고 이 판은 남은 것만 더 지운다(한 정규식의 갈래로 합치면 앞선 갈래가 뒤의 진짜 번호 앞머리를 먹을 수 있다).
+// PHONE·PHONE_INTL 뒤의 판이다: 그 둘이 잡던 것은 전과 똑같이 먼저 지워지고 이 판들은 남은 것만 더 지운다(한 정규식의 갈래로 합치면 앞선 갈래가 뒤의 진짜 번호 앞머리를 먹을 수 있다).
+// 여기서도 국내 꼴(PHONE_SPACED)을 먼저, 국제 표기(PHONE_INTL_SPACED)를 다음에 돌린다 — 합치면 국가 번호 뒤에 0 을 다시 붙인 번호
+// (+82 10 010 - 1234 - 5678)에서 국제 갈래가 '+82 10 010 - 1234' 까지만 먹고 꼬리 ' - 5678' 을 남긴다.
 // 앞에 숫자가 붙어 있으면 지우지 않는다 — 더 긴 숫자의 꼬리일 뿐인 숫자 범위(20180101 - 20241231)를 번호로 오인하지 않게
 const SPACED_SEP = String.raw`(?:[ \t]*[-.][ \t]*|\s)?`;
-const PHONE_SPACED = new RegExp(
-  String.raw`(?<!\d)(?:\+?82${SPACED_SEP}(?:\(0\))?${SPACED_SEP}|0)1[016789]${SPACED_SEP}\d{3,4}${SPACED_SEP}\d{4}`,
+const PHONE_SPACED = new RegExp(String.raw`(?<!\d)01[016789]${SPACED_SEP}\d{3,4}${SPACED_SEP}\d{4}`, 'g');
+const PHONE_INTL_SPACED = new RegExp(
+  String.raw`(?<!\d)\+?82${SPACED_SEP}(?:\(0\))?${SPACED_SEP}1[016789]${SPACED_SEP}\d{3,4}${SPACED_SEP}\d{4}`,
   'g',
 );
 
 export function redactContacts(text: string): string {
   // 주민번호를 먼저 — 휴대폰 패턴과 겹치지 않게. 휴대폰은 국내 꼴 다음에 국제 표기.
-  // 공백 낀 꼴은 앞의 네 판이 지운 뒤에 남은 것만 더 지운다(이때도 주민번호가 먼저)
+  // 공백 낀 꼴은 앞의 네 판이 지운 뒤에 남은 것만 더 지운다(이때도 주민번호가 먼저, 휴대폰은 국내 꼴 다음에 국제 표기)
   return text
     .replace(RRN, '[주민번호]')
     .replace(EMAIL, '[이메일]')
     .replace(PHONE, '[연락처]')
     .replace(PHONE_INTL, '[연락처]')
     .replace(RRN_SPACED, '[주민번호]')
-    .replace(PHONE_SPACED, '[연락처]');
+    .replace(PHONE_SPACED, '[연락처]')
+    .replace(PHONE_INTL_SPACED, '[연락처]');
 }
 
 export interface PseudonymizeOptions {
