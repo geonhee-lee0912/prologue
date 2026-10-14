@@ -15,7 +15,7 @@ import type { PrismaService } from '../prisma/prisma.service';
 import { pageGaps } from './known';
 import { stripUnstorableChars } from './messages';
 import type { HistoryLine, ReplyPromptInput } from './prompt/reply-prompt';
-import { type ParsedReply, parseReply } from './reply';
+import { type ParsedReply, parseReply, readCrisisSignal } from './reply';
 import type { CrisisKind } from './safety/crisis';
 import { enforceVoice } from './voice';
 import type { WikiService, WikiSnapshot } from './wiki/wiki.service';
@@ -69,14 +69,15 @@ function strongerCrisis(a: CrisisKind, b: CrisisKind): CrisisKind {
 export interface ReplyOutcome {
   /** 쓸 수 있는 답. 없으면 null — 대화는 대체 문장으로 답하고, 먼저 말 걸기는 보내지 않는다 */
   reply: ParsedReply | null;
-  /** 읽을 수 있었던 모든 시도가 알린 위기 신호 중 가장 센 것. 그 답을 버렸어도 남는다 */
+  /** JSON 으로 읽을 수 있었던 모든 시도가 알린 위기 신호 중 가장 센 것. 그 답을 버렸어도, 쓸 말풍선이 없었어도 남는다 */
   crisis: CrisisKind;
 }
 
 /**
  * 갈피 답을 받는다 — 금지 표현(과 extraBanned 가 찾은 말)이 나오거나 읽을 수 없으면 한 번 다시 묻는다.
  * 그래도 안 되거나 LLM 이 실패하면 reply 는 null (리뷰 1). 대화는 대체 문장으로 답하고, 먼저 말 걸기는 보내지 않는다.
- * crisis 는 읽을 수 있었던(parseReply 가 읽은) 모든 시도가 알린 signals.crisis 중 가장 센 것이다(self_harm > danger > none).
+ * crisis 는 JSON 으로 읽을 수 있었던 모든 시도(쓸 수 있는 말풍선이 없던 답 포함 — readCrisisSignal)가 알린 signals.crisis 중
+ * 가장 센 것이다(self_harm > danger > none).
  * 금지 표현 등으로 그 답의 글을 버려도 갈피가 알린 위기 신호는 잃지 않는다 — 부르는 쪽이 안전 안내를 붙일 수 있게.
  * 받아들인 답이 있으면 그 답의 signals.crisis 도 같은 값으로 맞춰, 성공하면 crisis 와 reply.signals.crisis 가 늘 같다
  */
@@ -103,8 +104,8 @@ export async function completeReply(
       return { reply: null, crisis };
     }
     const parsed = parseReply(raw);
-    // 글을 못 쓰게 되더라도 갈피가 알린 위기 신호는 남긴다
-    if (parsed) crisis = strongerCrisis(crisis, parsed.signals.crisis);
+    // 글을 못 쓰게 되더라도 갈피가 알린 위기 신호는 남긴다 — 쓸 수 있는 말풍선이 없어 parseReply 가 null 인 답도
+    crisis = strongerCrisis(crisis, parsed ? parsed.signals.crisis : readCrisisSignal(raw));
     // LLM 이 JSON 안에 \ud83d 처럼 짝 없는 서로게이트를 쓰면 저장이 거절될 수 있다 — 저장 전에 빼고, 비어 버린 말풍선은 버린다
     const bubbles = (parsed?.bubbles ?? [])
       .map((b) => ({ ...b, text: enforceVoice(stripUnstorableChars(b.text).split(PSEUDONYM_NAME).join('{name}')) }))

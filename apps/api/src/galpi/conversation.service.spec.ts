@@ -353,6 +353,24 @@ describe('버려진 답이 위기 신호를 알렸을 때 — 안전 안내는 �
     expect(db.galpiMessages.filter((m) => m.safety)).toHaveLength(1);
   });
 
+  it('쓸 수 있는 말풍선이 없는 답이 알린 신호도 남는다 — 다시 물어도 안 되면 대체 문장 뒤에 안전 안내', async () => {
+    const { db, llm, service } = await started(['{"bubbles":[],"signals":{"crisis":"self_harm"}}', '```\n깨진 답\n```']);
+    const result = await service.send('u1', { text: tired }, later(1));
+    expect(llm.calls).toHaveLength(2);
+    expect(result.messages.map((m) => m.text)).toEqual([tired, GALPI_COPY.fallback, GALPI_COPY.crisis.selfHarm]);
+    expect(db.galpiMessages.filter((m) => m.safety).map((m) => m.content)).toEqual([GALPI_COPY.crisis.selfHarm]);
+  });
+
+  it('말풍선 없이 신호만 알린 답 뒤에 LLM 이 실패해도 신호는 남는다', async () => {
+    const complete = vi
+      .fn()
+      .mockResolvedValueOnce({ content: '{"messages":[],"signals":{"crisis":"danger"}}', inputTokens: 0, cachedInputTokens: 0, outputTokens: 0 })
+      .mockRejectedValue(new Error('llm down'));
+    const { service } = await started([], {}, { complete });
+    const result = await service.send('u1', { text: tired }, later(1));
+    expect(result.messages.map((m) => m.text)).toEqual([tired, GALPI_COPY.fallback, GALPI_COPY.crisis.danger]);
+  });
+
   it('읽을 수 없는 답은 신호도 없다 — 이어서 읽을 수 있는 답이 알린 신호만 남는다', async () => {
     const { service } = await started(['안녕하세요!', flagged('운명이에요.', 'danger')]);
     const result = await service.send('u1', { text: tired }, later(1));
@@ -627,6 +645,18 @@ describe('갈피 답 받기 (reply-llm — 먼저 말 걸기도 쓴다)', () => 
   it('읽을 수 없는 시도는 신호가 없다 — 읽은 시도가 알린 신호만 센다', async () => {
     const llm = new MockLlmProvider({ responses: ['안녕하세요!', reply('운명 같은 말.', signal('danger'))] });
     expect(await completeReply(llm, request)).toEqual({ reply: null, crisis: 'danger' });
+  });
+
+  it('쓸 수 있는 말풍선이 없는 답이 알린 신호도 센다 — 받아들인 답의 신호도 그 값으로 맞춘다', async () => {
+    const noBubble = '{"bubbles":[],"signals":{"crisis":"self_harm"}}';
+    expect(await completeReply(new MockLlmProvider({ responses: [noBubble, '깨진 답'] }), request)).toEqual({ reply: null, crisis: 'self_harm' });
+
+    const llm = new MockLlmProvider({ responses: [noBubble, reply('많이 힘들었겠어요.')] });
+    const { reply: accepted, crisis } = await completeReply(llm, request);
+    expect(llm.calls).toHaveLength(2);
+    expect(accepted?.bubbles[0].text).toBe('많이 힘들었겠어요.');
+    expect(crisis).toBe('self_harm');
+    expect(accepted?.signals.crisis).toBe('self_harm');
   });
 
   it('다시 물어 받은 답이 괜찮아도 버려진 첫 답의 더 강한 신호가 남고, 받아들인 답의 신호도 그 값으로 맞춘다', async () => {

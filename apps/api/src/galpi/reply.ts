@@ -35,6 +35,16 @@ export function parseReply(raw: string): ParsedReply | null {
   return { bubbles, quickReply: toQuickReply(obj.quickReply), signals: toSignals(obj.signals) };
 }
 
+/**
+ * 갈피 답(JSON)이 알린 위기 신호만 읽는다 — 쓸 수 있는 말풍선이 없어 parseReply 가 null 이어도 신호는 잃지 않게 (reply-llm.ts).
+ * JSON 객체가 아니거나 신호가 없거나 틀리면 'none'. 말풍선이 있는 답에서는 parseReply 의 signals.crisis 와 같다
+ */
+export function readCrisisSignal(raw: string): CrisisKind {
+  const json = extractJson(raw);
+  if (!json || typeof json !== 'object' || Array.isArray(json)) return 'none';
+  return toSignals((json as Record<string, unknown>).signals).crisis;
+}
+
 function extractJson(raw: string): unknown {
   const trimmed = raw
     .trim()
