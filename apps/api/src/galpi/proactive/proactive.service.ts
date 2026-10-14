@@ -8,6 +8,7 @@ import { loadRenderContext, saveGalpiLine, toMessageDto } from '../messages';
 import { buildProactiveMessages } from '../prompt/proactive-prompt';
 import type { ReplyBubble } from '../reply';
 import { completeReply, loadReplyInput } from '../reply-llm';
+import type { CrisisKind } from '../safety/crisis';
 import { truncateCodePoints } from '../text';
 import { isQuietHour } from '../time';
 import { WikiService } from '../wiki/wiki.service';
@@ -51,13 +52,15 @@ export class ProactiveService {
 
   private async sendTo(state: GalpiState, now: Date): Promise<boolean> {
     const userId = state.userId;
+    // 시각만 쓴다 — 말 본문은 읽지 않는다
     const [recent, lastSafety] = await Promise.all([
       this.prisma.galpiMessage.findMany({
         where: { userId, sender: 'user', skipped: false },
         orderBy: { createdAt: 'desc' },
         take: RECENT_FOR_HOUR,
+        select: { createdAt: true },
       }),
-      this.prisma.galpiMessage.findFirst({ where: { userId, safety: true }, orderBy: { createdAt: 'desc' } }),
+      this.prisma.galpiMessage.findFirst({ where: { userId, safety: true }, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
     ]);
     const due = shouldSendProactive({
       now,
@@ -88,7 +91,11 @@ export class ProactiveService {
 
     let saved: GalpiMessage;
     try {
-      const bubble = await this.compose(state);
+      const { bubble, crisis } = await this.compose(state);
+      // 갈피가 위기 신호를 알렸으면(그 답을 버렸어도 남는다) 안부를 거는 자리가 아니다 — 억지로 보내느니 침묵이 낫다.
+      // 차지는 그대로 둔다: 그날을 쓰고 답 없는 말 한 번으로 센다. 돌려놓으면 매시 같은 위기 대화를 다시 LLM(국외)으로 보낸다.
+      // maxUnansweredProactive 번 이어지면 사용자가 다시 말할 때까지 멈춘다
+      if (crisis !== 'none') return false;
       if (!bubble) {
         // 쓸 말이 없으면 보내지 않는다. 차지를 돌려놓아 다음 시각에 다시 본다
         await this.release(state, now);
@@ -117,8 +124,8 @@ export class ProactiveService {
     }
   }
 
-  /** 첫 말풍선 하나만 쓰고 버튼은 버린다. 위기 신호가 섞이거나 쓸 말이 없으면 보내지 않는다 */
-  private async compose(state: GalpiState): Promise<ReplyBubble | null> {
+  /** 첫 말풍선 하나만 쓰고 버튼은 버린다. 쓸 말이 없으면 bubble 이 null 이고, crisis 는 갈피가 알린 위기 신호다(버린 답이 알린 것도) */
+  private async compose(state: GalpiState): Promise<{ bubble: ReplyBubble | null; crisis: CrisisKind }> {
     const user = await this.prisma.user.findUnique({ where: { id: state.userId }, select: { profile: { select: { displayName: true } } } });
     const { input } = await loadReplyInput(
       { prisma: this.prisma, wiki: this.wiki },
@@ -132,9 +139,7 @@ export class ProactiveService {
       { userId: state.userId, purpose: 'proactive', messages: buildProactiveMessages(input) },
       findProactiveBanned,
     );
-    // 갈피가 위기 신호를 알렸으면(그 답을 버렸어도 남는다) 안부를 거는 자리가 아니다 — 억지로 보내느니 침묵이 낫다
-    if (!reply || crisis !== 'none') return null;
-    return reply.bubbles[0];
+    return { bubble: reply?.bubbles[0] ?? null, crisis };
   }
 
   /** 잠금화면 문구는 티 나지 않게 — 제목은 "갈피", 본문은 갈피의 말 (AI 엔진 문서 7장, IA 3.11). 알림이 실패해도 대화방의 말은 남는다 */

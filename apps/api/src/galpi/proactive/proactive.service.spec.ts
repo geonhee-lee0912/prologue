@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { type LlmProvider, MockLlmProvider, type PushMessage, type PushProvider, type PushSendResult } from '@prologue/shared';
+import { type LlmProvider, MockLlmProvider, POLICY, type PushMessage, type PushProvider, type PushSendResult } from '@prologue/shared';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import type { PrismaService } from '../../prisma/prisma.service';
 import { GalpiAccessService } from '../access.service';
@@ -214,17 +214,23 @@ describe('먼저 말 걸기 실행', () => {
 });
 
 describe('위기 신호가 섞인 말은 보내지 않는다 (completeReply 의 crisis)', () => {
-  it('갈피가 위기 신호를 알린 말은 보내지 않고 차지를 돌려놓는다', async () => {
+  const crisisReply = (crisis = 'self_harm') => reply('{name}, 괜찮아요?', { signals: { userUsedCasual: false, crisis } });
+
+  it('갈피가 위기 신호를 알린 말은 보내지 않고, 차지는 그대로 둔다 — 그날을 쓰고 답 없는 말 한 번으로 센다', async () => {
     for (const crisis of ['danger', 'self_harm']) {
-      const { db, push, make } = await setup({ responses: [reply('{name}, 괜찮아요?', { signals: { userUsedCasual: false, crisis } })] });
+      const { db, llm, push, make } = await setup({ responses: [crisisReply(crisis)] });
       expect(await make().runOnce(NOW)).toBe(0);
       expect(db.galpiMessages.some((m) => m.proactive)).toBe(false);
       expect(push.sent).toHaveLength(0);
-      expect(db.galpiStates[0]).toMatchObject({ lastProactiveAt: null, unansweredProactive: 0 });
+      expect(db.galpiStates[0]).toMatchObject({ lastProactiveAt: NOW, unansweredProactive: 1 });
+
+      // 같은 날 다시 돌려도 LLM 을 부르지 않는다 — 위기 대화를 매시 다시 국외로 보내지 않는다
+      expect(await make().runOnce(kst(20, 30))).toBe(0);
+      expect(llm.calls).toHaveLength(1);
     }
   });
 
-  it('앞 시도가 위기 신호를 알리고 금지 표현으로 버려졌으면, 뒤 시도가 깨끗해도 보내지 않는다', async () => {
+  it('앞 시도가 위기 신호를 알리고 금지 표현으로 버려졌으면, 뒤 시도가 깨끗해도 보내지 않고 차지는 그대로 둔다', async () => {
     const { db, llm, push, make } = await setup({
       responses: [reply('왜 안 와요?', { signals: { userUsedCasual: false, crisis: 'self_harm' } }), reply('{name}, 금요일 발표는 잘 끝났어요?')],
     });
@@ -232,7 +238,40 @@ describe('위기 신호가 섞인 말은 보내지 않는다 (completeReply 의 
     expect(llm.calls).toHaveLength(2);
     expect(db.galpiMessages.some((m) => m.proactive)).toBe(false);
     expect(push.sent).toHaveLength(0);
+    expect(db.galpiStates[0]).toMatchObject({ lastProactiveAt: NOW, unansweredProactive: 1 });
+  });
+
+  it('위기 표시가 답 없는 말 상한만큼 이어지면 사용자가 다시 말할 때까지 LLM 을 부르지 않는다', async () => {
+    const max = POLICY.galpi.maxUnansweredProactive;
+    const { db, llm, push, make } = await setup({
+      responses: [...Array.from({ length: max }, () => crisisReply()), reply('{name}, 오늘은 어떻게 지냈어요?')],
+    });
+    const service = make();
+    // 12일부터 하루 한 번씩 위기 표시된 말이 온다
+    for (let i = 0; i < max; i += 1) expect(await service.runOnce(kst(20, 0, 12 + i))).toBe(0);
+    expect(llm.calls).toHaveLength(max);
+    expect(db.galpiStates[0].unansweredProactive).toBe(max);
+
+    // 그 뒤로는 날이 바뀌어도 살펴보지 않는다
+    expect(await service.runOnce(kst(20, 0, 12 + max))).toBe(0);
+    expect(await service.runOnce(kst(20, 0, 13 + max))).toBe(0);
+    expect(llm.calls).toHaveLength(max);
+
+    // 사용자가 다시 말하면 — 대화가 답 없는 수를 0 으로 되돌린다(conversation.service) — 다음 날 다시 건다
+    const back = kst(20, 30, 13 + max);
+    await db.galpiMessage.create({ data: { userId: 'u1', sender: 'user', content: '저 왔어요', createdAt: back } });
+    Object.assign(db.galpiStates[0], { lastUserMessageAt: back, unansweredProactive: 0 });
+    expect(await service.runOnce(kst(20, 0, 14 + max))).toBe(1);
+    expect(llm.calls).toHaveLength(max + 1);
+    expect(push.sent.map((p) => p.body)).toEqual(['지은 님, 오늘은 어떻게 지냈어요?']);
+  });
+
+  it('위기 표시가 없는 쓸 수 없는 말은 지금처럼 차지를 돌려놓아 다음 시각에 다시 본다', async () => {
+    const { db, llm, make } = await setup({ responses: [reply('왜 안 와요?'), reply('기다렸어요'), reply('{name}, 금요일 발표는 잘 끝났어요?')] });
+    expect(await make().runOnce(NOW)).toBe(0);
     expect(db.galpiStates[0]).toMatchObject({ lastProactiveAt: null, unansweredProactive: 0 });
+    expect(await make().runOnce(kst(20, 30))).toBe(1);
+    expect(llm.calls).toHaveLength(3);
   });
 });
 
