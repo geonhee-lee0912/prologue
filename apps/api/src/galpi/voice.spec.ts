@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { BANNED_EMOJI, emojiCount, enforceVoice, stripEmoji } from './voice';
+import { GALPI_SYSTEM_PROMPT } from './prompt/system-prompt';
+import { BANNED_EMOJI, emojiCount, enforceVoice, hasBannedEmoji, stripEmoji } from './voice';
 
 describe('갈피 목소리 — 이모지 규칙 (갈피 문서 3.6 ④)', () => {
   it('이모지는 하나만 남긴다 — 마지막 것', () => {
@@ -38,6 +39,30 @@ describe('갈피 목소리 — 이모지 규칙 (갈피 문서 3.6 ④)', () => 
 
   it('피부색이 붙은 이모지는 하나로 보고 통째로 뺀다', () => {
     expect(enforceVoice('좋다 👍🏽🙂')).toBe('좋다 🙂');
+  });
+
+  it('금지 이모지가 든 이어 붙인 이모지(ZWJ)는 통째로 뺀다 — 커플·키스 이모지', () => {
+    for (const couple of ['👩‍❤️‍👨', '👨‍❤️‍💋‍👨', '🧑🏻‍❤️‍🧑🏼']) {
+      expect(enforceVoice(`잘 어울려요 🙂 ${couple}`)).toBe('잘 어울려요 🙂');
+      expect(enforceVoice(`잘 어울려요 ${couple}`)).toBe('잘 어울려요');
+      expect(hasBannedEmoji(couple)).toBe(true);
+    }
+  });
+
+  it('하트 눈 고양이·뽀뽀 고양이와 하트 기호 ❥ 도 뺀다', () => {
+    for (const emoji of ['😻', '😽', '❥']) {
+      expect(enforceVoice(`좋다 🙂 ${emoji}`)).toBe('좋다 🙂');
+      expect(hasBannedEmoji(emoji)).toBe(true);
+    }
+  });
+
+  it('갈피가 쓰는 결의 이모지(시스템 프롬프트)는 남는다 — 편지 ✉️ 📮 도', () => {
+    const palette = GALPI_SYSTEM_PROMPT.match(/쓰는 결: ([^.]+)\./)?.[1].split(' ') ?? [];
+    expect(palette).toEqual(expect.arrayContaining(['🙂', '✉️', '📮']));
+    for (const emoji of palette) {
+      expect(enforceVoice(`좋다 ${emoji}`)).toBe(`좋다 ${emoji}`);
+      expect(hasBannedEmoji(emoji)).toBe(false);
+    }
   });
 
   it('이모지가 없으면 그대로', () => {

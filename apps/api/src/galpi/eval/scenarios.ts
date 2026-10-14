@@ -70,7 +70,6 @@ export const EVAL_SCENARIOS: EvalScenario[] = [
     '"다른 얘기 할래요"에 이유를 묻지 않는다',
     '다른 얘기 할래요',
     {
-      emojiAllowed: false,
       mustNotInclude: ['왜', '이유'],
       // 무슨 일이 있었는지 돌려 묻는 말 — '무슨 일 하면서 지내요?'는 다른 화제라 걸리지 않는다
       mustNotMatch: [/무슨\s*일\s*(이\s*)?있(었|어|나)/],

@@ -1,5 +1,5 @@
 import { findForbidden } from '@prologue/shared';
-import { BANNED_EMOJI, emojiCount } from '../voice';
+import { emojiCount, hasBannedEmoji } from '../voice';
 
 /**
  * 갈피 말 하나를 규칙으로 본다 — 어긴 것을 돌려준다 (AI 엔진 문서 8장 평가 세트)
@@ -9,7 +9,8 @@ export function checkReplyText(text: string, opts: { emojiAllowed?: boolean } = 
   const issues = findForbidden(text).map((word) => `금지 표현: ${word}`);
   const emojis = emojiCount(text);
   if (opts.emojiAllowed === false ? emojis > 0 : emojis > 1) issues.push(`이모지 ${emojis}개`);
-  if (BANNED_EMOJI.some((emoji) => text.includes(emoji))) issues.push('금지 이모지');
+  // 목소리 다듬기와 같은 판정 — 금지 이모지가 든 이어 붙인 이모지(ZWJ)도 금지다
+  if (hasBannedEmoji(text)) issues.push('금지 이모지');
   if (text.includes('[이름]')) issues.push('가명 [이름] 을 그대로 썼다');
   return issues;
 }
