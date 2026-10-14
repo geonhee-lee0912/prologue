@@ -6,6 +6,7 @@ import { GalpiAccessService } from '../access.service';
 import type { KnownService } from '../known.service';
 import { FakePrisma, type FakeUserInput } from '../testing/fake-prisma';
 import { IngestService } from './ingest.service';
+import { WikiService } from './wiki.service';
 
 const T = (minute: number) => new Date(Date.UTC(2026, 9, 11, 3, minute));
 const EMPTY = JSON.stringify({ claims: [], facts: [] });
@@ -475,6 +476,81 @@ describe('서고 수집 실행', () => {
       expect(db.wikiClaims.filter((c) => c.page === 'now')).toHaveLength(15);
       expect(db.wikiClaims.map((c) => c.text)).not.toContain('열여섯째 문장');
       expect(db.wikiClaims.map((c) => c.text)).toContain('다른 장의 새 문장');
+    });
+
+    describe('겹치는 문장을 합칠 때 (고치기 + 빼기) — 빠진 문장의 출처는 같은 장에서 고치거나 더한 문장으로 옮긴다', () => {
+      let olderId: string;
+
+      /** keepId 와 같은 장(now)에 있는, 다른 옛 원문에서 나온 문장 */
+      const addMergeable = async (page: 'now' | 'people', sources: string[]) =>
+        (await db.wikiClaim.create({ data: { userId: 'u1', page, text: '퇴근하면 한강을 걷는다', sources: { create: sources.map((messageId) => ({ messageId })) } } })).id;
+      const ingestReply = (claims: Record<string, unknown>[]) => new MockLlmProvider({ responses: [JSON.stringify({ claims, facts: [] })] });
+      const sourcesOf = (claimId: string) => db.wikiClaimSources.filter((s) => s.claimId === claimId).map((s) => s.messageId);
+
+      beforeEach(async () => {
+        olderId = (await db.galpiMessage.create({ data: { userId: 'u1', sender: 'user', content: '퇴근하면 한강을 걸어요', createdAt: T(-4) } })).id;
+      });
+
+      it('고친 문장이 빠진 문장의 출처를 이어받고, 그 문장을 갈피 빼기로 지우면 빠진 문장의 원문도 지워진다', async () => {
+        const mergedId = await addMergeable('now', [olderId]);
+        await service(
+          ingestReply([
+            { op: 'update', id: keepId, text: '주말마다, 퇴근하면 한강을 걷는다', sources: [userMessageId] },
+            { op: 'remove', id: mergedId },
+          ]),
+        ).runForUser('u1', T(30));
+
+        expect(db.wikiClaims.map((c) => c.id)).not.toContain(mergedId);
+        expect(sourcesOf(keepId)).toEqual([earlierId, userMessageId, olderId]);
+
+        // 합친 문장의 내용은 고친 문장에 살아 있다 — 고친 문장을 빼면 그 원문까지 지워져야 빼기가 참이다 (AI 엔진 문서 3.6)
+        await new WikiService(db as unknown as PrismaService).removeClaim('u1', keepId);
+        expect(db.galpiMessages.map((m) => m.id)).not.toContain(olderId);
+      });
+
+      it('같은 장에 새로 더한 문장도 빠진 문장의 출처를 이어받는다', async () => {
+        const mergedId = await addMergeable('now', [olderId]);
+        await service(
+          ingestReply([
+            { op: 'remove', id: mergedId },
+            { op: 'add', page: 'now', text: '퇴근하면 한강을 걷고 요즘은 아침에도 걷는다', sources: [userMessageId] },
+          ]),
+        ).runForUser('u1', T(30));
+
+        const added = db.wikiClaims.find((c) => c.text === '퇴근하면 한강을 걷고 요즘은 아침에도 걷는다');
+        expect(sourcesOf(added?.id ?? '')).toEqual([userMessageId, olderId]);
+        // 고치지 않은 문장은 그대로다
+        expect(sourcesOf(keepId)).toEqual([earlierId]);
+      });
+
+      it('이미 달린 출처는 다시 달지 않는다 — 같은 출처를 두 번 달면 DB 가 거절하고 묶음이 통째로 실패한다', async () => {
+        // 빠지는 두 문장이 모두 keepId 와 같은 옛 원문(earlierId)을 출처로 두고, olderId 도 함께 나눈다
+        const first = await addMergeable('now', [earlierId, olderId]);
+        const second = await addMergeable('now', [olderId]);
+        await service(
+          ingestReply([
+            { op: 'update', id: keepId, text: '주말마다, 퇴근하면 한강을 걷는다', sources: [userMessageId] },
+            { op: 'remove', id: first },
+            { op: 'remove', id: second },
+          ]),
+        ).runForUser('u1', T(30));
+
+        expect(sourcesOf(keepId)).toEqual([earlierId, userMessageId, olderId]);
+        expect(db.galpiStates[0].lastIngestAt).toEqual(T(2));
+      });
+
+      it('다른 장에서 빠진 문장의 출처는 옮기지 않는다 — 장을 넘는 병합은 보지 않는다', async () => {
+        const otherPage = await addMergeable('people', [olderId]);
+        await service(
+          ingestReply([
+            { op: 'update', id: keepId, text: '주말마다, 퇴근하면 한강을 걷는다', sources: [userMessageId] },
+            { op: 'remove', id: otherPage },
+          ]),
+        ).runForUser('u1', T(30));
+
+        expect(db.wikiClaims.map((c) => c.id)).not.toContain(otherPage);
+        expect(sourcesOf(keepId)).toEqual([earlierId, userMessageId]);
+      });
     });
 
     it('같은 문장을 두 번 고치라는 답에도 묶음이 실패하지 않는다 — 같은 출처를 두 번 달면 DB 가 거절한다', async () => {

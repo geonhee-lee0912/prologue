@@ -138,7 +138,8 @@ export class IngestService {
 
   private async ingestBatch(userId: string, batch: GalpiMessage[], userMessages: GalpiMessage[], previousEnd: Date | null): Promise<void> {
     const [claims, facts, user, before] = await Promise.all([
-      this.prisma.wikiClaim.findMany({ where: { userId }, orderBy: { createdAt: 'asc' }, select: { id: true, page: true, text: true } }),
+      // 출처까지 읽는다 — 합쳐서 빠지는 문장의 출처를 남는 문장으로 옮긴다(carriedSources)
+      this.prisma.wikiClaim.findMany({ where: { userId }, orderBy: { createdAt: 'asc' }, include: { sources: true } }),
       this.prisma.profileFact.findMany({ where: { userId }, select: { key: true, value: true } }),
       this.prisma.user.findUnique({ where: { id: userId }, select: { profile: { select: { displayName: true } } } }),
       this.loadContext(userId, previousEnd),
@@ -158,21 +159,30 @@ export class IngestService {
       existingClaims: new Map(claims.map((c) => [c.id, c.page as WikiPageKey])),
       maxClaimsPerPage: POLICY.galpi.ingest.maxClaimsPerPage,
     });
+    const carried = carriedSources(claims, ops.removes);
+    const claimById = new Map(claims.map((c) => [c.id, c]));
 
     await this.prisma.$transaction(async (tx) => {
       for (const id of ops.removes) await tx.wikiClaim.deleteMany({ where: { id, userId } });
       for (const update of ops.updates) {
+        const claim = claimById.get(update.id);
+        const sources = withCarried(
+          update.sources,
+          claim ? carried.get(claim.page) : undefined,
+          claim?.sources.map((s) => s.messageId),
+        );
         await tx.wikiClaim.update({
           where: { id: update.id },
           data: {
             text: update.text,
-            ...(update.sources.length ? { sources: { create: update.sources.map((messageId) => ({ messageId })) } } : {}),
+            ...(sources.length ? { sources: { create: sources.map((messageId) => ({ messageId })) } } : {}),
           },
         });
       }
       for (const add of ops.adds) {
+        const sources = withCarried(add.sources, carried.get(add.page));
         await tx.wikiClaim.create({
-          data: { userId, page: add.page, text: add.text, sources: { create: add.sources.map((messageId) => ({ messageId })) } },
+          data: { userId, page: add.page, text: add.text, sources: { create: sources.map((messageId) => ({ messageId })) } },
         });
       }
       for (const fact of ops.facts) {
@@ -188,4 +198,25 @@ export class IngestService {
       `ingest user=${userId} add=${ops.adds.length} update=${ops.updates.length} remove=${ops.removes.length} facts=${ops.facts.length}`,
     );
   }
+}
+
+/**
+ * 합쳐서 빠지는 문장의 출처를 장별로 모은다 — 모델은 겹치는 문장을 합치라고 듣는다(고치기 Y + 빼기 X).
+ * X 의 내용은 Y 에 살아 있으니, 나중에 Y 를 갈피 빼기로 지우면 X 의 원문도 함께 지워져야 빼기가 참이다 (AI 엔진 문서 3.6).
+ * 같은 장에서 이번에 고치거나 더하는 문장 모두에 단다 — 필요보다 많이 다는 쪽이 안전하다. 장을 넘는 병합은 보지 않는다
+ */
+function carriedSources(claims: { id: string; page: string; sources: { messageId: string }[] }[], removes: readonly string[]): Map<string, string[]> {
+  const removed = new Set(removes);
+  const byPage = new Map<string, string[]>();
+  for (const claim of claims) {
+    if (!removed.has(claim.id)) continue;
+    byPage.set(claim.page, [...(byPage.get(claim.page) ?? []), ...claim.sources.map((s) => s.messageId)]);
+  }
+  return byPage;
+}
+
+/** 이번에 달 출처 — 새 출처에 옮겨 오는 출처를 더하고, 겹치거나 이미 달린 출처는 뺀다(같은 출처를 두 번 달면 DB 가 거절하고 묶음이 통째로 실패한다) */
+function withCarried(own: readonly string[], carried: readonly string[] = [], existing: readonly string[] = []): string[] {
+  const attached = new Set(existing);
+  return [...new Set([...own, ...carried])].filter((messageId) => !attached.has(messageId));
 }
