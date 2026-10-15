@@ -3,34 +3,23 @@
 다음 세션에서 챙길 수 있도록 보류 시점의 상태와 재개 방법을 기록한다.
 완료되면 이 파일에서 제거.
 
-마지막 정리: 2026-10-11 (8. 앱 IA v2 화면 골격의 남은 일, 9. 최종 점검 — 보안·운영 차단, 10. 갈피 AI 엔진 1단계의 남은 일)
+마지막 정리: 2026-10-14 (1·2. RLS 정책 파일 정리, 8. 앱 IA v2 화면 골격의 남은 일, 9. 최종 점검 — 보안·운영 차단, 10. 갈피 AI 엔진 1단계의 남은 일)
 
 ---
 
-## 1. ⚠️ RLS 정책 파일이 9/17 스키마 정리를 반영하지 않았다 — `pnpm db:rls` 실패
+## 1. RLS 정책 파일 — 정리됨, dev DB 적용만 남음
 
-**상태**: 9/17 베이스라인 재생성(`ca7f25a`)에서 `recommendations`, `recommendation_reasons`, `user_actions` 테이블이 사라졌지만 `supabase/policies/` 는 그대로다.
-
-- `recommendations.sql`, `recommendation_reasons.sql`, `user_actions.sql` — 없는 테이블이 대상이다
-- `photos.sql`, `profiles.sql` — `select_recommended_*` 정책이 없는 `recommendations` 테이블을 조회한다
-
-`supabase/apply-policies.js` 는 파일을 이름순으로 `ON_ERROR_STOP=1` 로 실행하므로 **`photos.sql` 에서 멈춘다.** 그 뒤의 `profile_answers`, `profiles`, `relationship_preferences`, `reports` 정책은 적용되지 않는다.
-
-**확인할 것**: 9/17 커밋 안내대로 dev DB 에 `prisma migrate reset` 을 했다면 테이블이 RLS 없이 다시 만들어졌다. `reports`, `profiles` 등에 RLS 가 꺼져 있을 수 있다. dev 에는 실사용자 데이터가 없지만 prod 배포 전에는 반드시 고쳐야 한다.
+**상태 (2026-10-14)**: 9/17 정리로 없어진 테이블을 가리키던 정책 파일 3개(`recommendations`·`recommendation_reasons`·`user_actions`)를 지우고, `photos.sql`·`profiles.sql` 의 `select_recommended_*` 정책을 뺐다(소개 테이블이 생기면 다시 설계). 임시 Postgres 16 에 마이그레이션 2개와 정책 파일 전부를 `pnpm db:rls` 순서로 적용해 끝까지 통과하고 RLS 가 꺼진 테이블이 없는 것을 확인했다. `apps/api/src/supabase/rls-coverage.spec.ts` 가 RLS 누락과 없는 테이블을 가리키는 정책을 잡는다.
 
 **할 일**:
-- [ ] 없는 테이블이 대상인 정책 파일 3개 삭제
-- [ ] `photos.sql`, `profiles.sql` 에서 `select_recommended_*` 정책 제거. 소개(introduction) 테이블이 생기면 그때 다시 설계한다
-- [ ] dev DB 에 `pnpm db:rls` 재적용 후 테이블별 RLS 활성화 확인
-- [ ] 정책 단위 테스트 추가 (CLAUDE.md §14). 지금은 RLS 테스트가 하나도 없다
+- [ ] dev DB 에 마이그레이션(`prisma migrate deploy`)과 `pnpm db:rls` 적용 후 테이블별 RLS 활성화 확인 — 9/17 안내대로 `prisma migrate reset` 을 했다면 지금 dev 테이블은 RLS 없이 다시 만들어진 상태다
+- [ ] 실제 접근 거부 테스트(anon·authenticated 로 읽기 시도) — 지금 테스트는 정책 파일 검사뿐이다 (CLAUDE.md §14)
 
 ---
 
-## 2. RLS 정책이 없는 테이블
+## 2. RLS 정책이 없는 테이블 — 해결 (2026-10-14)
 
-`users`, `refresh_tokens`, `user_consents`, `user_auths`, `admin_users`, `admin_reviews`, `admin_audit_logs` 에 정책 파일이 없다.
-
-모바일이 직접 읽지 않는 테이블이라도 RLS 를 켜고 정책을 두지 않아(= anon/authenticated 접근 차단) service role 만 접근하게 해야 한다. 특히 `user_auths`(본인인증 해시)와 `refresh_tokens`.
+`users`, `refresh_tokens`, `user_consents`, `user_auths`, `admin_users`, `admin_reviews`, `admin_audit_logs` 에 정책 없이 RLS 만 켜는 파일(`supabase/policies/<table>.sql`)을 더했다 — anon·authenticated 는 전부 거부, service role 만 접근. dev DB 적용은 1번과 같이.
 
 ---
 
@@ -79,7 +68,7 @@
 - [ ] **실 토큰으로 end-to-end 검증**
   1. 브라우저에서 인가 URL 열기:
      ```
-     https://kauth.kakao.com/oauth/authorize?client_id=ea53415a27efd05ef6517e48310a983e&redirect_uri=<등록한URI>&response_type=code
+     https://kauth.kakao.com/oauth/authorize?client_id=<REST_API_KEY>&redirect_uri=<등록한URI>&response_type=code
      ```
   2. 카카오 로그인 → redirect URL 의 `?code=XXX` 복사
   3. 백엔드에 `code` 전달 → `accessToken` 받음:
@@ -206,8 +195,7 @@
 **상태**: 2026-10-11 전체 점검에서 확인. 앞으로 만들 코드에서도 계속 엮이므로 지금 고치지 않고, **실제 사용자를 받기 전 최종 점검에서 한꺼번에 처리**한다(사용자 결정). 그때까지 목록에서 빼지 않는다.
 
 **먼저 확인**
-- [ ] dev Supabase 의 RLS 실제 상태 — `users`, `refresh_tokens`, `user_auths`, `user_consents`, `admin_users`, `admin_reviews`, `admin_audit_logs` 7개 테이블은 정책 파일이 없다. RLS 가 꺼져 있으면 anon 키로 전화번호 해시·관리자 비밀번호 해시를 읽을 수 있다(1·2번 항목과 함께)
-- [ ] `pnpm db:rls` 가 `photos.sql`에서 멈춘다 — 1번 항목
+- [ ] dev Supabase 의 RLS 실제 상태 — 정책 파일은 2026-10-14 에 정리됐다(1·2번 항목, 7개 테이블도 RLS 만 켜는 파일이 생겼다). dev 에 적용하기 전까지는 RLS 가 꺼져 있을 수 있고, 그러면 anon 키로 전화번호 해시·관리자 비밀번호 해시를 읽을 수 있다
 
 **서버(API)**
 - [ ] 외부 서비스 mock 이 고정돼 있다 — `apps/api/src/infra/infra.module.ts`(SMS·본인인증·얼굴·사진 검수·푸시·결제). env 로 진짜/mock 을 고르는 스위치와 운영에서 mock 을 막는 장치가 없다. 특히 mock 본인인증은 앱이 보낸 신원 정보를 그대로 인정한다
@@ -225,10 +213,10 @@
 - [ ] 세션 비밀값에 기본값 폴백(`apps/admin/src/lib/session.ts`), 운영자 역할(owner/manager/reviewer)을 강제하는 곳이 없다
 
 **키·문서**
-- [ ] 5번 항목 본문(카카오 인가 URL 예시)에 실제 REST API 키가 있고 2026-05-17 부터 원격 저장소에 있다 — 문서에서 빼고, 카카오 콘솔에서 키 재발급 또는 client secret 사용
+- [ ] 카카오 REST API 키가 2026-05-17 부터 원격 저장소의 이 문서(5번 항목)에 있었다 — 문서에서는 2026-10-14 에 뺐지만 git 기록에 남아 있다. 카카오 콘솔에서 키 재발급 또는 client secret 사용
 
 **테스트**
-- [ ] RLS 정책 테스트가 0 개다(CLAUDE.md 14장 의무)
+- [ ] RLS 정책 테스트가 파일 검사(`rls-coverage.spec.ts`, 갈피 `rls-policy.spec.ts`)뿐이다 — 실제 접근 거부 테스트가 없다(CLAUDE.md 14장 의무, 1번 항목)
 
 **앞으로 새 코드에서 지킬 것** (목록이 늘지 않게)
 - 새 테이블은 RLS 정책과 정책 테스트를 같이 만든다(CLAUDE.md 6·7·14장)
@@ -244,7 +232,7 @@
 **상태**: 백엔드 엔진(`apps/api/src/galpi`)은 `docs/superpowers/plans/2026-10-11-갈피-AI-엔진-1단계.md` 로 만들었다. 실제 DB 적용과 모바일 연결은 아직이다.
 
 **DB 적용 (사람 확인 후)**
-- [ ] `prisma migrate deploy`(`20261011000000_galpi_engine`)와 `supabase/policies/galpi.sql` 적용 — `pnpm db:rls` 는 1번 항목(photos.sql)에서 멈추니 먼저 푼다
+- [ ] `prisma migrate deploy`(`20261011000000_galpi_engine`)와 `supabase/policies/galpi.sql` 적용 — `pnpm db:rls` 가 멈추던 정책 파일은 2026-10-14 에 정리됐다(1번 항목)
 - [ ] 마이그레이션 적용 전에 이 코드를 배포하지 않는다 — 예약 작업(10분 수집·매시 먼저 말 걸기)이 없는 테이블을 읽어 계속 실패한다
 - [ ] 적용 뒤 `LLM_PROVIDER=mock` 으로 첫 만남 → 첫 리포트까지 API 로 한 번 돌려 본다
 - [ ] 실제 DB 에서 동시성·롤백을 통합 테스트로 고정한다 — 알게 됨 차지와 첫 리포트 저장(한 트랜잭션), 버튼 답 한 번만(동시 200/409, 실패하면 풀림), 서고 수집 묶음 차지, 먼저 말 걸기 차지와 되돌리기. 테스트용 FakePrisma 는 롤백·격리가 없다

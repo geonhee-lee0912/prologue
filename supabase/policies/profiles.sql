@@ -5,7 +5,8 @@
 --
 -- 핵심 원칙:
 -- 1. 사용자는 자신의 프로필 SELECT/UPDATE 가능.
--- 2. 자신에게 추천된 상대 또는 매칭된 상대의 프로필만 SELECT 가능.
+-- 2. 매칭된 상대의 프로필만 SELECT 가능. 소개(introduction) 받은 상대의 프로필은
+--    소개 테이블이 생길 때 다시 설계한다 (옛 추천 테이블은 2026-09-17 정리로 없어졌다).
 -- 3. 무관한 다른 사용자 프로필 SELECT 불가.
 -- 4. INSERT/DELETE 는 NestJS service role 만 수행.
 -- =====================================================================
@@ -22,18 +23,8 @@ CREATE POLICY "select_own_profile" ON profiles
   FOR SELECT
   USING (auth.uid() = user_id);
 
--- 자신이 받은 추천의 대상 프로필
+-- 옛 추천 정책 — 테이블이 없어졌다. 남아 있는 DB 에서도 지운다
 DROP POLICY IF EXISTS "select_recommended_profile" ON profiles;
-CREATE POLICY "select_recommended_profile" ON profiles
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM recommendations r
-      WHERE r.user_id = auth.uid()
-        AND r.target_user_id = profiles.user_id
-        AND r.status IN ('created', 'shown', 'interested', 'skipped')
-    )
-  );
 
 -- 자신이 매칭된 상대의 프로필
 DROP POLICY IF EXISTS "select_matched_profile" ON profiles;
