@@ -43,6 +43,8 @@
 
 ## 2. 아키텍처 한 장 요약 (B안)
 
+> **2026-10-15 결정: Railway 를 쓰지 않는다.** NestJS 도 Vercel 함수로 올리고, 예약 작업은 Vercel Cron, 응답 뒤 작업은 `waitUntil`, 재시도가 필요한 일은 Supabase 큐(pgmq), 요청 제한·인증번호는 Redis(Upstash)로 간다(`docs/superpowers/specs/2026-10-15-멀티서비스-플랫폼-design.md` 7·13장). 아래 그림과 `09_아키텍처_의사결정_v0_2.md`·`DEVELOPMENT_SPEC.md` 의 Railway 는 프롤로그 적용 스펙에서 고친다.
+
 ```
 모바일 (Expo) ─── Supabase 직접 (단순 조회, 실시간 구독)
               └── NestJS (Railway) ─── Supabase service role
@@ -66,6 +68,10 @@
 | 작업 종류 | 우선 확인 문서 |
 |---|---|
 | **모든 작업 (최우선)** | **`docs/superpowers/specs/2026-09-02-컨셉-재설정-design.md`** — 컨셉·BM·설계 원칙·법적 검토. 아래 어떤 문서와 충돌하든 이 문서가 우선한다 |
+| 운영자와 일하는 방식 | `docs/context/운영자-작업-방식.md` — 말투, 추천안 먼저·한 번에 하나씩, 허락받을 것(생성·푸시·DB 적용), 디자인 취향, 진행 방향 |
+| 개발 환경·실행 규칙 | `docs/context/개발-환경.md` — git 계정과 푸시, 명령, 에이전트 실행 규칙, 로컬 RLS 확인 |
+| 호스팅·여러 서비스 공통 기능 | `docs/superpowers/specs/2026-10-15-멀티서비스-플랫폼-design.md` — Vercel + Supabase, 공통 패키지(알림·AI·결제·로그인·동의·운영) |
+| 갈피 엔진 코드 (`apps/api/src/galpi`) | `docs/superpowers/specs/2026-10-11-갈피-AI-엔진-design.md` + 실행 중 결정 80개 `docs/superpowers/plans/2026-10-11-갈피-AI-엔진-1단계-결정.md` |
 | 새 기능 개발 | 위 문서 4·5·6장 → (참고만) `docs/08_기능요구사항서_v_0_1.md` |
 | 데이터 모델 변경 | `docs/08_데이터항목_정의서_v_0_1.md` + `apps/api/prisma/schema.prisma` |
 | RLS 정책 변경 | `09_아키텍처_의사결정_v0_2.md` 6장 + `supabase/policies/<table>.sql` |
@@ -565,6 +571,7 @@ pnpm build
 ## 18. 변경 이력
 
 - 2026-05-10: v0.1 최초 작성. NestJS + 자체 AWS 인프라 기준.
+- 2026-10-15: v0.11 갱신. **맥락을 저장소로** — 프롤로그 컴퓨터의 Claude 메모리 중 문서에 없던 것을 `docs/context/`(운영자 작업 방식, 개발 환경)로, 갈피 엔진 1단계 실행 중 결정 80개를 `docs/superpowers/plans/2026-10-11-갈피-AI-엔진-1단계-결정.md` 로 옮기고 3장 표에 연결(멀티 서비스 플랫폼 스펙 10장 1단계). 2장에 Railway 를 쓰지 않는다는 결정을 적음.
 - 2026-10-11: v0.10 갱신. **10.2b 민감정보 범위를 개인정보보호법 23조 전체로** — 사상·신념, 노조·정당, 정치적 견해, 건강, 성생활과 시행령의 유전·범죄경력·생체인식·인종·민족 정보. 갈피는 직접 묻지 않고, 흘러든 언급은 저장할 때 마스킹한다(`docs/superpowers/specs/2026-10-11-갈피-AI-엔진-design.md` 5.3).
 - 2026-10-11: v0.9 갱신. **하드룰 3 가벼운 소개를 "노출에 동의한 사람끼리만 주고받는다"로 명확히** — 받으려면 나도 켠다(앱 IA 4.4 양쪽 동의). 12장 `exposureDefault` 주석 같은 뜻으로.
 - 2026-10-10: v0.8 갱신. **8.1에 앱 IA v2 화면 파일 규칙 추가** — 새 화면은 파일 맨 위 `@screen` 주석으로 기존 화면 ID를 추적한다. 모바일 화면 골격(친구/대화/내 이야기/설정)이 mock 데이터로 섰다. 12장 `policy.ts` 예시를 코드 키에 맞춤(`maxStoryChoices`, `galpi`, `feed`).
