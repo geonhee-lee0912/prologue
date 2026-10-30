@@ -1,649 +1,122 @@
-# 프롤로그 개발 스펙 v0.2
+# 프롤로그 개발 스펙
 
-문서 상태: Confirmed
-작성 기준: 09_아키텍처 의사결정 v0.2, 프롤로그 서비스 콘셉트 기획서 v1.1, 08_MVP 기능범위 정의서 v0.1, 08_기능요구사항서 v0.1, 08_화면목록_IA v0.1, 08_데이터항목 정의서 v0.1, 08_추천 알고리즘 기준서 v0.1
-문서 목적: 프롤로그 MVP 를 클로드 코드로 개발하기 위한 기술 스택, 아키텍처, 의사결정 기준을 정의한다.
+갱신: 2026-10-30. 현재 코드와 확정된 목표를 구분한다. 이전 v0.2의 Railway·정기 추천·점수 6종·대화 만료·옛 FR 구현 순서는 폐기된 기준이다.
 
-> v0.2 변경 요점: 아키텍처 B안 (NestJS + Supabase 하이브리드) 채택. PostgreSQL/Storage/Auth/Realtime 을 Supabase 로 위임. 자체 인프라 (Docker Compose, S3, MinIO, socket.io) 제거.
+작업 규칙은 [AGENTS.md](AGENTS.md), 실행은 [README](README.md), 배포 결정은 [아키텍처 문서](09_아키텍처_의사결정_v0_2.md)와 [멀티 서비스 플랫폼 스펙](docs/superpowers/specs/2026-10-15-멀티서비스-플랫폼-design.md)을 따른다.
 
----
+## 1. 설계 기준
 
-## 1. 문서 목적
+- 사용자는 진열하지 않는다. 깊은 데이터는 AI만 보고, 허락한 조건 정보만 소개 편지에 담는다.
+- 정기 추천·품질을 낮춘 억지 소개를 하지 않는다. 연결권은 양쪽의 대화 성립 시점에 차감한다.
+- NestJS가 비즈니스 규칙·권한·외부 서비스를 담당한다. Supabase는 Postgres·RLS·Storage·Realtime을 맡는다.
+- 공통 기능은 서비스별 데이터·키를 합치지 않고 `platform` 패키지로 공유한다. **현황 조사·현황표 작성 계획만 폐기됐으며 공통 플랫폼 계획은 유지한다.**
+- 현재 구현이 정책을 만족하지 않는 부분은 [BACKLOG](BACKLOG.md)에 남긴다. 옛 코드의 존재를 새 제품 정책의 근거로 삼지 않는다.
 
-이 문서는 프롤로그 MVP 의 기술 의사결정을 한 곳에 모은다. 기획 문서가 "무엇을 만들지"를 정의했다면, 이 문서는 "어떻게 만들지"를 정의한다.
+## 2. 현재 기술 스택
 
-이 문서가 다루는 범위:
+정확한 버전은 각 `package.json`과 `pnpm-lock.yaml`이 기준이다.
 
-1. 기술 스택 선택과 그 이유
-2. 모노레포 구조와 패키지 분리 기준
-3. Supabase 와 NestJS 의 책임 분담
-4. 외부 서비스 의존성과 추상화 방식
-5. 데이터 모델과 RLS 정책 매핑
-6. 보안/개인정보 처리 원칙의 기술적 적용
-7. 개발 워크플로우와 환경
-8. 배포와 운영 기본 방향
+| 영역           | 현재 코드                                                                                                          |
+| -------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 언어·도구      | TypeScript, Node.js 20 이상, pnpm 9.12.0, Turbo                                                                    |
+| 모바일         | Expo SDK 54, Expo Router 6, React 19.1, React Native 0.81, Zustand, TanStack Query, React Hook Form·Zod            |
+| API            | NestJS 10, Prisma 5, Passport JWT, class-validator·class-transformer, Pino, Swagger, Throttler, `@nestjs/schedule` |
+| 운영 도구      | Next.js 15 App Router, React 19.1, Tailwind, iron-session, NestJS Admin API                                        |
+| DB·파일·실시간 | Supabase Postgres·Storage·Realtime, RLS SQL                                                                        |
+| 테스트         | Vitest, API는 Nest testing·Supertest도 사용. 모바일 테스트는 `TZ=Asia/Seoul`                                       |
 
----
+BullMQ·ioredis 의존성은 남아 있지만, 현재 갈피 예약 작업이 BullMQ로 실행되거나 임시 상태가 Redis에 저장된다는 뜻은 아니다.
 
-## 2. 의사결정 원칙
+## 3. 데이터 흐름과 권한
 
-이 문서의 모든 기술 선택은 다음 원칙을 따른다.
+| 패턴                | 경로                                                          | 적용 기준                                                     |
+| ------------------- | ------------------------------------------------------------- | ------------------------------------------------------------- |
+| 1. 허용된 단순 조회 | 모바일 → Supabase                                             | RLS와 컬럼 공개 범위가 확인된 자기 데이터 등                  |
+| 2. 비즈니스 처리    | 모바일·운영 도구 → NestJS → DB·외부 서비스                    | 인증·동의·다단계 트랜잭션·신고·차단·갈피 대화·서고·리포트     |
+| 3. 실시간 수신      | Supabase Realtime → 모바일                                    | RLS가 허용한 변경만. 사람 대화 2단계에서 연결 예정            |
+| 4. 백그라운드       | 현재 NestJS `@Cron`, 목표 Vercel Cron·`waitUntil`·Supabase 큐 | 먼저 말 걸기·수집·정리·재시도. 정기 추천 배급은 만들지 않는다 |
 
-1. **MVP 검증이 최우선이다.**
-2. **국내 규제와 사용자 환경에 맞춘다.** Supabase 서울 리전 사용.
-3. **소수 인원이 운영 가능해야 한다.** 한 명 또는 두 명의 개발자가 클로드 코드와 함께 운영.
-4. **외부 서비스는 갈아끼울 수 있게 한다.** 본인인증, SMS, 푸시는 인터페이스 뒤로 숨긴다.
-5. **민감 정보는 처음부터 격리한다.** Supabase RLS 와 NestJS 응답 직렬화로 이중 방어.
-6. **추천은 룰 기반에서 시작한다.** ML 인프라보다 SQL 점수 계산 우선.
-7. **Supabase 가 기본, NestJS 가 비즈니스 로직.** Supabase 로 충분한 단순 조회는 모바일 직접 호출, 트랜잭션과 외부 연동은 NestJS 경유.
+- 클라이언트는 `messages`, `matches`, `reports`, `blocks`에 직접 INSERT하지 않는다.
+- 갈피 테이블은 클라이언트가 직접 읽거나 쓰지 않는다. API가 사용자·동의를 검사하고 공유 DTO로 필요한 정보만 반환한다.
+- Prisma와 Supabase service role 접근은 RLS가 사용자별 권한을 대신 보장하지 않는다. API에서 차단 관계·소유권·상태를 검증한다.
+- 메시지 전송은 NestJS 경유, 실시간 수신은 Realtime이라는 경계를 유지한다. 사람 대화 API·연결권 차감은 아직 구현되지 않았다.
 
----
+## 4. 인증과 API 규약
 
-## 3. 기술 스택 결정
+### 사용자·운영자 인증
 
-### 3.1 언어
+현재 사용자 JWT는 **API의 `JwtIssuerService`가 `SUPABASE_JWT_SECRET`으로 발급**하는 Supabase 호환 HS256 토큰이다. `sub`, `role=authenticated`, `aud=authenticated`, `iss=prologue`를 담고 15분 유효하다. refresh token은 30일, DB에는 SHA-256 해시만 저장하며 회전한다. `SupabaseJwtStrategy`가 Bearer 토큰을 검증한다. “Supabase Auth가 발급하고 API는 검증만 한다”는 옛 설명은 현재 코드와 다르다.
 
-전 영역에서 **TypeScript**.
+운영자는 `AdminAuthService`의 이메일·bcrypt 비밀번호 검증과 `ADMIN_JWT_SECRET`으로 서명한 별도 JWT(8시간)를 쓴다. Next.js 쪽은 iron-session을 사용한다. 역할 강제·세션 비밀값 기본값 등 남은 점검은 BACKLOG 9절을 따른다. Realtime이 사용자 토큰을 신뢰하도록 맞추는 일은 2단계 전 확인한다.
 
-### 3.2 모바일 앱 (사용자 앱)
+### 경로·응답
 
-**Expo (React Native) + TypeScript**
+- 전역 prefix: `/api`. 사용자 컨트롤러는 `/api/v1/...`, 관리자 API는 `/api/v1/admin/...`. 예외는 컨트롤러를 확인한다.
+- 상태 확인: `/api/health`, Swagger: `/api/docs`.
+- 성공: `{ "data": <T> }`. 실패: `{ "error": { "code": "...", "message": "...", "details"?: ... } }`.
+- 새 비즈니스 오류는 `AppException`과 `packages/shared/src/errors.ts`의 `ErrorCode`를 사용한다.
+- 응답은 명시적 DTO로 만든다. Prisma/Supabase 결과 전체를 그대로 반환하지 않는다. 화면용 모델은 서버 응답 계약과 구분한다.
+- 반복 요청·예약 작업은 멱등성을 보장한다. 갈피 구현의 조건부 갱신·트랜잭션은 실행 중 결정 기록을 확인한다.
 
-| 항목 | 선택 |
-|---|---|
-| 프레임워크 | Expo SDK 51+ |
-| 라우팅 | Expo Router (file-based) |
-| 상태 관리 | Zustand + TanStack Query |
-| 폼 | React Hook Form + Zod |
-| Supabase 클라이언트 | @supabase/supabase-js (실시간, 직접 조회) |
-| 푸시 | expo-notifications |
-| 카메라/얼굴 | expo-camera |
-| 보안 저장소 | expo-secure-store (Supabase 토큰) |
+## 5. 갈피·화면·정책
 
-### 3.3 백엔드 API
+갈피 1단계 구현은 `apps/api/src/galpi/`, 설계는 [AI 엔진 스펙](docs/superpowers/specs/2026-10-11-갈피-AI-엔진-design.md), 세부 선택은 [실행 중 결정](docs/superpowers/plans/2026-10-11-갈피-AI-엔진-1단계-결정.md)을 본다. 2026-09의 AI 인터뷰 계획을 새 실행 순서로 쓰지 않는다.
 
-**NestJS + Prisma + Supabase Postgres**
+- 정책 값: `packages/shared/src/policy.ts`. 점수 6개·가중치·대화 7/14/21일 만료는 폐기됐다.
+- 갈피 서버 계약: `packages/shared/src/galpi/contract.ts`. UI 도메인 모델과 다른 사용자에게 보낼 데이터는 `apps/mobile/domain/types.ts` 상단 계약을 확인한다.
+- 현행 라우트는 뜻이 보이는 이름, 화면 ID A1~G5는 `@screen` 주석으로 추적한다. 옛 FR-\*·A01~K05는 남아 있는 코드의 이력이다.
+- 모바일은 mock store·시나리오 기반이다. API 엔진 구현 완료와 모바일 연결 완료를 구분한다.
 
-| 항목 | 선택 | 비고 |
-|---|---|---|
-| 프레임워크 | NestJS 10+ | |
-| ORM | Prisma | Supabase Postgres 연결 |
-| DB | Supabase Postgres (서울 리전) | dev / prod 두 프로젝트 |
-| 호스팅 | Railway Hobby | $5~10/월 예상 |
-| 캐시/큐 | Upstash Redis + BullMQ | 무료 티어로 시작 |
-| 실시간 (서버 측 보조만) | NestJS는 직접 WebSocket 안 함 | Supabase Realtime 이 broadcast |
-| Storage 접근 | @supabase/supabase-js (service role) | NestJS 가 사진 검수 시 사용 |
-| 인증 | Supabase JWT 검증 | 자체 발급 안 함 |
-| 검증 | class-validator + class-transformer | |
-| 로깅 | Pino | |
-| API 문서 | Swagger | `/api/docs` |
+## 6. DB·RLS 변경
 
-### 3.4 관리자 도구 (운영자용)
+| 자산                    | 현재 위치·도구                                               |
+| ----------------------- | ------------------------------------------------------------ |
+| 스키마                  | `apps/api/prisma/schema.prisma`                              |
+| 테이블·enum·인덱스 변경 | `apps/api/prisma/migrations/*/migration.sql`, Prisma Migrate |
+| RLS·정책 부속 SQL       | `supabase/policies/*.sql`                                    |
+| RLS 적용                | 루트 `pnpm db:rls` → `supabase/apply-policies.js` → psql     |
 
-**Next.js 15 (App Router) + TypeScript**
+변경 SQL은 원격 DB 없이 `prisma migrate diff`로 만든다. 새 테이블은 RLS와 정책 검사를 함께 추가한다. **원격 적용은 사람 확인 후** Prisma 마이그레이션 → 정책 순서로 진행한다. 현재 `supabase db push`로 정책 디렉터리가 적용되지 않는다. 정확한 명령은 [supabase/README](supabase/README.md)를 따른다.
 
-| 항목 | 선택 |
-|---|---|
-| 프레임워크 | Next.js 15 App Router |
-| UI | shadcn/ui + Tailwind |
-| 데이터 | NestJS Admin API (`/api/admin/v1`) 호출 |
-| 인증 | Supabase Auth + 운영자 권한 검증 |
-| 호스팅 | Vercel Hobby |
+미리보기 브랜치를 위해 `supabase/migrations`로 스키마·RLS를 통합하고 Prisma는 클라이언트·SQL 생성에만 쓴다는 결정은 **아직 미적용**이다. 현재 경로와 미래 경로를 섞어 안내하지 않는다.
 
-### 3.5 인프라 / DevOps
+## 7. 개인정보·외부 서비스
 
-| 항목 | 선택 |
-|---|---|
-| Database / Auth / Storage / Realtime | Supabase (서울 리전, dev + prod 두 프로젝트) |
-| 백엔드 호스팅 | Railway Hobby |
-| Redis | Upstash 무료 티어 |
-| 모바일 빌드 | Expo EAS |
-| 관리자 호스팅 | Vercel Hobby |
-| 도메인/CDN | Cloudflare (선택) |
-| 모니터링 | Sentry (선택, MVP 후순위 가능) |
-| CI/CD | GitHub Actions |
+- 전화번호는 SHA-256 + pepper로 `User.phoneHash`만 저장한다. 이름·생년월일 등 본인인증 원본은 검증 뒤 폐기한다.
+- 얼굴 인증 이미지는 보안 버킷에 두고 24시간 이내 폐기해야 한다. 실패 이미지의 TTL 작업은 아직 없다(BACKLOG 7절).
+- 상대 식별자·연락처·거절 사유·점수·신고 내용·운영 메모를 사용자 응답에 싣지 않는다. 연락처의 허용 조건은 AGENTS 10.1을 따른다.
+- 로그에 전화번호·이메일·인증 원본·메시지 본문을 쓰지 않는다. 오류 응답·예외 로그에 데이터가 섞이는 기존 문제는 BACKLOG 9절에 있다.
+- 실제 LLM 전에 필수·민감정보·국외이전 동의를 분리하고, API 전송 전 가명처리, 저장 시 민감정보 마스킹, 무보존·미학습 설정과 처리방침을 확인한다(AGENTS 10.2b·10.2c).
+- 자동화된 결정의 설명·거부 요청 창구를 둔다. 운영자의 상시 주선 검수는 두지 않는다.
+- 외부 서비스는 `packages/shared/src/integrations/` 인터페이스를 거친다. Storage는 Supabase SDK를 직접 쓴다.
+- 현재 `InfraModule`은 LLM 이외의 외부 서비스를 mock으로 고정한다. LLM은 `mock|openai`, 카카오는 `mock|real` 선택 코드가 있다. 새 provider는 실/mock 전환과 운영 mock 금지를 함께 만든다.
+- 본인인증 목표는 포트원 V2, 앱 결제는 인앱결제·웹은 토스다. 업체 계약·실 연동은 아직이다. 얼굴 인증을 새 온보딩에 둘지는 미정이다.
 
----
+## 8. 실행·검증·PR
 
-## 4. Supabase vs NestJS 책임 분담
+클라우드에서 저장소·설치된 도구와 개발용 환경변수만으로 실행한다. 데스크톱 메모리·회사 노트북 SSH 설정·특정 플러그인을 필수 조건으로 삼지 않는다. `.env` 없이 가능한 검증과 mock 미리보기는 README를 따른다.
 
-이 절이 B안의 핵심이다. 어떤 작업을 어디서 하는지 명확히 해야 코드가 흩어지지 않는다.
+shared를 먼저 빌드하고 변경 영역의 타입 검사·Vitest를 실행한다. 보안·권한 변경은 회귀 테스트, RLS는 정책 검사와 실제 접근 검증이 필요하다. 현재 RLS 테스트가 파일 검사 위주라는 한계는 BACKLOG 1·9절에 남긴다. API dev 실행은 원격 DB·예약 작업에 연결하므로 DB 적용 상태를 확인한다.
 
-### 4.1 4가지 데이터 흐름 패턴
+작업은 개별 브랜치와 PR로 남긴다. PR 생성 요청에는 해당 브랜치 게시가 포함된다. 운영자가 병합하며 자동 병합을 켜지 않는다. DB·호스팅 콘솔 변경은 별도 승인 후 한다.
 
-#### 패턴 1: 단순 조회 — 모바일이 Supabase 직접
+## 9. 배포 목표와 미완료 전환
 
-```ts
-// apps/mobile 에서
-const { data } = await supabase
-  .from('profiles')
-  .select('*')
-  .eq('user_id', userId)
-  .single();
-```
+| 역할                    | 확정된 목표                              | 남은 일                                               |
+| ----------------------- | ---------------------------------------- | ----------------------------------------------------- |
+| API·운영 도구           | Vercel                                   | API 진입점·배포 설정 검증                             |
+| 예약 작업               | Vercel Cron의 내부 엔드포인트            | 인증·중복 실행 방어·NestJS `@Cron` 전환               |
+| 응답 뒤 작업            | `waitUntil`                              | 첫 리포트·수집 등 프로세스 내 작업 전환               |
+| 재시도                  | Supabase 큐(pgmq) 또는 발송 대기표       | 작업 분할·재시도·중복 방지                            |
+| OTP·인증 세션·요청 제한 | Upstash Redis                            | 메모리 저장소 전환, 프록시 뒤 tracker 확인            |
+| DB·환경                 | Supabase의 서비스 단계별 dev·PR 미리보기 | 스키마·RLS 마이그레이션 통합과 환경 연결              |
+| 모바일                  | Expo EAS                                 | development/운영 빌드·카카오 OAuth·푸시·인앱결제 연결 |
 
-해당 작업: 내 프로필, 매칭된 대화방 목록, 받은 추천 카드 목록, 알림 목록.
+Railway와 BullMQ 상시 워커는 목표에서 제외됐다. 상시 서버가 필요한 예외는 플랫폼 스펙 7장을 따른다. Vercel·Supabase 요금은 기존 Pro 팀·조직과 사용량을 기준으로 플랫폼 스펙 15장에서 관리하며, 옛 Railway 포함 월 $30~35 추산은 사용하지 않는다.
 
-RLS 가 권한 검증을 담당한다.
+## 10. 다음 작업과 변경 이력
 
-#### 패턴 2: 비즈니스 트랜잭션 — NestJS 경유
+공통 플랫폼 순서는 플랫폼 스펙 14장, 프롤로그의 남은 작업은 BACKLOG를 따른다. 현황 조사·현황표 작성이나 조사 승인 단계를 다시 넣지 않는다. 공통 플랫폼 자체를 폐기하거나 새로운 제품 개발 순서를 정한 것으로 해석하지 않는다.
 
-```ts
-// apps/mobile 에서
-await api.post('/interests', { targetUserId });
-
-// apps/api 에서
-async sendInterest(userId, targetUserId) {
-  // 1. 차단/제재/자기 자신 검증
-  // 2. UserAction INSERT
-  // 3. 상호 관심이면 Match INSERT + Conversation INSERT
-  // 4. 첫 대화 주제 시스템 메시지 INSERT (Realtime 자동 broadcast)
-  // 5. 양쪽 푸시 알림 발송
-}
-```
-
-해당 작업: 관심 보내기, 매칭 생성, 메시지 전송, 신고, 차단, 연락처 교환 동의, 대화 연장.
-
-NestJS 가 service role key 로 Supabase 에 쓴다 (RLS 우회).
-
-#### 패턴 3: 실시간 구독 — 모바일이 Supabase Realtime 직접
-
-```ts
-// apps/mobile 에서
-supabase
-  .channel(`conversation:${conversationId}`)
-  .on('postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'messages',
-        filter: `conversation_id=eq.${conversationId}` },
-      (payload) => addMessage(payload.new)
-  )
-  .subscribe();
-```
-
-해당 작업: 대화방 새 메시지 수신, 매칭 도착 알림, 추천 카드 도착 알림.
-
-RLS 가 본인이 참여한 대화/매칭/추천만 구독 허용.
-
-#### 패턴 4: 백그라운드 작업 — NestJS Cron + BullMQ
-
-```ts
-@Cron('0 6 * * *')
-async generateDailyRecommendations() {
-  // 1. 모든 active 사용자 조회
-  // 2. 각 사용자별 추천 후보 큐에 enqueue
-  // 3. 워커가 큐에서 꺼내 점수 계산 → Recommendation INSERT
-}
-```
-
-해당 작업: 추천 배치, 대화 만료 처리, 24시간 전 안내, 오래된 OTP/얼굴 인증 이미지 정리, 푸시 발송.
-
-### 4.2 결정 흐름표
-
-새 기능을 만들 때 어떤 패턴을 쓸지 결정하는 흐름.
-
-```
-이 작업이 …
-
-1. 단순 조회인가?
-   ├ 그렇다 → 패턴 1 (모바일 직접)
-   └ 아니다 → 2번으로
-
-2. 다른 사용자의 데이터를 변경하거나, 외부 서비스 호출이 필요한가?
-   ├ 그렇다 → 패턴 2 (NestJS API)
-   └ 아니다 → 3번으로
-
-3. 실시간 데이터 수신이 필요한가?
-   ├ 그렇다 → 패턴 3 (Supabase Realtime 구독)
-   └ 아니다 → 패턴 4 (NestJS 백그라운드)
-```
-
-### 4.3 절대 위반 금지 규칙
-
-- 모바일이 `recommendations.total_score` 같은 점수 컬럼을 SELECT 하지 않는다 (RLS 로 컬럼 가림).
-- 모바일이 `user_actions.skip_reason` 을 SELECT 하지 않는다 (자신 것이라도).
-- 모바일이 `messages` 에 직접 INSERT 하지 않는다 (검증 우회 방지). 항상 NestJS 경유.
-- 모바일이 `matches`, `reports`, `blocks` 에 직접 INSERT 하지 않는다.
-- NestJS 는 모바일에 Supabase service role key 를 노출하지 않는다.
-
----
-
-## 5. 외부 서비스 의존성
-
-기능 ID 기준으로 의존하는 외부 서비스.
-
-| 영역 | 기능 ID | 후보 | MVP 선택 | 추상화 인터페이스 |
-|---|---|---|---|---|
-| 본인 인증 | FR-B01 | PASS, NICE | 계약 후 결정 | `IdentityVerificationProvider` |
-| SMS OTP | FR-A01 | NHN Toast, Aligo | NHN Toast | `SmsProvider` |
-| 얼굴 인증 | FR-B02 | AWS Rekognition, NAVER Clova | 계약 후 결정 | `FaceVerificationProvider` |
-| 사진 검수 | FR-C02 | AWS Rekognition Moderation | + 운영자 검수 | `PhotoModerationProvider` |
-| 푸시 | FR-F01, FR-G01 | Expo Push | Expo Push | `PushProvider` |
-| 결제 | FR-I01, FR-I02 | 토스, 아임포트, App Store/Play | MVP 후순위 | `PaymentProvider` |
-| 객체 스토리지 | 사진 | Supabase Storage | Supabase Storage | (인터페이스 없이 직접 사용) |
-| 인증 JWT | 모든 | Supabase Auth | Supabase Auth | NestJS 가 검증만 |
-
-`packages/shared/integrations/` 에 인터페이스 정의, `apps/api/src/infra/` 에 구현체. 테스트와 로컬 개발은 `MockProvider`.
-
----
-
-## 6. 모노레포 구조
-
-pnpm workspaces + Turborepo.
-
-```
-prologue/
-├─ apps/
-│  ├─ api/              # NestJS 백엔드 (Railway)
-│  │  └─ prisma/        # 스키마와 마이그레이션
-│  ├─ mobile/           # Expo 사용자 앱
-│  └─ admin/            # Next.js 운영자 도구 (Vercel)
-├─ packages/
-│  └─ shared/           # 타입, enum, 정책 상수, 외부 서비스 인터페이스
-├─ supabase/
-│  ├─ migrations/       # Prisma 가 만든 SQL (테이블, 인덱스, 외래키)
-│  ├─ policies/         # RLS 정책 SQL (사람이 작성)
-│  ├─ functions/        # DB 함수 / 트리거 SQL
-│  └─ seed.sql          # 개발용 시드 데이터
-├─ docs/                # 기획 문서 사본
-├─ turbo.json
-├─ pnpm-workspace.yaml
-├─ package.json
-├─ tsconfig.base.json
-├─ CLAUDE.md            # 클로드 코드 작업 지침
-├─ DEVELOPMENT_SPEC.md  # 이 문서
-└─ 09_아키텍처_의사결정_v0_2.md
-```
-
-**Docker Compose 와 MinIO 는 사용하지 않는다.** Supabase 가 모두 대체.
-
----
-
-## 7. 데이터 모델과 마이그레이션
-
-### 7.1 Prisma 와 Supabase CLI 의 책임 분담
-
-| 도구 | 담당 | 작업 흐름 |
-|---|---|---|
-| Prisma | 테이블, 컬럼, 인덱스, 외래키, enum | `schema.prisma` 수정 → `prisma migrate dev` → SQL 자동 생성 |
-| Supabase CLI | RLS 정책, DB 함수, 트리거, Realtime 설정 | `supabase/policies/*.sql` 작성 → `supabase db push` |
-
-**한 가지 운영 규칙: Supabase Studio 에서 스키마를 직접 변경하지 않는다.** 모든 변경은 코드 저장소 → 마이그레이션 적용 흐름.
-
-### 7.2 데이터 모델 매핑 원칙
-
-`08_데이터항목 정의서 v0.1` 의 엔티티를 Prisma 스키마로 옮기는 원칙은 v0.1 과 동일. (모델 이름, enum, ID, 공통 필드, 민감 정보 분리)
-
-추가로 RLS 관련:
-
-- 자신만 볼 수 있는 데이터: `auth.uid() = user_id` 정책
-- 매칭/추천 관계가 있는 상대만 볼 수 있는 데이터: 관계 테이블 조회 정책
-- 점수 컬럼: 컬럼 단위 정책 (`column-level RLS`)
-- 운영자 데이터: 별도 스키마 또는 `is_admin()` 함수 사용
-
-### 7.3 마이그레이션 작업 순서
-
-```
-1. apps/api/prisma/schema.prisma 수정
-2. pnpm --filter api prisma migrate dev --name <name>
-   → prisma/migrations/<timestamp>_<name>/migration.sql 생성
-3. 생성된 SQL 검토 후 supabase/migrations/ 로 복사 (또는 심볼릭 링크)
-4. 새 RLS 가 필요하면 supabase/policies/<table>.sql 추가/수정
-5. supabase db push (dev 프로젝트에 적용)
-6. 모바일/관리자/백엔드 영향받는 코드 수정
-7. dev 에서 검증 후 prod 에 동일한 흐름 적용
-```
-
-### 7.4 RLS 정책 파일 구조
-
-```
-supabase/policies/
-├─ profiles.sql
-├─ photos.sql
-├─ messages.sql
-├─ recommendations.sql
-├─ matches.sql
-├─ conversations.sql
-├─ user_actions.sql
-├─ reports.sql
-├─ blocks.sql
-├─ contact_exchanges.sql
-└─ admin.sql
-```
-
-각 파일은 해당 테이블의 모든 정책 (SELECT/INSERT/UPDATE/DELETE) 을 담는다. 정책 변경 이력을 git 으로 추적한다.
-
----
-
-## 8. API 설계 규칙
-
-### 8.1 경로
-
-- 사용자용: `/api/v1/...`
-- 관리자용: `/api/admin/v1/...`
-- 헬스체크: `/api/health`
-
-### 8.2 인증/인가
-
-JWT 는 Supabase 가 발급한다. NestJS 는 Supabase JWT secret 으로 검증만 한다.
-
-```ts
-// apps/api/src/auth/supabase-jwt.strategy.ts
-new JwtStrategy({
-  secretOrKey: process.env.SUPABASE_JWT_SECRET,
-  algorithms: ['HS256'],
-  // ...
-});
-```
-
-토큰 페이로드 (Supabase 표준):
-- `sub`: Supabase user id
-- `email`, `phone`
-- `role`: `authenticated` 또는 `service_role`
-- `app_metadata`: 우리가 추가한 정보 (membership_type, identity_verified 등)
-
-운영자 토큰은 별도 (`role = 'admin'` 같은 커스텀 클레임).
-
-### 8.3 응답 규약
-
-```ts
-// 성공
-{ "data": <T>, "meta"?: { ... } }
-
-// 실패
-{ "error": { "code": "STRING_CODE", "message": "...", "details"?: {...} } }
-```
-
-에러 코드는 `packages/shared/errors.ts` 에 모은다.
-
-### 8.4 페이지네이션
-
-cursor-based 기본.
-
-### 8.5 멱등성
-
-POST `/matches`, `/interests`, `/reports`, `/messages` 는 `Idempotency-Key` 헤더 지원.
-
----
-
-## 9. 보안과 개인정보의 기술적 적용
-
-`prologue_04_privacy_visibility_policy_v0.1` 정책의 기술 측면 보장.
-
-### 9.1 휴대폰 번호
-
-- Supabase Auth 의 phone provider 는 사용하지 않는다 (한국 SMS 업체 미지원).
-- 자체 OTP 흐름:
-  1. 모바일 → NestJS `/auth/otp/send`
-  2. NestJS → NHN Toast SMS API
-  3. NestJS → Upstash Redis (3분 TTL, 해시값 저장)
-  4. 모바일 → NestJS `/auth/otp/verify`
-  5. 검증 성공 → Supabase Admin SDK 로 사용자 생성/조회
-  6. Supabase Auth Admin API 로 세션 발급 → JWT 반환
-- 휴대폰 번호 평문은 OTP 검증 동안만 메모리 보관. 이후 SHA-256(pepper) 으로 해시해 `User.phoneHash` 저장.
-
-### 9.2 본인 인증 원본
-
-- PASS/NICE 응답의 CI 만 해시 저장. 이름, 생년월일은 검증에만 사용 후 폐기.
-- 인증 완료 시점, 동의 버전, 업체 식별자만 `UserAuth` 에 보관.
-
-### 9.3 얼굴 인증 이미지
-
-- Supabase Storage 의 별도 보안 버킷 (`face-auth`).
-- RLS 정책으로 운영자도 직접 SELECT 불가. 검수 시 짧은 TTL 서명 URL 발급.
-- 24시간 후 자동 삭제 (NestJS Cron + Supabase Storage Admin API).
-- 매칭 결과 (matched/not_matched, confidence) 만 `UserAuth.faceMatchStatus` 에 저장.
-
-### 9.4 거절 사유, 신고 내용
-
-- `user_actions.skip_reason` 은 컬럼 단위 RLS 로 자신도 SELECT 불가하게 막을 수 있다 (또는 별도 테이블 분리 검토).
-- `reports.description` 은 운영자만 SELECT.
-- NestJS 응답 직렬화에서도 이중 차단.
-
-### 9.5 연락처 교환
-
-- 상호 동의 전까지 어떤 응답에도 평문 포함 안 함.
-- 동의 시점에 양쪽 사용자가 자기 연락처를 새로 입력. 저장된 User 데이터로 자동 노출 안 함.
-- 교환 완료 시 시스템 메시지로 한 번 노출, `ContactExchange` 에는 마스킹 형태로만 보관.
-
-### 9.6 메시지
-
-- soft delete 만 허용. 신고 검토 보존.
-- 정책서 확정 후 일정 기간 뒤 cron 으로 영구 삭제.
-
-### 9.7 일반 보안
-
-- Supabase service role key 는 NestJS 환경 변수로만 보관, 코드/모바일/Vercel 클라이언트에 절대 노출 금지.
-- 모바일은 anon key 만 사용 (RLS 가 권한 강제).
-- 운영 DB 접근은 Supabase 의 IAM/네트워크 제한 활용.
-
----
-
-## 10. 추천 시스템의 기술적 형태 (MVP)
-
-### 10.1 데이터 흐름
-
-```
-[사용자/프로필/인증/관계 목적/액션]
-        ↓
-[추천 후보 필터: SQL view]
-        ↓
-[점수 계산: NestJS 서비스 메서드]
-        ↓
-[Recommendation INSERT]
-        ↓
-[추천 이유 생성: 룰 기반 템플릿]
-        ↓
-[모바일이 Supabase 에서 자기 것만 SELECT (RLS)]
-[모바일이 패턴 3로 새 추천 도착 알림 구독 가능]
-```
-
-### 10.2 배치 vs 온디맨드
-
-- **배치**: 매일 새벽 NestJS @Cron + BullMQ. 일자별 추천 미리 생성.
-- **온디맨드**: 빈 상태 사용자에게 fallback. 최대 1회/일.
-
-### 10.3 점수 계산 위치
-
-- MVP 는 NestJS 서비스 메서드. 디버깅 용이.
-- 후보 풀이 커지면 SQL CTE 또는 materialized view 로 옮긴다.
-
-### 10.4 추천 이유 텍스트
-
-- 점수 → 텍스트 매핑을 `packages/shared/recommendation-reasons.ts` 에 둔다.
-- 모든 텍스트는 `08_추천 알고리즘 기준서` 의 권장/금지 표현 규칙 준수.
-- 운명/완벽/보장 같은 금지 표현은 정적 분석으로 차단.
-
----
-
-## 11. 화면 ID 와 코드 매핑
-
-(v0.1 과 동일)
-
-### 11.1 모바일 (Expo Router)
-
-화면 ID 가 파일명 prefix 로 노출.
-
-```
-apps/mobile/app/
-├─ (auth)/a01-splash.tsx, a02-onboarding.tsx, a03-login.tsx, a04-consent.tsx
-├─ (verification)/b01-intro.tsx ~ b07-single-pledge.tsx
-├─ (profile-setup)/c01-start.tsx ~ c08-completeness.tsx
-├─ (tabs)/home.tsx (D01), interests.tsx (E04), chats.tsx (G01), me.tsx (J01)
-├─ recommendation/[id]/card.tsx (D02), profile.tsx (D03), report.tsx (D04, D05)
-├─ chat/[id].tsx (G02)
-└─ ...
-```
-
-### 11.2 관리자 (Next.js)
-
-```
-apps/admin/app/
-├─ login/page.tsx              # K01
-├─ users/page.tsx              # K02
-├─ reviews/page.tsx            # K03
-├─ reports/page.tsx            # K04
-└─ recommendations/page.tsx    # K05
-```
-
----
-
-## 12. 환경 변수와 시크릿
-
-`.env.example` 에 모든 키 기록, 실제 값은 Railway/Vercel/Supabase 의 환경 변수 UI로 관리.
-
-| 카테고리 | 예시 키 | 비고 |
-|---|---|---|
-| Supabase | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET` | dev/prod 다른 값 |
-| DB | `DATABASE_URL` | Supabase Postgres 연결 (Prisma 용) |
-| Redis | `REDIS_URL` | Upstash |
-| 본인 인증 | `IDENTITY_VERIFICATION_PROVIDER`, `PASS_*` 또는 `NICE_*` | |
-| SMS | `SMS_PROVIDER`, `NHN_TOAST_*` | |
-| 푸시 | `EXPO_ACCESS_TOKEN` | |
-| 보안 | `PHONE_HASH_PEPPER` | 64자 이상 랜덤 |
-| 모니터링 | `SENTRY_DSN` | 선택 |
-
----
-
-## 13. 개발 환경 요구사항
-
-| 항목 | 버전 |
-|---|---|
-| Node.js | 20 LTS 이상 |
-| pnpm | 9 이상 |
-| Supabase CLI | 최신 (`brew install supabase/tap/supabase` 또는 `npm i -g supabase`) |
-| iOS 시뮬레이터 | Xcode 15+ (macOS만) |
-| Android 에뮬레이터 | Android Studio Hedgehog+ |
-| Expo Go (실기기 테스트용) | 최신 |
-
-**Docker 는 필요하지 않다.** Supabase Cloud 두 프로젝트로 dev/prod 분리.
-
----
-
-## 14. 개발 워크플로우
-
-### 14.1 환경 분리
-
-| 환경 | Supabase 프로젝트 | 백엔드 | 운영자 도구 |
-|---|---|---|---|
-| 로컬 개발 | dev | localhost:3001 (NestJS) | localhost:3002 (Next.js) |
-| Staging | dev (또는 별도 staging 프로젝트) | Railway staging | Vercel preview |
-| Production | prod | Railway production | Vercel production |
-
-MVP 초기에는 dev = staging 으로 시작. 베타 직전에 분리 검토.
-
-### 14.2 브랜치 전략
-
-(v0.1 과 동일)
-
-- `main`: 운영
-- `develop`: 통합 개발
-- `feat/<feature-id>-<desc>`: 기능
-- `fix/<desc>`: 버그
-- `chore/<desc>`: 그 외
-
-### 14.3 커밋 메시지
-
-(v0.1 과 동일) Conventional Commits + FR ID.
-
-### 14.4 PR 체크리스트
-
-- 관련 기획 문서 ID 명시
-- 테스트 추가/갱신
-- 데이터 모델 변경 시 Prisma 마이그레이션 + RLS 정책 모두 포함
-- 모바일이 추가된 테이블/컬럼에 직접 접근하는지 확인 → 필요 시 RLS 정책 작성
-- 개인정보가 로깅에 포함되지 않는지 확인
-- 카피가 톤 가이드의 권장/금지 표현을 위반하지 않는지 확인
-
-### 14.5 클로드 코드 활용 패턴
-
-- 새 기능 시작: 관련 FR ID, 화면 ID, 데이터 흐름 패턴(1~4) 명시
-- 데이터 변경: schema.prisma 수정 → 마이그레이션 → RLS 정책 → 영향받는 DTO/서비스/UI 까지 전수 검사
-- 카피: `prologue_02_copy_tone_guide` 의 톤 규칙 함께 전달
-- 정적 분석: 매 PR 에 금지 표현 검사
-
----
-
-## 15. 테스트 전략 (MVP)
-
-| 레벨 | 도구 | 적용 범위 |
-|---|---|---|
-| 단위 | Vitest | 추천 점수, 거절 사유 가중치, 카피 생성기 |
-| API 통합 | Vitest + Supertest | FR 단위 (가입, 인증, 추천, 매칭, 메시지, 신고) |
-| RLS 정책 | pgTAP 또는 SQL 테스트 | 정책별 SELECT/INSERT 권한 검증 |
-| E2E (모바일) | Maestro | 핵심 플로우 |
-
-**RLS 정책 테스트는 필수.** 정책 실수가 개인정보 노출로 이어지므로 회귀 테스트로 보호.
-
----
-
-## 16. 배포
-
-### 16.1 모바일
-
-Expo EAS → TestFlight (iOS) / Play Console 내부 테스트 → 베타 → 정식 출시.
-
-OTA 채널: `staging`, `production`.
-
-### 16.2 백엔드 (Railway)
-
-- GitHub Actions:
-  1. PR: lint + test
-  2. develop merge: Railway staging 자동 배포
-  3. main merge: Railway production 자동 배포 (수동 승인)
-
-### 16.3 관리자 (Vercel)
-
-GitHub 연결 → push 시 자동 배포. Preview deployments 활용.
-
-### 16.4 데이터베이스 마이그레이션
-
-- Prisma Migrate: `pnpm --filter api prisma migrate deploy`
-- Supabase CLI: `supabase db push --linked`
-- 운영 적용 전 dev 에서 항상 검증.
-- 백업: Supabase 의 자동 백업 활용 (Pro 플랜은 PITR 지원).
-
----
-
-## 17. 비용 (베타 1만 MAU 기준)
-
-| 항목 | 월 비용 |
-|---|---:|
-| Supabase Pro (운영) | $25 |
-| Supabase Free (개발) | $0 |
-| Railway Hobby (NestJS) | $5~10 |
-| Upstash Redis (무료) | $0 |
-| Vercel Hobby (운영자) | $0 |
-| **합계** | **$30~35** |
-
-별도: 도메인, Apple/Google 개발자 계정, Sentry, 본인인증/SMS 사용량.
-
----
-
-## 18. 미결정 사항
-
-1. 본인 인증 업체 (PASS vs NICE)
-2. 얼굴 인증 업체 (AWS Rekognition vs NAVER Clova)
-3. 사진 검수 자동화 수준
-4. 결제 수단 (앱스토어 IAP vs 웹결제)
-5. 얼굴 인증 라이브니스 도입 여부
-6. NativeWind 도입 여부
-7. dev 와 staging 분리 시점
-8. RLS 정책 테스트 도구 (pgTAP vs SQL 테스트 vs 통합 테스트)
-
----
-
-## 19. 다음 작업
-
-1. Supabase Cloud 에 dev / prod 두 프로젝트 생성 (서울 리전)
-2. `apps/api/prisma/schema.prisma` 를 dev Supabase 에 적용
-3. `supabase/policies/` 의 RLS 정책 작성
-4. NestJS 부트스트랩 + Supabase JWT 검증 설정
-5. 외부 서비스 인터페이스 + mock 구현체
-6. 기능요구사항서 P1 기능 구현 시작
-
----
-
-## 20. 변경 이력
-
-- 2026-05-10: v0.1 최초 작성. NestJS + 자체 AWS 인프라 기준.
-- 2026-05-10: v0.2 갱신. 09_아키텍처 의사결정 v0.2 의 결정 반영. B안 (NestJS + Supabase 하이브리드) 채택. PostgreSQL/Storage/Auth/Realtime → Supabase. 호스팅 → Railway + Vercel + Upstash. Docker Compose 와 MinIO 제거. 4가지 데이터 흐름 패턴, RLS 작업 흐름, Prisma + Supabase CLI 병행 마이그레이션 절차 추가.
+- 2026-10-30: 현재 코드와 2026-10 플랫폼 결정에 맞춰 정리. 인증·응답·마이그레이션·RLS·화면·외부 서비스 설명을 갱신하고, 현재 구현/미적용 목표를 구분했다.
+- 2026-05-10: v0.1·v0.2 작성. 당시 NestJS + Supabase 하이브리드를 채택했다. 이후 대체된 내용은 Git 이력에서 확인한다.
