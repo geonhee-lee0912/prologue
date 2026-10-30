@@ -1,335 +1,141 @@
 # 프롤로그 (Prologue)
 
-**진열되지 않는 소개팅.** 여성은 아무에게도 노출되지 않고, 남성은 조건이 아니라 성의로 검증되며, AI는 사람에게는 못 하는 말을 받아 다음 소개를 좋게 만든다.
+> **진열되지 않는 소개팅.** AI와 대화하며 나를 알아가고, 좋은 상대가 나타났을 때 소개를 받는다.
 
-컨셉과 하드룰은 [`CLAUDE.md`](./CLAUDE.md), 그 근거는 [컨셉 재설정 문서](docs/superpowers/specs/2026-09-02-컨셉-재설정-design.md)에 있다.
+작업 지침과 하드룰은 [AGENTS.md](AGENTS.md), 제품의 출발점은 [컨셉 재설정](docs/superpowers/specs/2026-09-02-컨셉-재설정-design.md)이다. 이후 결정은 날짜와 변경 이력을 함께 확인한다.
 
----
+## 현재 상태 (2026-10-30 문서 정리 기준)
 
-## 현재 상태
+| 영역               | 구현과 남은 일                                                                                                                                                                                             |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 모바일             | Expo SDK 54·React Native 0.81. 4탭(친구/대화/내 이야기/설정), 갈피 대화방·갈피의 방, 편지·가벼운 소개·사람 대화방이 **mock 데이터**로 동작한다. 로그인·동의·본인인증 진입 흐름과 갈피 API 연결은 남아 있다 |
+| 갈피 AI 엔진 1단계 | 대화·버튼 답·서고 수집·가명처리·위기 감지·첫 리포트·먼저 말 걸기 구현. LLM은 mock/OpenAI 전환과 운영 mock 차단이 있다. 원격 DB 적용·모바일 연결·실제 LLM 평가는 미완료다                                   |
+| API 기반           | NestJS 10·Prisma 5, JWT 발급·검증, 인증·계정·사진·신고·차단, 응답 규약·PII 마스킹 로거. 옛 온보딩·프로필·연락처 API 일부는 재설계 대상이다                                                                 |
+| 운영자 도구        | Next.js 15. 로그인, 사용자·사진·재직 검수, 신고 처리. 출시 전 권한·세션 점검이 남아 있다                                                                                                                   |
+| DB·RLS             | Prisma 마이그레이션과 `supabase/policies/` SQL을 관리한다. 정책 파일 정리는 끝났지만 dev DB 적용과 실제 역할별 접근 검증은 남아 있다                                                                       |
+| 호스팅·공통 플랫폼 | **Vercel + Supabase로 결정**, 이전과 공통 패키지 연결은 아직이다. 현재 API는 `app.listen()`·NestJS `@Cron`으로 실행한다                                                                                    |
 
-**2026-09 컨셉을 백지에서 재설정했다.** 이전의 "인증 기반 진지한 소개팅 앱" 기획과 그 기준으로 만든 코드는 폐기됐다.
+갈피 엔진 구현 계획은 [1단계 계획](docs/superpowers/plans/2026-10-11-갈피-AI-엔진-1단계.md), 구현 중 결정은 [결정 기록](docs/superpowers/plans/2026-10-11-갈피-AI-엔진-1단계-결정.md), 미완료·출시 차단 항목은 [BACKLOG.md](BACKLOG.md)에 있다. 구현 완료를 DB 적용·출시 완료로 해석하지 않는다.
 
-- ✅ 컨셉 재설정 v2.5, CLAUDE.md v0.3 (하드룰 8가지), 화면 흐름 설계 v0.2
-- ✅ 폐기된 기획 문서 21종을 `docs/archive/` 로 이동
-- ✅ 폐기된 코드 제거 — 추천·관심·대화 API, 4탭 화면, 추천 카드, 조건표형 프로필 편집
-- ✅ Prisma 스키마 베이스라인 재생성 (`20260917000000_reset_for_concept_v2`)
-- 옛 코드는 git 태그 `v0-old-concept` 에 있다: `git checkout v0-old-concept -- <경로>`
+2026-09 이전 컨셉의 추천 API·점수 체계·정기 배급·대화 만료는 폐기했다. 옛 문서는 [보관 문서](docs/archive/README.md), 옛 코드는 `v0-old-concept` 태그를 이력 확인용으로 본다.
 
-### 남아 있는 것
+## 작업 순서와 폐기 범위
 
-| 영역 | 내용 |
-|---|---|
-| 백엔드 골격 | Supabase JWT 가드, 예외 필터, 응답 인터셉터, PII 마스킹 로거, Throttler, Prisma·Supabase 모듈, 외부 서비스 인터페이스 + mock |
-| 인증 | 본인 인증으로 가입(PASS/NICE mock), SMS OTP·카카오 로그인, refresh token 회전 |
-| 계정 | 내 정보, 인증 상태, 얼굴 인증, 계정 탈퇴 |
-| 안전 | 신고, 차단 |
-| 운영자 도구 | 로그인, 사용자 관리, 사진·재직 검수, 신고 처리 |
-| 모바일 | 앱 IA v2 화면 골격이 mock 데이터로 섰다 — 4탭(친구/대화/내 이야기/설정), 갈피 대화방·갈피의 방, 편지, 가벼운 소개, 사람 대화방. 스플래시·로그인(A03)·인증 상태·탈퇴·신고 화면은 옛 구조로 남아 있고, 백엔드가 붙을 때 새 구조에 다시 잇는다 |
+**공통 기능 현황 조사·현황표 작성 계획은 폐기됐다.** 두 서비스의 여섯 기능을 조사해 표를 만들거나, 그 결과 승인을 후속 작업의 선행 조건으로 두지 않는다.
 
-옛 컨셉 기준으로 남아 있어 손봐야 할 코드와 알려진 문제는 [`BACKLOG.md`](./BACKLOG.md)에 있다.
+**공통 플랫폼 계획 전체는 유지한다.** `platform` 패키지와 `ops`·`notify`부터 만들고 서비스에 붙이는 방향, 이후 `ai`·`consent`·`pay`·`auth`·템플릿으로 이어지는 로드맵은 [멀티 서비스 플랫폼 스펙](docs/superpowers/specs/2026-10-15-멀티서비스-플랫폼-design.md) 14·16장을 따른다. 별콩톡 보안 수정은 공통 작업을 기다리지 않는다. 프롤로그 자체 기능 개발은 기존 결정대로 `notify` 연결 뒤 재개한다.
 
-### 다음
+문서 정리·검증·PR 작업은 데스크톱 없이 클라우드에서 실행할 수 있다. 변경은 검토 가능한 PR로 남기고, 병합은 사람이 한다. 자동 병합을 켜지 않는다.
 
-[화면 흐름 설계](docs/superpowers/specs/2026-09-11-화면-흐름-설계.md) 9절 순서를 따른다. **앱(Expo)으로 만들고, 백엔드보다 화면을 먼저 만든다.**
+## 저장소 구조
 
-1. 화면별 카피·디자인 다듬기 — 사용자 노출 문구는 PR에서 확인한다(CLAUDE.md 9.3)
-2. [AI 인터뷰 엔진 계획](docs/superpowers/plans/2026-09-11-ai-인터뷰-엔진.md)을 화면에 맞게 조정해 실행 — 화면이 기대하는 모양은 `apps/mobile/domain/types.ts` (화면용 뷰 모델 — 응답 DTO는 같은 파일 맨 위의 서버 계약을 따른다)
-3. 실제 AI를 붙이기 전에 진입 흐름(동의 3종 → 기본 정보·사진)을 세운다 — 민감정보·국외이전은 별도 동의(CLAUDE.md 10.2b·10.2c)
+```text
+apps/api/               NestJS API, Prisma 스키마·마이그레이션
+apps/mobile/            Expo 앱, mock 시나리오·화면용 도메인 모델
+apps/admin/             Next.js 운영자 도구
+packages/shared/src/    공유 계약·정책·타입·개인정보 처리·provider 인터페이스
+supabase/policies/      RLS SQL
+supabase/apply-policies.js  현재 RLS 적용 스크립트
+docs/superpowers/       현행 설계·구현 계획·결정 기록
+docs/context/           운영자 작업 방식·개발 환경
+docs/archive/           폐기된 이전 컨셉 문서
+```
 
-코드 밖의 우선순위(커뮤니티 침투 경로, 남성 측 가치 명제, 법률 자문 등)는 컨셉 문서 11장에 있다.
+## 클라우드에서 시작하기
 
-### 모바일 미리보기 (mock)
+Node.js **20 이상**, pnpm **9.12.0**이 필요하다. 전역 pnpm이 있으면 아래 `corepack pnpm`을 `pnpm`으로 바꿔도 된다. 일반 테스트·타입 검사·mock 화면 확인에는 Docker나 데스크톱 앱이 필요하지 않다.
 
 ```bash
-corepack pnpm --filter shared build
-corepack pnpm --filter mobile web
+corepack pnpm install
+corepack pnpm --filter @prologue/shared build
+
+# DB·외부 서비스에 연결하지 않는 검증
+corepack pnpm --filter @prologue/shared test
+corepack pnpm --filter @prologue/api typecheck
+corepack pnpm --filter @prologue/api test
+corepack pnpm --filter @prologue/mobile test
 ```
 
-http://localhost:8081 — 처음엔 "첫 실행" 시나리오(갈피 대화방). 설정 탭 아래 "개발용" 패널에서 시나리오 8종을 바꿀 수 있다. 휴대폰 프레임으로 보려면 `node scripts/device-frame.mjs` 후 http://localhost:8090. 규칙 테스트는 `corepack pnpm --filter mobile test`. 처음 한 번과 `packages/shared` 를 고친 뒤에는 먼저 shared 를 빌드한다(Metro 는 `packages/shared/dist` 를 읽는다).
+shared는 `dist`를 내보내므로 첫 실행과 shared 변경 뒤에는 먼저 빌드한다. 환경별 Git 인증·실행 규칙은 [개발 환경](docs/context/개발-환경.md)을 본다. 회사 노트북의 SSH 별칭·계정 경로는 클라우드의 필수 조건이 아니다.
 
----
-
-## 아키텍처
-
-**B안 (NestJS + Supabase 하이브리드)** 채택.
-
-```
-모바일 (Expo) ─── Supabase 직접 (단순 조회, 실시간 구독)
-              └── NestJS (Railway) ─── Supabase service role
-                                  └── Upstash Redis (OTP, 큐)
-                                  └── 외부 서비스 (PASS/NICE, NHN Toast, Expo Push)
-
-운영자 도구 (Next.js, Vercel) ─── NestJS Admin API
-```
-
-자세한 의사결정은 [`09_아키텍처_의사결정_v0_2.md`](./09_아키텍처_의사결정_v0_2.md)
-기술 스택과 규칙은 [`DEVELOPMENT_SPEC.md`](./DEVELOPMENT_SPEC.md)
-(두 문서 모두 컨셉 재설정 전에 쓰였다. 기술 결정은 유효하지만 기능 서술은 옛 컨셉 기준이다)
-
----
-
-## 모노레포 구조
-
-```
-prologue/
-├─ apps/
-│  ├─ api/      # NestJS 백엔드 (Railway)
-│  ├─ mobile/   # Expo 사용자 앱
-│  └─ admin/    # Next.js 운영자 도구 (Vercel)
-├─ packages/
-│  └─ shared/   # 공유 타입, enum, 정책 상수, 외부서비스 인터페이스
-├─ supabase/    # RLS 정책 SQL, RLS 일괄 적용 스크립트
-└─ docs/        # 현행 설계는 docs/superpowers/, 정책 문서 일부는 docs/ 바로 아래, 폐기된 기획은 docs/archive/
-```
-
----
-
-## 사전 요구사항
-
-- **Node.js 20 LTS 이상** (현재 검증: v22)
-- **pnpm 9 이상** (`npm i -g pnpm@9.12.0` 또는 `corepack enable`)
-- **psql** (Postgres 클라이언트, RLS 적용용 — `pnpm db:rls`가 호출)
-- **Supabase CLI** (선택, `prisma migrate` 와 `pnpm db:rls`만으로도 충분)
-- **모바일**:
-  - 실기기 Expo Go (가장 빠른 시작) — App Store / Play Store
-  - 또는 Android Studio 에뮬레이터 (Windows)
-  - 또는 iOS 시뮬레이터 (macOS만)
-  - 또는 브라우저 (Expo Web)
-
-**Docker 는 필요하지 않다.** Supabase Cloud 가 인프라를 대체한다.
-
----
-
-## 외부 서비스 가입 / 프로젝트 생성
-
-처음 한 번만 필요한 작업.
-
-1. **Supabase**: [supabase.com](https://supabase.com) 가입
-   - dev 프로젝트 생성 (서울 리전, 무료 티어) ✅
-   - prod 프로젝트 생성 (서울 리전, Pro 플랜) — 베타 출시 직전에
-2. **Upstash**: [upstash.com](https://upstash.com) — Redis (OTP / BullMQ), 베타 전까지 미뤄도 OK
-3. **Railway**: [railway.com](https://railway.com) — 백엔드 호스팅, 베타 전까지 미뤄도 OK
-4. **Vercel**: 운영자 도구 호스팅, 베타 전까지 미뤄도 OK
-
-베타 직전에 필요한 계약·계정:
-
-- 본인 인증 (PASS 또는 NICE), SMS (NHN Toast 권장)
-- Apple Developer ($99/년), Google Play ($25 1회)
-- OpenAI API — 무보존(zero data retention) 적용 조건 확인 필요 (컨셉 문서 8.4)
-- AWS (Rekognition 을 쓸 경우), Sentry (선택)
-
----
-
-## 처음 실행
+### 모바일 mock 미리보기
 
 ```bash
-# 1. 의존성 설치
-pnpm install
+corepack pnpm --filter @prologue/mobile web
+# http://localhost:8081
 
-# 2. 공유 패키지 빌드 (필수 — 매 클론 후 한 번, shared 코드 변경 시마다)
-pnpm --filter @prologue/shared build
-
-# 3. 환경 변수 복사 + 채우기
-cp .env.example .env
-cp apps/api/.env.example apps/api/.env
-cp apps/mobile/.env.example apps/mobile/.env
-cp apps/admin/.env.example apps/admin/.env
-# .env 안에 실제 Supabase 키, DB URL, JWT secret, peppers 입력
-
-# 4. Prisma 마이그레이션 적용 (Supabase dev DB 에)
-pnpm --filter api prisma migrate deploy
-
-# 5. RLS 정책 일괄 적용
-#    ⚠️ 지금은 중간에 실패한다 — BACKLOG.md 1번 참고
-pnpm db:rls
-
-# 6. 백엔드 실행
-pnpm --filter api dev
-#  → http://localhost:3001/api/health
-#  → http://localhost:3001/api/docs (Swagger UI)
+# 선택: 휴대폰 프레임
+node scripts/device-frame.mjs
+# http://localhost:8090
 ```
 
-### 모바일 앱 미리보기
+첫 실행은 갈피 대화방으로 들어간다. 설정 탭의 개발용 패널에서 시나리오 8종을 바꿀 수 있다. 클라우드에서는 해당 포트를 환경의 미리보기 기능으로 연다. 실기기 검증은 별도 Expo Go 또는 development build를 사용한다. 실제 카카오 OAuth의 네이티브 연결은 미구현이다([BACKLOG](BACKLOG.md) 6절).
+
+### API·운영 도구 실행 (개발용 설정 필요)
+
+필요한 키 이름은 루트와 각 앱의 `.env.example`에서 확인한다. 실제 `.env`·키를 출력하거나 커밋하지 않는다. API는 원격 dev DB를 사용하므로 **승인된 환경과 마이그레이션 적용 상태를 확인한 뒤** 실행한다. 갈피 테이블을 적용하지 않고 켜면 예약 작업이 실패한다. DB 적용 절차는 [supabase/README.md](supabase/README.md)를 따른다.
 
 ```bash
-# (A) 브라우저로 확인 — 가장 빠른 디자인 검토
-pnpm --filter mobile web
-# → http://localhost:8081 (Expo Metro)
+corepack pnpm --filter @prologue/api dev
+# http://localhost:3001/api/health
+# http://localhost:3001/api/docs (Swagger)
 
-# (B) 실기기로 확인 (Expo Go 앱 설치 필요)
-pnpm --filter mobile dev
-# → 터미널에 QR 코드 출력 → 폰 카메라로 스캔 → 핫리로드 동작
-# → 단, 실기기에선 API 호출 시 EXPO_PUBLIC_API_BASE_URL 을
-#   PC 의 LAN IP(예: http://192.168.x.x:3001/api/v1) 로 바꿔야 함
+corepack pnpm --filter @prologue/admin dev
+# http://localhost:3002
 ```
 
----
+API 기본 경로는 `/api/v1`, Swagger는 `/api/docs`다. 모바일·관리자의 API 주소는 각각의 `.env.example`을 본다. 실기기에서는 `localhost` 대신 접근 가능한 개발 API 주소를 쓴다. `pnpm dev`는 전체 앱을 띄워 원격 DB 연결도 시작하므로 mock 미리보기만 볼 때는 모바일 명령만 쓴다.
 
-## 환경 변수 — 여러 컴퓨터에서 쓰기
+## 아키텍처와 배포 목표
 
-`.env` 는 **절대 git 에 올리지 않는다.** 대신 `.env.example` 을 올려 "무엇을 채워야 하는지"만 공유하고, 값은 비밀번호 관리자에서 가져온다.
-
-```bash
-# 새 컴퓨터에서
-cp apps/api/.env.example apps/api/.env
-# 빈 값을 비밀번호 관리자에서 복사해 채운다
+```text
+Expo 앱 ── NestJS API ── Supabase Postgres / Storage
+       └─ 허용된 직접 조회·실시간 수신 ── Supabase RLS / Realtime
+Next.js 운영 도구 ── NestJS Admin API
 ```
 
-### 값을 어디서 구하나
+| 역할               | 결정된 목표                                                 | 현재 코드                                    |
+| ------------------ | ----------------------------------------------------------- | -------------------------------------------- |
+| API·운영 도구      | Vercel                                                      | API는 Node 서버 진입점, 운영 도구는 Next.js  |
+| 예약·응답 뒤 작업  | Vercel Cron·`waitUntil`                                     | NestJS `@Cron`, 프로세스 내 비동기 실행      |
+| 재시도             | Supabase 큐(pgmq) 또는 발송 대기표                          | 전환 전. BullMQ를 새 목표로 삼지 않는다      |
+| OTP·세션·요청 제한 | Upstash Redis                                               | 서버 메모리, 출시 전 수정 대상               |
+| DB 변경            | `supabase/migrations`에 스키마·RLS 통합, Prisma는 생성 도구 | `apps/api/prisma/migrations` + `pnpm db:rls` |
+| 본인인증·결제      | 포트원 V2, 앱 인앱결제·웹 토스                              | provider 인터페이스와 mock, 실 연동 전       |
 
-| 변수 | 출처 | 잃어버리면 |
-|---|---|---|
-| `DATABASE_URL`, `DIRECT_URL` | Supabase → Settings → Database | 대시보드에서 다시 본다 |
-| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET` | Supabase → Settings → API | 대시보드에서 다시 본다 |
-| `KAKAO_REST_API_KEY` | 카카오 Developers 콘솔 | 콘솔에서 다시 본다 |
-| `OPENAI_API_KEY` | OpenAI 대시보드 | 새로 발급 (기존 키는 못 본다) |
-| **`PHONE_HASH_PEPPER`** | 최초 1회 생성 | **복구 불가. 아래 경고 참조** |
-| `ADMIN_JWT_SECRET` | 최초 1회 생성 | 새로 만들면 기존 세션만 무효 |
+Railway는 쓰지 않는다. Vercel 설정·Cron 엔드포인트·Redis·큐·Supabase 미리보기 브랜치를 이미 구축한 것으로 안내하지 않는다. 세부 근거는 [아키텍처 결정](09_아키텍처_의사결정_v0_2.md), 현재 규약은 [개발 스펙](DEVELOPMENT_SPEC.md)을 본다.
 
-```bash
-# 시크릿 최초 생성
-openssl rand -hex 32
-```
+## 환경 변수와 외부 서비스
 
-### ⚠️ `PHONE_HASH_PEPPER` 는 반드시 백업한다
+- 키는 환경별로 분리한다. 클라우드에는 필요한 개발용 키만 주입하고, 운영 설정은 운영자가 관리한다.
+- `SUPABASE_SERVICE_ROLE_KEY`·`SUPABASE_JWT_SECRET`은 API 서버에만 둔다. 모바일·관리자 클라이언트에 넣지 않는다. 관리자 예시 파일에 남은 service role 자리도 사용하지 않는다([BACKLOG](BACKLOG.md) 9절).
+- `PHONE_HASH_PEPPER`는 같은 DB를 쓰는 모든 환경에서 같아야 한다. 비밀번호 관리자에 보관한다. 바뀌면 기존 휴대폰 해시가 맞지 않으므로 임의 재생성하지 않는다.
+- 현재 SMS·본인인증·얼굴·사진 검수·푸시·결제는 mock provider다. 예시 변수만 바꿔도 모두 real로 전환되는 구조는 아니다.
+- 카카오는 `KAKAO_USER_INFO_PROVIDER=mock|real`, LLM은 `LLM_PROVIDER=mock|openai` 선택 코드가 있다. 카카오 실제 사용자 E2E 검증은 남아 있다. 실제 LLM은 동의 3종·가명처리·무보존 설정과 평가 세트 확인 후 켠다.
 
-휴대폰 번호는 평문으로 저장하지 않고 `SHA-256(번호 + pepper)` 만 저장한다(CLAUDE.md §10.1). **pepper 가 바뀌면 기존 해시와 아무것도 일치하지 않아 모든 사용자가 로그인할 수 없게 된다.** 재생성으로 복구할 수 없다.
+운영 환경변수의 목표 관리 위치는 API·관리자 **Vercel**, 모바일 빌드 **Expo EAS**, DB 관련 설정 **Supabase**다. 현재 클라우드 실행 환경의 인증·변수 주입 방식을 유지하고 개인 데스크톱의 키를 복사하는 절차에 의존하지 않는다.
 
-비밀번호 관리자에 반드시 보관한다. 이 값만큼은 잃어버리면 DB 를 버려야 한다.
+## 자주 쓰는 명령
 
-### 여러 컴퓨터 운용 방법 세 가지
+| 명령                                                | 설명                                         |
+| --------------------------------------------------- | -------------------------------------------- |
+| `corepack pnpm --filter @prologue/shared build`     | 공유 패키지 빌드                             |
+| `corepack pnpm --filter @prologue/api test`         | API Vitest                                   |
+| `corepack pnpm --filter @prologue/mobile test`      | 모바일 도메인 테스트(KST)                    |
+| `corepack pnpm --filter @prologue/api typecheck`    | API 타입 검사                                |
+| `corepack pnpm --filter @prologue/mobile typecheck` | 모바일 타입 검사                             |
+| `corepack pnpm --filter @prologue/admin typecheck`  | 운영 도구 타입 검사                          |
+| `corepack pnpm --filter @prologue/api build`        | API 빌드                                     |
+| `corepack pnpm --filter @prologue/admin build`      | 운영 도구 빌드                               |
+| `corepack pnpm db:rls`                              | **DB 적용 승인 후** 현재 정책 파일 일괄 적용 |
 
-**1. 비밀번호 관리자에 secure note (권장 — 혼자 쓸 때)**
+루트의 `lint`·`test`·`build`는 Turbo로 각 패키지 스크립트를 호출한다. 모바일 `build`는 EAS 원격 빌드이므로 일반 로컬 검증으로 실행하지 않는다. lint 설정 등 알려진 빈칸은 [BACKLOG](BACKLOG.md) 8절을 본다.
 
-1Password·Bitwarden 등에 `.env` 내용을 통째로 secure note 로 저장하고, 새 컴퓨터에서 복사해 붙여넣는다. 파일이 몇 개 안 되고 자주 바뀌지 않으면 이게 가장 단순하다.
+## API와 화면 계약
 
-**2. 1Password CLI (`op`) 참조 방식**
+성공은 `{ "data": <T> }`, 실패는 `{ "error": { "code": "ERROR_CODE", "message": "...", "details"?: ... } }`다. 오류 코드는 [shared/errors.ts](packages/shared/src/errors.ts), 실제 엔드포인트는 컨트롤러와 Swagger를 기준으로 확인한다.
 
-`.env` 에 실제 값 대신 `op://` 참조를 넣고 실행 시 주입한다. 이러면 `.env` 자체에 비밀이 없어 동기화가 자유롭다.
-
-```bash
-# .env 예시
-DATABASE_URL=op://Private/prologue-supabase/database_url
-
-# 실행
-op run --env-file=apps/api/.env -- pnpm --filter api dev
-```
-
-**3. Doppler / Infisical (팀이 생기면)**
-
-전용 시크릿 관리 SaaS. 무료 티어가 있고 CLI 로 주입한다. 혼자일 때는 과하다.
-
-### 하지 말 것
-
-- iCloud·Dropbox 공유 폴더에 `.env` 두기 — 동기화 충돌과 유출 위험
-- 카카오톡·메일로 나에게 보내기
-- `.gitignore` 를 지우고 커밋 — 한 번 올라가면 history 에서 지우기 어렵다
-
-### 운영 환경
-
-로컬 `.env` 는 개발용이다. 운영에서는 파일을 쓰지 않는다.
-
-| 대상 | 관리 위치 |
-|---|---|
-| NestJS | Railway 환경 변수 UI |
-| Mobile | EAS Secret |
-| Admin | Vercel 환경 변수 UI |
-
----
-
-## 자주 쓰는 명령어
-
-| 명령 | 설명 |
-|---|---|
-| `pnpm install` | 의존성 설치 |
-| `pnpm --filter @prologue/shared build` | 공유 패키지 빌드 (변경 시) |
-| `pnpm --filter api dev` | 백엔드 dev 서버 |
-| `pnpm --filter mobile dev` | Expo Metro 시작 (실기기 QR) |
-| `pnpm --filter mobile web` | Expo Web (브라우저 미리보기) |
-| `pnpm --filter admin dev` | 운영자 도구 |
-| `pnpm dev` | 모든 앱 병렬 실행 |
-| `pnpm --filter api prisma studio` | DB GUI |
-| `pnpm --filter api prisma migrate dev --name <설명>` | 새 마이그레이션 |
-| `pnpm db:rls` | `supabase/policies/*.sql` 일괄 적용 |
-| `pnpm lint` / `pnpm test` / `pnpm build` | 전체 lint / test / build |
-
----
-
-## API 응답 규약
-
-```ts
-// 성공
-{ "data": <T>, "meta"?: { ... } }
-
-// 실패
-{ "error": { "code": "ERROR_CODE", "message": "...", "details"?: ... } }
-```
-
-에러 코드는 [`packages/shared/src/errors.ts`](./packages/shared/src/errors.ts) 에 정의.
-새 비즈니스 에러는 `AppException` + 적절한 `ErrorCode` 로 던진다.
-
-엔드포인트 목록은 Swagger UI(`/api/docs`)가 기준이다. 옛 컨셉 기준으로 남아 있는 엔드포인트(온보딩 설문·서약, 프로필)는 BACKLOG.md 3번에 있다.
-
----
-
-## 외부 서비스 (로컬 개발에서는 mock 으로 동작)
-
-| 영역 | 운영 | 로컬 개발 (현재) | 전환 방법 |
-|---|---|---|---|
-| Database / Auth / Storage / Realtime | Supabase prod | Supabase dev | env: `SUPABASE_URL` 등 |
-| 본인 인증 | PASS / NICE | `MockIdentityVerificationService` | provider 인터페이스 교체 |
-| SMS | NHN Toast | `MockSmsService` (콘솔에 OTP 출력, 휴대폰 뒷자리만) | provider 인터페이스 교체 |
-| 카카오 로그인 | kakao API | `KakaoUserInfoService` mock 모드 | env: `KAKAO_USER_INFO_PROVIDER=real` + `KAKAO_REST_API_KEY` |
-| 얼굴 인증 | AWS Rekognition / Clova | `MockFaceVerificationService` (항상 matched=true) | provider 인터페이스 교체 |
-| 사진 검수 | AWS Rekognition Moderation | `MockPhotoModerationService` | provider 인터페이스 교체 |
-| 푸시 | Expo Push | `MockPushService` | provider 인터페이스 교체 |
-| 결제 | 토스 / IAP | `MockPaymentService` | provider 인터페이스 교체 |
-
-실 연동은 외부 서비스 계약 후에 한다.
-
----
-
-## 화면 ID
-
-현행 화면 ID는 [화면 흐름 설계](docs/superpowers/specs/2026-09-11-화면-흐름-설계.md)의 A1~G5 다. 앱 IA v2(2026-10)부터 B(인터뷰)·C(매일 대화)는 갈피 대화방(`app/galpi/chat.tsx`), D(소개)는 편지(`app/letter/[id].tsx`)와 가벼운 소개(`app/light-intro.tsx`)에서 일어난다. 새 화면은 파일 맨 위 `@screen` 주석에 기존 ID를 적는다(CLAUDE.md 8.1).
-
-옛 화면 ID(A01~K05)와 기능 ID(FR-*)는 폐기된 기획서 기준이다. 기존 파일명(`a03-login.tsx`, `j07-withdraw.tsx`)과 컨트롤러 JSDoc 에만 남아 있다.
-
----
-
-## 알려진 dev 운영 메모
-
-- `packages/shared` 변경 후 → `pnpm --filter @prologue/shared build` 필수 (런타임은 `dist/`를 읽음)
-- `nest start --watch` 의 dist race 회피 위해 `apps/api/nest-cli.json`에서 `deleteOutDir: false`
-- 모바일 실기기에서 백엔드 호출 시 `localhost` 대신 PC의 LAN IP 사용
-  → `apps/mobile/.env` 의 `EXPO_PUBLIC_API_BASE_URL` 을 `http://192.168.x.x:3001/api/v1` 로 변경
-- 윈도우 + pnpm install 시 Defender 실시간 검사가 `node_modules/.pnpm/*_tmp_*` 폴더의
-  atomic rename 을 잡을 수 있음 → 프로젝트 폴더를 Defender 제외 목록에 추가
-- Expo SDK 는 폰의 Expo Go SDK 버전과 일치해야 함. 불일치 시 `npx expo install --fix`
-  (단, 그 전에 `expo` 패키지 버전을 `~XX.0.0` 로 핀하고 `pnpm install` 먼저)
-- 카카오 로그인 mock 모드: `KAKAO_USER_INFO_PROVIDER=mock` 일 때 access_token 의 해시로
-  결정적 kakaoId 생성. 모바일에서 임의 토큰을 보내도 동일 토큰 = 동일 사용자로 시연 가능.
-
-### 자주 막히는 지점
-
-**DATABASE_URL 연결이 안 된다**
-
-Supabase 대시보드 → Settings → Database → Connection string 의 두 모드를 구분한다.
-
-- **Pooler (port 6543, pgbouncer)**: 일반 쿼리용. `DATABASE_URL` 에 넣는다
-- **Direct (port 5432)**: 마이그레이션용. `DIRECT_URL` 에 넣는다 (Prisma `datasource` 의 `directUrl`)
-
-**RLS 때문에 데이터가 안 보인다**
-
-의도된 동작이다. 모바일은 RLS 가 허용한 데이터만 SELECT 할 수 있다. 디버깅할 때는 Supabase Studio → Authentication → Users 에서 테스트 사용자를 만들고 그 토큰으로 시도한다. NestJS 는 service role key 로 접근하므로 RLS 를 우회한다.
-
-**Supabase Realtime 메시지가 도착하지 않는다**
-
-- 해당 테이블이 Realtime publication 에 들어 있는지 확인한다: `ALTER PUBLICATION supabase_realtime ADD TABLE messages;`
-- RLS 정책이 SELECT 를 허용해야 구독도 된다
-
----
+현행 화면 ID는 [화면 흐름 설계](docs/superpowers/specs/2026-09-11-화면-흐름-설계.md)의 A1~G5이며 새 파일의 `@screen` 주석으로 추적한다. mock 화면용 타입과 응답 DTO는 같지 않다. [모바일 서버 계약](apps/mobile/domain/types.ts)과 [갈피 공유 계약](packages/shared/src/galpi/contract.ts)을 확인하고, 상대 내부 ID·넘긴 이유·점수·인터뷰 원문을 공개하지 않는다.
 
 ## 라이선스
 
