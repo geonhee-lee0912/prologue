@@ -38,6 +38,17 @@
 - `prologue_04_verification_policy_v0.1.md` — 인증 정책
 - `prologue_02_copy_tone_guide_v0.1.md` — 카피 금지 표현 목록
 
+## 2026-07 HOME v1 — 기록 보존, 작업 종료
+
+운영자 결정으로 현재 제품에 반영하지 않고 종료했다. 옛 코드와 설계를 현재 작업 트리에 합치지 않고 원격 태그로 보존한다.
+
+- 코드·미적용 마이그레이션: `archive/home-v1-code-2026-07` (`b4b2bd3`)
+- 설계와 당시 기획 이력: `archive/home-v1-docs-2026-07` (`fea6e57`)
+- 종료한 브랜치: `claude/home-v1-wip-2026-07`, `claude/docs-2026-07-unpushed`
+- [종료 결정과 기록 열람 링크](../decisions/2026-10-31-HOME-v1-종료.md)
+
+보관된 HANDOFF의 재개 안내는 당시 기록이다. 현재 작업 지시로 따르거나 옛 마이그레이션을 적용하지 않는다.
+
 ## 현재 기준 문서
 
 - `docs/superpowers/specs/2026-09-02-컨셉-재설정-design.md` — 컨셉·BM·법적 검토
