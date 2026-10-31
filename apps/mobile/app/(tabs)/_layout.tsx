@@ -1,11 +1,12 @@
 import { Tabs } from 'expo-router';
 
 /**
- * 하단 4탭 (08_화면목록_IA 4장):
- *  - 홈 (D01)
- *  - 관심 (E04)
- *  - 대화 (G01)
- *  - 마이 (J01)
+ * 하단 5탭 (IA v0.3, TAB-v0.3 — 탭 이름은 전부 가칭):
+ *  - 추천   (home)        오늘의 큐레이션
+ *  - 이야기 (story)       순수 무료 피드
+ *  - 이어짐 (connections) 관심~대화 한 퍼널 (관심+대화 병합)
+ *  - 활동   (activity)    참여형 프로그램 선반
+ *  - 마이   (my)          내 책 가꾸기
  */
 export default function TabsLayout() {
   return (
@@ -17,9 +18,10 @@ export default function TabsLayout() {
         tabBarStyle: { borderTopColor: '#eee' },
       }}
     >
-      <Tabs.Screen name="home" options={{ title: '홈' }} />
-      <Tabs.Screen name="interests" options={{ title: '관심' }} />
-      <Tabs.Screen name="conversations" options={{ title: '대화' }} />
+      <Tabs.Screen name="home" options={{ title: '추천' }} />
+      <Tabs.Screen name="story" options={{ title: '이야기' }} />
+      <Tabs.Screen name="connections" options={{ title: '이어짐' }} />
+      <Tabs.Screen name="activity" options={{ title: '활동' }} />
       <Tabs.Screen name="my" options={{ title: '마이' }} />
     </Tabs>
   );

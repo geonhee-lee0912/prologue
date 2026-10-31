@@ -34,6 +34,7 @@ async function makeUser(opts: {
   region1: string;
   region2: string;
   jobCategory: string;
+  bookTitle?: string;
   intro: string;
   lifestyleTags: string[];
   intent:
@@ -45,6 +46,7 @@ async function makeUser(opts: {
   pace: 'slow' | 'moderate' | 'fast';
   contactFrequency: 'low' | 'medium' | 'high';
   withMainPhoto?: boolean;
+  photoUrl?: string; // 지정 시 storageKey 대신 외부 URL (개발 프리뷰용)
 }) {
   const targetGender = opts.gender === 'male' ? 'female' : 'male';
   await prisma.user.create({
@@ -77,6 +79,7 @@ async function makeUser(opts: {
       profile: {
         create: {
           jobCategory: opts.jobCategory,
+          bookTitle: opts.bookTitle,
           intro: opts.intro,
           lifestyleTags: opts.lifestyleTags,
           reviewStatus: 'approved',
@@ -95,7 +98,7 @@ async function makeUser(opts: {
             photos: {
               create: {
                 photoType: 'main',
-                storageKey: `seed/${opts.id}/main.jpg`,
+                storageKey: opts.photoUrl ?? `seed/${opts.id}/main.jpg`,
                 isMain: true,
                 reviewStatus: 'approved',
                 faceMatchStatus: 'verified',
@@ -155,6 +158,9 @@ async function main() {
     intro:
       '백엔드 개발자예요. 평소엔 조용한 편인데, 관심 있는 주제가 나오면 이야기가 길어집니다. 등산과 위스키 한 잔을 좋아해요. 진지하게 관계를 생각하고 있어요.',
     lifestyleTags: ['등산', '위스키', '코딩', '팟캐스트'],
+    bookTitle: '산 정상에서 마시는 위스키 한 잔',
+    photoUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
+    withMainPhoto: true,
     intent: 'serious_long_term',
     pace: 'moderate',
     contactFrequency: 'medium',
@@ -169,6 +175,9 @@ async function main() {
     intro:
       '재활의학과에서 일하는 의사입니다. 사람 이야기를 듣는 걸 좋아해요. 주말엔 클래식 공연을 보러 가거나 집에서 베이킹을 합니다. 따뜻한 관계를 원해요.',
     lifestyleTags: ['클래식', '베이킹', '산책', '와인'],
+    bookTitle: '일요일 아침엔 빵을 굽습니다',
+    photoUrl: 'https://randomuser.me/api/portraits/men/45.jpg',
+    withMainPhoto: true,
     intent: 'open_to_marriage',
     pace: 'slow',
     contactFrequency: 'high',
@@ -183,6 +192,9 @@ async function main() {
     intro:
       '변호사로 일하고 있어요. 논리적이라는 말을 자주 듣지만 의외로 감성적인 영화를 좋아합니다. 미술관 가는 걸 즐기고, 좋은 대화 상대를 찾고 있어요.',
     lifestyleTags: ['미술관', '영화', '테니스', '여행'],
+    bookTitle: '미술관에서 오래 머무는 사람',
+    photoUrl: 'https://randomuser.me/api/portraits/men/12.jpg',
+    withMainPhoto: true,
     intent: 'natural_dating',
     pace: 'moderate',
     contactFrequency: 'medium',
@@ -199,6 +211,9 @@ async function main() {
     intro:
       '작은 비스트로를 운영하는 셰프예요. 제철 재료로 요리하는 걸 좋아하고, 쉬는 날엔 시장 구경을 다닙니다. 음식과 일상을 나눌 사람을 만나고 싶어요.',
     lifestyleTags: ['요리', '시장구경', '캠핑', '재즈'],
+    bookTitle: '제철 재료로 차리는 저녁',
+    photoUrl: 'https://randomuser.me/api/portraits/men/67.jpg',
+    withMainPhoto: true,
     intent: 'serious_long_term',
     pace: 'moderate',
     contactFrequency: 'medium',

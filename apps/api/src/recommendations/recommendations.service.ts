@@ -24,6 +24,7 @@ export interface RecommendationCardView {
     region2: string | null;
     profile: {
       jobCategory: string | null;
+      bookTitle: string | null;
       intro: string | null;
       lifestyleTags: string[];
     } | null;
@@ -120,6 +121,8 @@ export class RecommendationsService {
   }
 
   private async signPhotoUrl(storageKey: string): Promise<string | null> {
+    // 시드/외부 URL 은 그대로 통과 (Storage 실체가 없는 개발 데이터용)
+    if (storageKey.startsWith('http')) return storageKey;
     const { data } = await this.supabase.admin.storage
       .from('photos')
       .createSignedUrl(storageKey, 60 * 60);
@@ -326,6 +329,7 @@ export class RecommendationsService {
       } | null;
       profile?: {
         jobCategory: string | null;
+        bookTitle: string | null;
         intro: string | null;
         lifestyleTags: string[];
       } | null;
@@ -347,6 +351,7 @@ export class RecommendationsService {
         profile: target?.profile
           ? {
               jobCategory: target.profile.jobCategory,
+              bookTitle: target.profile.bookTitle,
               intro: target.profile.intro,
               lifestyleTags: target.profile.lifestyleTags,
             }

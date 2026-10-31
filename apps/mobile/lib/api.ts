@@ -630,6 +630,7 @@ export interface RecommendationCard {
     region2: string | null;
     profile: {
       jobCategory: string | null;
+      bookTitle: string | null;
       intro: string | null;
       lifestyleTags: string[];
     } | null;

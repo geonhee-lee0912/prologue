@@ -196,6 +196,8 @@ model Profile {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   jobCategory   String?  @map("job_category") // 직업군 (회사명 아님)
+  // 책 표지 제목 (사용자가 쓴 한 줄, 추천 표지 헤드라인)
+  bookTitle     String?  @map("book_title")
   // 나의 프롤로그 (자기소개)
   intro         String?  @db.Text
   // 라이프스타일 키워드 (배열)
