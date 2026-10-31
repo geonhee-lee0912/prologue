@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Claude Code·Codex 등 이 저장소에서 작업하는 모든 에이전트의 공통 지침이다. `CLAUDE.md` 는 이 파일을 불러오는 진입점이다. 작업 전에 이 문서와 해당 영역의 현행 설계를 읽는다.
+Claude Code·Codex 등 개발 도구의 공통 지침이다. 서비스 갈피 AI의 런타임 설정이 아니다. `CLAUDE.md` 는 이 파일을 불러오는 진입점이다. 작업 전에 이 문서와 해당 영역의 현행 설계를 읽는다.
 
 ## 공통 규칙
 
@@ -104,34 +104,10 @@ Next.js 운영 도구 ── NestJS Admin API
 | 갈피 엔진                 | `docs/superpowers/specs/2026-10-11-갈피-AI-엔진-design.md`, 실행 중 결정 `docs/superpowers/plans/2026-10-11-갈피-AI-엔진-1단계-결정.md`                                                                    |
 | 화면·브랜드·용어          | `docs/superpowers/specs/2026-09-11-화면-흐름-설계.md`, `docs/superpowers/specs/2026-10-10-서비스-구성-위계-design.md`, `docs/superpowers/specs/2026-10-09-브랜드-세계관-갈피-design.md`                    |
 | 데이터·RLS                | `apps/api/prisma/schema.prisma`, `supabase/policies/`, `supabase/README.md`, 아키텍처 문서 6장                                                                                                             |
-| 사용자 카피               | `docs/prologue_02_copy_tone_guide_v0.1.md` 및 이 문서 9장                                                                                                                                                  |
+| 사용자 카피               | `docs/prologue_02_copy_tone_guide_v0.1.md` 및 `docs/agent/copy.md`                                                                                                                                                  |
 | 개인정보·신고·안전        | `docs/prologue_04_privacy_visibility_policy_v0.1.md`, `docs/prologue_04_report_block_sanction_policy_v0.1.md`, `docs/prologue_04_safety_ux_guide_v0.1.md` — 현행 설계와 충돌하는 옛 정책은 적용하지 않는다 |
 
 `docs/archive/2026-05-이전-컨셉/` 의 기획은 참고용이다. 옛 FR 목록, 추천 점수·재화 모델·화면 IA·데이터항목 정의서를 구현 근거로 쓰지 않는다. 현재 스키마와 현행 설계로 판단하고, 미결정 제품 정책만 운영자에게 확인한다.
-
----
-
-## 4. 데이터 흐름 결정 흐름표
-
-새 기능을 만들 때 항상 다음 순서로 결정한다.
-
-```
-이 작업이 …
-
-1. 단순 조회인가? (자기 데이터 또는 RLS 로 허용된 상대 데이터 SELECT)
-   ├ 그렇다 → 패턴 1: 모바일이 supabase.from('table').select() 직접
-   └ 아니다 → 2번으로
-
-2. 다른 사용자 데이터 변경, 외부 서비스 호출, 다단계 트랜잭션이 필요한가?
-   ├ 그렇다 → 패턴 2: 모바일 → NestJS API → Supabase (service role)
-   └ 아니다 → 3번으로
-
-3. 실시간 데이터 수신이 필요한가? (새 메시지, 매칭 도착)
-   ├ 그렇다 → 패턴 3: 모바일이 supabase.channel().on('postgres_changes') 구독
-   └ 아니다 → 패턴 4: 백그라운드 작업 — 목표는 Vercel Cron + waitUntil / Supabase 큐(현재는 NestJS @Cron)
-```
-
-**판단이 애매하면 NestJS 경유 (패턴 2) 를 선택한다.** 보안 사고 비용이 크다.
 
 ---
 
@@ -152,144 +128,10 @@ supabase/     → 현재 RLS 정책 SQL·적용 스크립트 (Prisma 마이그�
 
 ---
 
-## 6. 데이터 모델 변경 작업 패턴
+## 구현·카피 핵심
 
-1. `apps/api/prisma/schema.prisma` 를 바꾸고 이유를 남긴다.
-2. 원격 DB에 붙지 않는 `prisma migrate diff` 로 SQL을 만들어 `apps/api/prisma/migrations/<timestamp>_<name>/migration.sql` 에 둔다. 정확한 명령은 `supabase/README.md`.
-3. `supabase/policies/<table>.sql` 에 RLS를 추가·수정한다. 직접 읽지 않는 테이블도 RLS를 켜고 클라이언트 정책은 두지 않는다.
-4. `packages/shared/src/` 의 타입·enum·정책과 영향받는 DTO·서비스·화면을 함께 수정한다.
-5. 정책 파일 검사와 변경에 맞는 테스트를 실행한다. 실제 접근 거부 검증의 남은 일은 `BACKLOG.md` 1·9절에 유지한다.
-6. **원격 DB 적용은 사람 확인 후** 현재 방식인 `prisma migrate deploy` → `pnpm db:rls` 순서로 한다. `supabase db push` 가 현재 정책 디렉터리를 적용하는 것으로 안내하지 않는다.
-
-향후 Supabase 미리보기 브랜치에 맞춰 마이그레이션·RLS를 `supabase/migrations` 로 통합한다는 결정은 아직 미적용이다. Supabase Studio에서 스키마/RLS를 직접 바꾸지 않는다.
-
----
-
-## 7. RLS 정책 작성 규칙
-
-### 7.1 작성 위치
-
-`supabase/policies/<table>.sql` 한 파일에 해당 테이블의 모든 정책을 모은다.
-
-### 7.2 기본 패턴
-
-```sql
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "select_own_profile" ON profiles;
-CREATE POLICY "select_own_profile" ON profiles
-  FOR SELECT USING (auth.uid() = user_id);
-```
-
-이 예시는 자기 프로필 조회만 설명한다. 실제 전체 정책은 `supabase/policies/profiles.sql` 을 본다. 상대 공개 범위를 바꾸기 전에 DTO·컬럼 제한과 하드룰을 함께 확인한다. 삭제된 `recommendations`, `user_actions` 테이블을 되살리는 정책을 만들지 않는다.
-
-### 7.3 절대 위반 금지
-
-- 점수·넘긴 이유·신고 원문·운영 메모는 클라이언트에 공개하지 않는다. 행 접근 정책만으로 컬럼이 가려지지 않는다. 필요한 경우 view 또는 컬럼별 GRANT와 API DTO를 사용한다.
-- 갈피 테이블은 `supabase/policies/galpi.sql` 처럼 클라이언트 정책 없이 RLS만 켠다. 대화·서고·리포트의 허용된 열람은 NestJS가 검증하고 전용 DTO로 보낸다.
-- 권한을 넓힐 때는 실제 역할(anon·authenticated)로 접근 거부를 검증한다.
-
----
-
-### 7.4 service role 사용
-
-NestJS 가 service role key 로 접근하면 RLS 가 우회된다. 이 경우 NestJS 코드에서 명시적으로 권한 검증을 한다.
-
-```ts
-// 잘못된 예: service role 로 검증 없이 INSERT
-await supabaseAdmin.from('matches').insert({ ... });
-
-// 올바른 예: NestJS 가 비즈니스 규칙 검증 후 INSERT
-async createMatch(userA, userB) {
-  await this.checkNotBlocked(userA, userB);
-  await this.checkNotAlreadyMatched(userA, userB);
-  await supabaseAdmin.from('matches').insert({ ... });
-}
-```
-
----
-
-## 8. 화면 ID 와 기능 ID 추적
-
-### 8.1 모바일 파일 명명 규칙
-
-현행 화면 ID는 화면 흐름 설계의 **A1~G5**다. 앱 IA v2 이후 한 화면이 여러 ID를 품으므로 파일 맨 위 `@screen` 주석에 적는다. 라우트는 `app/(tabs)/friends.tsx`, `app/galpi/chat.tsx`, `app/letter/[id].tsx` 처럼 뜻이 보이는 이름을 쓴다. 매핑은 서비스 구성·위계 스펙 3.5를 본다.
-
-옛 A01~K05·FR-\*는 남아 있는 코드의 이력이다. 새 화면 파일에 옛 ID prefix를 강제하지 않는다.
-
----
-
-### 8.2 백엔드 모듈 명명 규칙
-
-기능 이름으로 모듈·컨트롤러를 나누고, 주석에 현행 설계와 담당 동작을 적는다. 기존 `@fr FR-*`는 이력으로 남길 수 있지만 새 기능에 폐기된 FR ID를 요구하지 않는다. 예: `apps/api/src/galpi/galpi.controller.ts`.
-
-### 8.3 커밋 메시지
-
-```
-feat(api): 갈피 대화 API 추가
-feat(mobile): D1 소개 편지 화면 구현
-feat(supabase): profiles RLS 정책 추가
-docs: 작업 지침과 실행 안내 갱신
-```
-
----
-
-## 9. 카피 작성 규칙 (절대 위반 금지)
-
-### 9.1 절대 사용 금지 표현
-
-추천/매칭:
-
-- "운명의 상대", "완벽한 매칭", "100% 잘 맞아요", "반드시 잘 맞을 거예요"
-- "프롤로그가 보장합니다", "실패 없는 추천"
-- "당신보다 수준이 높은 상대", "고급 회원", "프리미엄 등급"
-- "놓치면 후회해요", "지금 안 보면 끝나요"
-
-대화/연락처:
-
-- "곧 대화가 사라져요. 지금 잡으세요."
-- "답장하지 않으면 매칭이 사라집니다"
-- "지금 결제하지 않으면 기회를 잃어요"
-- "상대가 기다리고 있어요. 빨리 답장하세요."
-
-결제/유료:
-
-- "프리미엄 회원만 선택받을 수 있어요"
-- "결제하면 매칭 확률이 보장됩니다"
-
-안전/개인정보:
-
-- "걱정하지 마세요, 안전합니다"
-- "100% 안전한 만남"
-- "프롤로그가 알아서 지켜드립니다"
-- "검증된 사람만 보여드립니다"
-
-사람 상품화:
-
-- "쓸어보기", "쇼핑하기", "사냥하기", "랭킹 보기"
-- "품절", "대출", "반납", "장바구니", "소장"
-
-### 9.2 권장 톤
-
-차분한, 따뜻한, 신뢰감 있는, 성숙한, 설명적인.
-
-### 9.3 핵심 용어 매핑
-
-**세계관은 "서고와 편지", AI 캐릭터는 "갈피"로 정했다 (2026-10, 설계 진행 중).** 상세는 `docs/superpowers/specs/2026-10-09-브랜드-세계관-갈피-design.md`. 대화는 채팅으로 하고, 편지는 소개와 리포트 같은 중요한 순간에만 쓴다. 옛 책방 메타포 용어 중 새 컨셉과 부딪히는 것(오늘의 프롤로그, 내 서재, 책갈피)은 되살리지 않는다. 세계관은 갈피의 말에만 담고, 버튼·동의·결제·신고 문구는 담백하게 쓴다. 코드에서는 아래 중립 표현을 쓴다.
-
-| 사용자 노출 (잠정)        | 코드/DB                     |
-| ------------------------- | --------------------------- |
-| 소개 / 소개받기           | introduction, introduce     |
-| 소개 이유                 | introductionReason          |
-| 수락 / 넘기기             | accept / pass               |
-| 서로 수락했어요           | mutualAccept                |
-| 대화                      | conversation                |
-| 나를 알아가기 (AI 인터뷰) | interview, interviewSession |
-| 나에 대한 리포트          | selfReport                  |
-| 연결권                    | connectionCredit            |
-
-**브랜드 확정 전까지 사용자 노출 문구는 PR에서 별도 확인을 받는다.**
-
----
+- DB 변경은 마이그레이션 SQL·RLS·공유 계약을 함께 고친다. service role 경로는 API 권한 검증이 필수다. 권한 확대는 실제 역할로 검증한다.
+- 문구는 차분하고 따뜻하게 쓴다. 브랜드 확정 전 사용자 노출 문구는 PR에서 별도 확인한다. 금지 표현·용어는 카피 상세를 따른다.
 
 ## 10. 개인정보·민감 데이터 규칙 (절대 위반 금지)
 
@@ -350,28 +192,6 @@ docs: 작업 지침과 실행 안내 갱신
 
 ---
 
-## 11. 외부 서비스 호출 규칙
-
-본인인증, SMS, 얼굴 인증, 푸시, 결제 SDK 는 직접 호출 금지. 항상 인터페이스 경유.
-
-```ts
-// 잘못된 예
-import { SMSClient } from 'nhn-toast-sdk';
-await client.sendSMS(...);
-
-// 올바른 예
-constructor(
-  @Inject('SmsProvider')
-  private readonly sms: SmsProvider,
-) {}
-
-await this.sms.sendOtp(phoneNumber, code);
-```
-
-테스트와 로컬 개발은 mock provider. Storage 는 Supabase 직접 사용 (인터페이스 없이).
-
----
-
 ## 12. 매칭/대화 정책
 
 정책 수치는 **`packages/shared/src/policy.ts`** 의 `POLICY`를 기준으로 쓴다. 문서에 전체 코드를 복제하지 않는다.
@@ -412,30 +232,6 @@ await this.sms.sendOtp(phoneNumber, code);
 
 ---
 
-## 15. 자주 묻는 패턴
-
-### 새 기능 시작 시 확인할 것
-
-현행 화면 ID·설계 근거, 데이터 흐름, 변경 영역과 정책 차이를 저장소에서 먼저 찾는다. 빠진 제품 결정만 묻는다.
-
-### 기획 문서와 코드가 다를 때
-
-최근 명시적 결정을 우선하고, 현재 구현과 미적용 목표를 구분해 기록한다. 미결정 정책은 운영자에게 확인한다. 이미 폐기된 계획을 다시 실행하지 않는다.
-
----
-
-### 카피가 필요한 화면
-
-1. 톤 가이드의 권장 표현으로 후보 3~5개 작성.
-2. 금지 표현 체크리스트 통과 확인.
-3. 사용자에게 어떤 후보가 좋은지 묻거나, 가장 일관된 후보 선택 후 PR 본문에 다른 후보 명시.
-
-### 결제 압박/결핍 자극 의심 시
-
-즉시 멈추고 사용자에게 확인. 추천권/Plus 안내, 대화 종료 안내, 빈 상태 화면이 위험 영역.
-
----
-
 ## 16. 절대 하지 않는 것 (요약)
 
 - 사용자 응답에 추천 점수 숫자, 거절 사유, 신고 내용 포함 금지.
@@ -463,36 +259,10 @@ await this.sms.sendOtp(phoneNumber, code);
 
 ---
 
-## 17. 자주 쓰는 명령어
+## 더 읽을 것 (그 영역을 만지기 전에)
 
-Node.js 20 이상, pnpm 9.12.0. 전역 pnpm이 없으면 `corepack pnpm` 을 쓴다. 테스트·타입 검사는 `.env` 없이 실행한다.
-
-```bash
-corepack pnpm install
-corepack pnpm --filter @prologue/shared build
-corepack pnpm --filter @prologue/shared test
-corepack pnpm --filter @prologue/api typecheck
-corepack pnpm --filter @prologue/api test
-corepack pnpm --filter @prologue/mobile test
-corepack pnpm --filter @prologue/mobile web
-```
-
-shared는 `dist`를 내보내므로 첫 실행과 shared 변경 후 먼저 빌드한다. API 실행은 원격 dev DB와 예약 작업에 연결하므로 승인된 환경·마이그레이션 적용 상태를 확인한 뒤 한다. DB 적용 명령은 `supabase/README.md`, 미리보기·전체 명령은 `README.md`를 본다.
-
----
-
-## 18. 변경 이력
-
-- 2026-10-30: `CLAUDE.md` 본문을 공통 `AGENTS.md`로 이전. 작업 승인 범위, 클라우드 실행, 현황 조사·현황표 계획 폐기 범위를 명시. Vercel 목표/현재 구현, RLS·마이그레이션·화면 ID·테스트 안내와 문서 경로를 정리. 아래는 이전 지침의 변경 이력이다.
-
-- 2026-05-10: v0.1 최초 작성. NestJS + 자체 AWS 인프라 기준.
-- 2026-10-15: v0.11 갱신. **맥락을 저장소로** — 프롤로그 컴퓨터의 Claude 메모리 중 문서에 없던 것을 `docs/context/`(운영자 작업 방식, 개발 환경)로, 갈피 엔진 1단계 실행 중 결정 80개를 `docs/superpowers/plans/2026-10-11-갈피-AI-엔진-1단계-결정.md` 로 옮기고 3장 표에 연결(멀티 서비스 플랫폼 스펙 10장 1단계). 2장에 Railway 를 쓰지 않는다는 결정을 적음.
-- 2026-10-11: v0.10 갱신. **10.2b 민감정보 범위를 개인정보보호법 23조 전체로** — 사상·신념, 노조·정당, 정치적 견해, 건강, 성생활과 시행령의 유전·범죄경력·생체인식·인종·민족 정보. 갈피는 직접 묻지 않고, 흘러든 언급은 저장할 때 마스킹한다(`docs/superpowers/specs/2026-10-11-갈피-AI-엔진-design.md` 5.3).
-- 2026-10-11: v0.9 갱신. **하드룰 3 가벼운 소개를 "노출에 동의한 사람끼리만 주고받는다"로 명확히** — 받으려면 나도 켠다(앱 IA 4.4 양쪽 동의). 12장 `exposureDefault` 주석 같은 뜻으로.
-- 2026-10-10: v0.8 갱신. **8.1에 앱 IA v2 화면 파일 규칙 추가** — 새 화면은 파일 맨 위 `@screen` 주석으로 기존 화면 ID를 추적한다. 모바일 화면 골격(친구/대화/내 이야기/설정)이 mock 데이터로 섰다. 12장 `policy.ts` 예시를 코드 키에 맞춤(`maxStoryChoices`, `galpi`, `feed`).
-- 2026-10-10: v0.7 갱신. **앱 IA v2 반영** — 홈이 카톡형 "친구" 탭으로 바뀌며 소식이 생겨, 하드룰 1의 "피드"를 "다른 사용자를 보여주는 피드"로 정확히 하고 16장에 친구 목록 원칙 추가.
-- 2026-10-10: v0.6 갱신. **앱 IA v1 반영** (`docs/superpowers/specs/2026-10-10-서비스-구성-위계-design.md`). 하드룰 3에 가벼운 소개 허용 조건, 12장 정책에 편지 한 번에 한 통·만료 7일·이야기로 고르기·가벼운 소개 항목 추가, 16장에 편지함 금지 추가.
-- 2026-10-09: v0.5 갱신. **하드룰 6을 "사용자끼리의 압박 장치 금지"로 좁힘.** 읽음 확인·온라인 상태·답장 압박은 유지, 갈피와의 관계 장치(태엽 등)는 보상만 있고 벌이 없는 조건으로 허용. 16장 반영.
-- 2026-10-09: v0.4 갱신. **하드룰 2·8 조건 정보 정책 변경** — AI가 학벌·연봉·주거·회사명을 묻고 본인이 허락한 항목은 소개 편지에 담는다. 가입 자격으로는 쓰지 않는다. 조건 3분류 표와 16장 반영. **9.3 책방 메타포 보류를 해제**하고 세계관 "서고와 편지", AI 캐릭터 "갈피"로 교체(설계 진행 중).
-- 2026-09-11: v0.3 갱신. **2026-09 컨셉 재설정 반영.** 1장 한 줄 요약을 "진열되지 않는 소개팅"으로 교체하고 **1.1 하드룰 8가지** 신설. 3장 우선 문서를 컨셉 재설정 문서로 교체하고 기존 기획 문서 26종을 참고용으로 강등. 9.3 책방 메타포 용어 매핑을 보류하고 중립 용어로 대체. 12장 정책을 새 BM 기준으로 교체(대화 만료·추천 가중치·하루 N장 폐기). 13장을 추천 점수 체계 폐기 + AI 호출 규칙으로 교체. 10장에 민감정보·국외이전·자동화된 결정 규칙 추가. 16장 금지 목록에 하드룰 위반 항목 추가.
-- 2026-05-10: v0.2 갱신. B안 (NestJS + Supabase 하이브리드) 채택. 4가지 데이터 흐름 패턴, RLS 정책 작성 규칙, Supabase 키 관리 규칙, Prisma + Supabase CLI 병행 마이그레이션 절차 추가. Docker Compose 와 socket.io 관련 내용 제거.
+- 데이터 흐름·DB/RLS·화면 ID·외부 호출(4·6·7·8·11장): [구현 상세](docs/agent/implementation.md)
+- 사용자 문구·금지 표현·용어(9장): [카피 상세](docs/agent/copy.md)
+- 작업 패턴·추가 명령(15·17장): [작업 패턴](docs/agent/work-patterns.md)
+- 과거 기록(18장): [변경 이력](docs/agent/history.md) — 현행 작업 지시가 아니다
+- 도구·자리 교대: [인계 안내](docs/context/에이전트-인계.md)
