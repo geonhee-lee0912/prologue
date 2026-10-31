@@ -25,7 +25,7 @@
 
 **공통 플랫폼 계획 전체는 유지한다.** `platform` 패키지와 `ops`·`notify`부터 만들고 서비스에 붙이는 방향, 이후 `ai`·`consent`·`pay`·`auth`·템플릿으로 이어지는 로드맵은 [멀티 서비스 플랫폼 스펙](docs/superpowers/specs/2026-10-15-멀티서비스-플랫폼-design.md) 14·16장을 따른다. 별콩톡 보안 수정은 공통 작업을 기다리지 않는다. 프롤로그 자체 기능 개발은 기존 결정대로 `notify` 연결 뒤 재개한다.
 
-문서 정리·검증·PR 작업은 데스크톱 없이 클라우드에서 실행할 수 있다. 변경은 검토 가능한 PR로 남기고, 병합은 사람이 한다. 자동 병합을 켜지 않는다.
+현재 작업 순서는 [ROADMAP.md](ROADMAP.md), 진행 상태는 미병합 브랜치의 `HANDOFF.md`, 상세 체크리스트는 [BACKLOG.md](BACKLOG.md)가 정본이다. 위 플랫폼 순서는 설계 이력이며 현재 작업 순서를 ROADMAP 대신 결정하지 않는다. 교대·완료 절차는 [인계 안내](docs/context/에이전트-인계.md)를 따른다. PR은 완료 시 만들고 병합은 운영자가 한다.
 
 ## 저장소 구조
 
@@ -46,7 +46,9 @@ docs/archive/           폐기된 이전 컨셉 문서
 Node.js **20 이상**, pnpm **9.12.0**이 필요하다. 전역 pnpm이 있으면 아래 `corepack pnpm`을 `pnpm`으로 바꿔도 된다. 일반 테스트·타입 검사·mock 화면 확인에는 Docker나 데스크톱 앱이 필요하지 않다.
 
 ```bash
-corepack pnpm install
+bash scripts/agent/start.sh
+# 작업 브랜치 선택 → HANDOFF 상태 재확인·자리 기록·커밋·푸시
+bash scripts/agent/init.sh
 corepack pnpm --filter @prologue/shared build
 
 # DB·외부 서비스에 연결하지 않는 검증
@@ -69,7 +71,7 @@ node scripts/device-frame.mjs
 # http://localhost:8090
 ```
 
-첫 실행은 갈피 대화방으로 들어간다. 설정 탭의 개발용 패널에서 시나리오 8종을 바꿀 수 있다. 클라우드에서는 해당 포트를 환경의 미리보기 기능으로 연다. 실기기 검증은 별도 Expo Go 또는 development build를 사용한다. 실제 카카오 OAuth의 네이티브 연결은 미구현이다([BACKLOG](BACKLOG.md) 6절).
+첫 실행은 갈피 대화방으로 들어간다. 설정 탭의 개발용 패널에서 시나리오 8종을 바꿀 수 있다. 클라우드의 화면 확인은 Vercel Preview를 사용하며, 브라우저·실기기 확인은 로컬에서 한다. 실기기 검증은 별도 Expo Go 또는 development build를 사용한다. 실제 카카오 OAuth의 네이티브 연결은 미구현이다([BACKLOG](BACKLOG.md) 6절).
 
 ### API·운영 도구 실행 (개발용 설정 필요)
 
@@ -107,13 +109,13 @@ Railway는 쓰지 않는다. Vercel 설정·Cron 엔드포인트·Redis·큐·Su
 
 ## 환경 변수와 외부 서비스
 
-- 키는 환경별로 분리한다. 클라우드에는 필요한 개발용 키만 주입하고, 운영 설정은 운영자가 관리한다.
+- 키는 환경별로 분리한다. 클라우드는 비밀값 0을 유지하고, 키가 필요한 실행은 로컬에서 한다. 운영 설정은 운영자가 관리한다.
 - `SUPABASE_SERVICE_ROLE_KEY`·`SUPABASE_JWT_SECRET`은 API 서버에만 둔다. 모바일·관리자 클라이언트에 넣지 않는다. 관리자 예시 파일에 남은 service role 자리도 사용하지 않는다([BACKLOG](BACKLOG.md) 9절).
 - `PHONE_HASH_PEPPER`는 같은 DB를 쓰는 모든 환경에서 같아야 한다. 비밀번호 관리자에 보관한다. 바뀌면 기존 휴대폰 해시가 맞지 않으므로 임의 재생성하지 않는다.
 - 현재 SMS·본인인증·얼굴·사진 검수·푸시·결제는 mock provider다. 예시 변수만 바꿔도 모두 real로 전환되는 구조는 아니다.
 - 카카오는 `KAKAO_USER_INFO_PROVIDER=mock|real`, LLM은 `LLM_PROVIDER=mock|openai` 선택 코드가 있다. 카카오 실제 사용자 E2E 검증은 남아 있다. 실제 LLM은 동의 3종·가명처리·무보존 설정과 평가 세트 확인 후 켠다.
 
-운영 환경변수의 목표 관리 위치는 API·관리자 **Vercel**, 모바일 빌드 **Expo EAS**, DB 관련 설정 **Supabase**다. 현재 클라우드 실행 환경의 인증·변수 주입 방식을 유지하고 개인 데스크톱의 키를 복사하는 절차에 의존하지 않는다.
+운영 환경변수의 목표 관리 위치는 API·관리자 **Vercel**, 모바일 빌드 **Expo EAS**, DB 관련 설정 **Supabase**다. 클라우드에 로컬 키를 복사하지 않는다. 실제 계정 연결과 실행 권한은 환경마다 확인한다.
 
 ## 자주 쓰는 명령
 
