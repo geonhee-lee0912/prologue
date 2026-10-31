@@ -5,10 +5,9 @@
 순서는 운영자가 정한다. 이 초안은 2026-10-31 `BACKLOG.md` 상태에서 만든 것이라 운영자가 GitHub 웹에서 바로 고쳐도 된다(`main` 보호 때문에 PR 이 될 수 있다 — 운영자 혼자 합치면 된다).
 
 ## 다음 (순서대로)
-1. 홈 책방·사서 컨셉(HOME v1) 7월 작업 — 폐기 여부 운영자 판단 — 브랜치 `claude/home-v1-wip-2026-07`(코드)·`claude/docs-2026-07-unpushed`(7월 설계 문서). 2026-09 컨셉 재설정 전 코드라 그대로 합치지 않는다
-2. 갈피 AI 엔진 1단계 남은 일 — `BACKLOG.md` 10절
-3. 앱 IA v2 화면 골격 남은 일 — `BACKLOG.md` 8절
-4. RLS 정책 파일 dev DB 적용 — `BACKLOG.md` 1절 (DB 적용은 운영자 승인 범위)
+1. 갈피 AI 엔진 1단계 남은 일 — `BACKLOG.md` 10절
+2. 앱 IA v2 화면 골격 남은 일 — `BACKLOG.md` 8절
+3. RLS 정책 파일 dev DB 적용 — `BACKLOG.md` 1절 (DB 적용은 운영자 승인 범위)
 
 ## 나중
 - 카카오 로그인 실 연동 end-to-end 검증 — `BACKLOG.md` 5절
@@ -20,6 +19,7 @@
 - 어드민은 `apps/admin`(이미 있음, Prisma 타입 공유). 회사 대시보드는 별도 결정
 
 ## 끝남 (최근 5)
+- 홈 책방·사서 컨셉(HOME v1) 7월 작업 — 제품 반영 없이 종료, 기록은 보관 태그로 보존 — [종료 결정](docs/decisions/2026-10-31-HOME-v1-종료.md)
 - 작업 지침 분리와 인계 정본 정리 — 브랜치 `codex/agent-guidance-handoff`
 - 작업 구조 적용 — 공통 규칙·절차·로드맵 — 브랜치 `claude/work-structure` (2026-10-31)
 - 공통 작업 지침을 AGENTS.md 로 통합 — 브랜치 `codex/docs-agents-refresh-2026-10-30` (2026-10-30)
