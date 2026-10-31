@@ -20,5 +20,6 @@
 - 어드민은 `apps/admin`(이미 있음, Prisma 타입 공유). 회사 대시보드는 별도 결정
 
 ## 끝남 (최근 5)
+- 작업 지침 분리와 인계 정본 정리 — 브랜치 `codex/agent-guidance-handoff`
 - 작업 구조 적용 — 공통 규칙·절차·로드맵 — 브랜치 `claude/work-structure` (2026-10-31)
 - 공통 작업 지침을 AGENTS.md 로 통합 — 브랜치 `codex/docs-agents-refresh-2026-10-30` (2026-10-30)
