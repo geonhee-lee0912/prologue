@@ -5,6 +5,7 @@
 순서는 운영자가 정한다. 이 초안은 2026-10-31 `BACKLOG.md` 상태에서 만든 것이라 운영자가 GitHub 웹에서 바로 고쳐도 된다(`main` 보호 때문에 PR 이 될 수 있다 — 운영자 혼자 합치면 된다).
 
 ## 다음 (순서대로)
+- 현재 구현·기존 결정 정리와 로드맵 구체화 — 운영자 요청, 브랜치 `codex/roadmap-current-state`
 1. 갈피 AI 엔진 1단계 남은 일 — `BACKLOG.md` 10절
 2. 앱 IA v2 화면 골격 남은 일 — `BACKLOG.md` 8절
 3. RLS 정책 파일 dev DB 적용 — `BACKLOG.md` 1절 (DB 적용은 운영자 승인 범위)
