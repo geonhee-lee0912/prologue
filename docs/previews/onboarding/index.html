@@ -1,67 +1,244 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>프롤로그 · 첫 화면 시안</title>
-<style>
-*{box-sizing:border-box}body{margin:0;background:#f5f5f5;color:#191919;font-family:-apple-system,BlinkMacSystemFont,"Malgun Gothic",sans-serif;word-break:keep-all}main{background:white;max-width:430px;margin:auto;min-height:100svh;padding:32px 28px 20px;display:flex;flex-direction:column}header{font-family:Georgia,"Batang",serif;font-weight:700;font-size:21px;letter-spacing:-1px}.hello{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:36px 0}.hello img{width:clamp(135px,24vh,204px);height:auto}h1{font-size:30px;letter-spacing:-1.6px;margin:20px 0 12px}p{font-size:16px;color:#555;line-height:1.7;margin:0}.privacy{color:#656565;text-align:center;font-size:13px;margin:0 0 16px}button{width:100%;padding:16px;border:0;border-radius:14px;background:#191919;color:white;font:inherit;font-weight:650;cursor:pointer}button:focus-visible{outline:3px solid #ac5132;outline-offset:3px}.quiet{background:white;color:#626262;font-size:14px}.next{margin:auto 0}.next h1{margin-bottom:16px}.next p{margin-bottom:32px}[hidden]{display:none!important}@media(min-width:600px){body{padding:24px}main{min-height:min(830px,calc(100svh - 48px));border:1px solid #ebebeb;border-radius:24px}}
-.hello h1{text-wrap:balance}
-.deck{flex:1;display:flex;align-items:center;min-width:0}
-.track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;width:100%;overscroll-behavior-x:contain}
-.track::-webkit-scrollbar{display:none}
-.slide{flex:0 0 100%;scroll-snap-align:start;scroll-snap-stop:always;text-align:center;padding:24px 4px;display:flex;align-items:center;justify-content:center;flex-direction:column}
-.slide h1,.slide h2{font-size:clamp(24px,6vw,30px);line-height:1.35;letter-spacing:-1.4px;text-wrap:balance;margin:20px 0 12px}
-.slide p{max-width:325px;text-wrap:pretty}.art{height:clamp(128px,24svh,196px);width:100%;display:grid;place-content:center}
-.bubble{padding:12px 16px;border-radius:18px 18px 18px 4px;background:#f4f4f4;font-size:14px;line-height:1.5;text-align:left;justify-self:start}
-.reply{margin:9px 0 0 28px;border-radius:18px 18px 4px 18px;background:#282828;color:white;justify-self:end}
-.letter{width:164px;height:108px;color:#8e8379}
-.pager{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px}.pager button{width:44px;height:44px;padding:0;background:transparent;color:#444;font-size:22px}.pager button:disabled{opacity:.25}.count{font-size:13px;color:#555;font-variant-numeric:tabular-nums}
-</style></head><body><main>
-<header>프롤로그</header>
-<section class="deck" id="hello" aria-label="프롤로그 소개"><div class="track" id="track" tabindex="0" aria-label="옆으로 넘겨 읽기">
-<article class="slide">
-  <svg width="196" height="196" viewBox="0 0 256 256" role="img" aria-label="손을 흔드는 갈피">
-    <defs><clipPath id="galpi-outline"><path d="M108 140 C77 134 63 114 64 84 C64 47 92 20 130 19 C168 17 197 41 198 80 C200 109 183 133 151 140 L155 142 L160 150 Q172 152 180 157 Q186 157 187 163 Q201 158 207 176 L208 185 Q211 185 213 193 L227 241 L228 249 L185 250 L73 250 Q69 247 73 221 Q68 228 58 231 Q34 242 22 217 Q17 206 18 187 Q17 178 22 172 L22 162 L25 155 Q16 143 17 122 Q16 103 28 98 Q38 91 46 101 Q50 107 51 124 Q56 110 62 116 Q67 120 62 135 Q60 149 54 154 L56 163 L56 174 Q65 156 76 159 L81 157 Q85 153 93 154 L101 150 Z"/></clipPath></defs>
-    <image href="../../../apps/mobile/assets/galpi/expr-wave.png" width="256" height="256" clip-path="url(#galpi-outline)"/>
-  </svg>
-  <h1>한 사람씩, 편지로 만나는 소개팅</h1>
-  <p>AI 친구 갈피가 나와 이야기를 나누고,<br>잘 맞을 만한 사람을 편지로 소개해요.</p>
-</article>
-<article class="slide">
-  <div class="art" aria-hidden="true"><span class="bubble">쉬는 날엔 뭐 할 때 제일 편해요?</span><span class="bubble reply">걷다가 작은 책방에 들를 때요.</span></div>
-  <h2>갈피는 대화 속에서<br>나를 알아가요</h2>
-  <p>어떤 하루를 좋아하는지, 어떤 사람과 있으면 편한지 들려주세요. 갈피는 그 이야기를 다음 소개에 참고해요.</p>
-</article>
-<article class="slide">
-  <div class="art" aria-hidden="true"><svg class="letter" viewBox="0 0 164 108" fill="none"><rect x="3" y="5" width="158" height="98" rx="6" stroke="currentColor" stroke-width="2"/><path d="m5 8 72 53q5 4 10 0l72-53M5 100l52-44m102 44-52-44" stroke="currentColor" stroke-width="2"/><path d="M122 5h13v28l-6.5-5-6.5 5z" fill="#C8603C"/></svg></div>
-  <h2>잘 맞을 사람이 떠오르면<br>편지가 도착해요</h2>
-  <p>갈피가 두 사람을 소개하고 싶은 이유를 적어요. 프로필과 편지는 소개 상대에게만 전해지고, 두 사람 모두 수락하면 대화가 열려요.</p>
-</article>
-<article class="slide">
-  <div class="art" aria-hidden="true"><span class="bubble">어제 만나보니 어땠어요?</span><span class="bubble reply">걸으면서 얘기하니까 편했어요.</span></div>
-  <h2>만나고 난 뒤에도<br>갈피와 이야기해요</h2>
-  <p>편했던 순간도, 아쉬웠던 점도 갈피에게만 들려줄 수 있어요. 다음 소개에는 내가 반영하고 싶은 점만 담아요.</p>
-</article>
-</div></section>
-<nav class="pager" id="pager" aria-label="서비스 설명 넘기기"><button id="prevSlide" aria-label="이전 설명">‹</button><span class="count" id="position" aria-live="polite">1 / 4</span><button id="nextSlide" aria-label="다음 설명">›</button></nav>
-<footer id="actions"><p class="privacy">내 프로필은 소개 편지를 받는 상대에게만 보여요.</p><button data-next="가입하기">시작하기</button><button class="quiet" data-next="로그인">이미 계정이 있어요</button></footer>
-<section class="next" id="next" hidden><h1 id="heading" tabindex="-1"></h1><p>다음 화면의 구성은 함께 정할 예정이에요.</p><button id="back">첫 화면으로</button></section>
-</main><script>
-const hello=document.querySelector('#hello'),actions=document.querySelector('#actions'),next=document.querySelector('#next'),heading=document.querySelector('#heading');
-const track=document.querySelector('#track'),pager=document.querySelector('#pager');
-const previous=document.querySelector('#prevSlide'),forward=document.querySelector('#nextSlide');
-const slides=Array.from(track.children);
-function activeSlide(){return Math.round(track.scrollLeft/(track.clientWidth||1))}
-function syncPager(){
-  if(!track.clientWidth)return;
-  const i=activeSlide();
-  document.querySelector('#position').textContent=(i+1)+' / '+slides.length;
-  previous.disabled=i===0;forward.disabled=i===slides.length-1;
-}
-function move(by){
-  const i=Math.min(slides.length-1,Math.max(0,activeSlide()+by));
-  track.scrollTo({left:i*track.clientWidth,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
-}
-previous.onclick=()=>move(-1);forward.onclick=()=>move(1);
-track.onkeydown=e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();move(e.key==='ArrowRight'?1:-1)}};
-track.addEventListener('scroll',syncPager,{passive:true});new ResizeObserver(syncPager).observe(track);
-function render(){const name=location.hash==='#signup'?'가입하기':location.hash==='#login'?'로그인':'';hello.hidden=pager.hidden=actions.hidden=!!name;next.hidden=!name;heading.textContent=name;if(name)heading.focus();else syncPager()}
-document.querySelectorAll('[data-next]').forEach(b=>b.onclick=()=>location.hash=b.dataset.next==='로그인'?'login':'signup');document.querySelector('#back').onclick=()=>location.hash='';addEventListener('hashchange',render);render();
-</script></body></html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>프롤로그 · 화면 구성 시안</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <aside class="preview-tools" aria-label="시안 탐색">
+    <span>화면 시안 · 인증과 AI 연결 전</span>
+    <details>
+      <summary>화면 이동</summary>
+      <nav aria-label="검토할 화면">
+        <a href="#">서비스 소개</a>
+        <a href="#signup">가입 동의</a>
+        <a href="#verify">본인인증</a>
+        <a href="#chat-consent">대화 동의</a>
+        <a href="#first-chat">갈피 첫 만남</a>
+        <a href="#home">친구 홈</a>
+        <a href="#profile">내 소개 준비</a>
+        <a href="#conversations">대화</a>
+        <a href="#story">내 이야기</a>
+        <a href="#settings">설정</a>
+      </nav>
+    </details>
+  </aside>
+
+  <main class="app">
+    <header class="app-header">
+      <span class="brand">프롤로그</span>
+      <a id="goHome" href="#home" hidden>홈으로</a>
+      <a id="login" href="#login">로그인</a>
+    </header>
+
+    <div class="screen-viewport" id="viewport">
+      <section class="screen intro" data-screen="intro" aria-label="프롤로그 소개">
+        <div class="deck">
+          <div class="track" id="track" tabindex="0" aria-label="옆으로 넘겨 읽기">
+            <article class="slide">
+              <img src="intro-envelope.png" alt="살짝 열린 봉투 속 크림색 편지 한 장" width="196" height="196">
+              <h1>내 프로필은 모두에게 공개되지 않아요.</h1>
+              <p>프롤로그에서는 소개받는 한 사람에게만 내 프로필이 편지로 전해져요.</p>
+            </article>
+            <article class="slide">
+              <img src="intro-2.png" alt="고개를 기울여 이야기를 듣는 갈피" width="196" height="196">
+              <h2>갈피는 대화 속에서<br>나를 알아가요</h2>
+              <p>나를 잘 아는 친구에게 소개팅을 받듯이, AI 친구 갈피가 내 이야기를 듣고 잘 맞을 만한 사람을 소개해요.</p>
+            </article>
+            <article class="slide">
+              <img src="intro-3.png" alt="봉투에서 꺼내 펼친 크림색 편지" width="196" height="196">
+              <h2>잘 맞을 사람이 떠오르면<br>편지가 도착해요</h2>
+              <p>갈피가 두 사람을 소개하고 싶은 이유를 적어요. 프로필과 편지는 소개 상대에게만 전해지고, 두 사람 모두 수락하면 대화가 열려요.</p>
+            </article>
+            <article class="slide">
+              <img src="intro-4.png" alt="외투가 걸린 의자 옆에 앉아 있는 갈피" width="196" height="196">
+              <h2>만나고 난 뒤에도<br>갈피와 이야기해요</h2>
+              <p>편했던 순간도, 아쉬웠던 점도 갈피에게만 들려줄 수 있어요. 다음 소개에는 내가 반영하고 싶은 점만 담아요.</p>
+            </article>
+          </div>
+        </div>
+        <p class="position" id="position" aria-live="polite">1 / 4</p>
+        <footer class="intro-actions">
+          <p class="helper">내 프로필은 소개 편지를 받는 상대에게만 보여요.</p>
+          <button id="primary">다음</button>
+          <a id="skip" class="skip" href="#signup">건너뛰고 시작하기</a>
+        </footer>
+      </section>
+
+      <section class="screen" data-screen="signup" hidden>
+        <a class="back" href="#">‹ 소개로 돌아가기</a>
+        <h1 tabindex="-1">가입 전 확인해 주세요</h1>
+        <p>항목을 펼쳐 내용을 읽고 동의할 수 있어요.</p>
+        <form class="consent-form" id="accountConsent">
+          <div class="consent-row">
+            <input type="checkbox" aria-label="서비스 이용약관 동의">
+            <details><summary>서비스 이용약관</summary><p>서비스 이용 기준과 회원 간에 지켜야 할 약속을 확인하는 항목이에요.</p></details>
+          </div>
+          <div class="consent-row">
+            <input type="checkbox" aria-label="개인정보 수집·이용 동의">
+            <details><summary>개인정보 수집·이용</summary><p>가입과 본인 확인에 어떤 정보가 필요한지, 어디에 사용하는지 확인하는 항목이에요.</p></details>
+          </div>
+          <footer class="screen-actions"><button id="verify" disabled>본인인증으로</button></footer>
+        </form>
+      </section>
+
+      <section class="screen" data-screen="verify" hidden>
+        <a class="back" href="#signup">‹ 가입 동의로</a>
+        <h1 tabindex="-1">본인인증을 진행해 주세요</h1>
+        <p>프롤로그는 성인만 이용할 수 있어요. 가입하는 분이 본인인지, 성인인지 확인해요.</p>
+        <footer class="screen-actions">
+          <p id="identityStatus" role="status"></p>
+          <p class="helper">다음 단계에서 인증기관의 화면으로 이동해요.</p>
+          <button id="startIdentity">본인인증 시작하기</button>
+        </footer>
+      </section>
+
+      <section class="screen" data-screen="chat-consent" hidden>
+        <a class="back" href="#verify">‹ 본인인증 안내로</a>
+        <h1 tabindex="-1">갈피와 대화하기 전에</h1>
+        <p>대화에 필요한 두 항목을 각각 확인해 주세요.</p>
+        <form class="consent-form" id="chatConsent">
+          <div class="consent-row">
+            <input type="checkbox" aria-label="민감정보 처리 동의">
+            <details><summary>민감정보 처리</summary><p>갈피와 이야기할 때 종교나 건강처럼 민감한 내용이 포함될 수 있어 따로 동의를 받아요.</p></details>
+          </div>
+          <div class="consent-row">
+            <input type="checkbox" aria-label="개인정보 국외 이전 동의">
+            <details><summary>개인정보 국외 이전</summary><p>갈피의 답변을 만들 때 대화 내용이 해외 AI 서비스로 전송되는 과정을 확인하는 항목이에요.</p></details>
+          </div>
+          <footer class="screen-actions"><button id="meet" disabled>갈피와 대화하기</button></footer>
+        </form>
+      </section>
+
+      <section class="screen chat-screen" data-screen="first-chat" hidden>
+        <div class="chat-heading"><h1 tabindex="-1">갈피</h1><span class="muted">AI 주선 친구</span></div>
+        <div class="conversation" id="conversation" role="log" aria-label="갈피와의 대화">
+          <p class="message">안녕하세요, 저는 갈피예요. 소개팅 주선해 주는 친구가 한 명 생겼다고 생각해 주세요.</p>
+          <p class="message">“이런 사람이 좋아”도, 소개를 받고 나서 “막상 만나 보니 이런 점이 편했어”도 좋아요. 그런 이야기를 들으면 다음에 누구를 소개해 드리면 좋을지 감이 좀 더 오거든요.</p>
+          <div class="chat-card">
+            <h2>내 소개 준비</h2>
+            <p>만나기 편한 지역과 하는 일, 프로필 사진을 함께 정리해요.</p>
+            <a class="button secondary" href="#profile">프로필 채우기</a>
+          </div>
+        </div>
+        <form class="composer" id="replyForm">
+          <input id="reply" aria-label="갈피에게 보낼 답장" placeholder="갈피에게 답장하기" autocomplete="off">
+          <button>보내기</button>
+        </form>
+      </section>
+
+      <section class="screen" data-screen="home" hidden>
+        <h1 tabindex="-1">친구</h1>
+        <a class="galpi-card" href="#first-chat">
+          <div><span class="muted">소개를 도와줄 친구</span><h2>갈피</h2><span class="text-link">대화 이어가기 →</span></div>
+          <img src="intro-2.png" alt="갈피" width="148" height="148">
+        </a>
+        <h2 class="section-heading">내 소개</h2>
+        <a class="list-row" href="#profile"><span><strong>소개 준비하기</strong><small id="homeProfileStatus">편지에 담을 나를 준비해요</small></span><span aria-hidden="true">›</span></a>
+        <p class="home-note">소개하고 싶은 사람이 생기면<br>갈피가 편지로 알려드려요.</p>
+      </section>
+
+      <section class="screen" data-screen="conversations" hidden>
+        <h1 tabindex="-1">대화</h1>
+        <a class="conversation-row" href="#first-chat">
+          <img class="avatar" src="intro-2.png" alt="" width="58" height="58">
+          <span><strong>갈피</strong><small id="chatSnippet">소개팅 주선해 주는 친구가 한 명 생겼다고 생각해 주세요.</small></span><span aria-hidden="true">›</span>
+        </a>
+      </section>
+
+      <section class="screen" data-screen="profile" hidden>
+        <a class="back" href="#home">‹ 친구</a>
+        <h1 tabindex="-1">내 소개 준비</h1>
+        <p>소개할 때 사용할 내용을 정리해요.</p>
+        <div class="row-list">
+          <a class="list-row" href="#profile-basics"><span><strong>만나기 편한 지역</strong><small data-area>선택 전</small></span><span aria-hidden="true">›</span></a>
+          <a class="list-row" href="#profile-basics"><span><strong>하는 일·활동</strong><small data-work>입력 전</small></span><span aria-hidden="true">›</span></a>
+          <a class="list-row" href="#profile-photo"><span><strong>프로필 사진</strong><small data-photo-count>대표 사진 선택 전</small></span><span aria-hidden="true">›</span></a>
+          <div class="list-row"><span><strong>편지에 쓸 이름</strong><small>첫 소개 편지를 준비할 때 정해요</small></span></div>
+        </div>
+        <footer class="screen-actions">
+          <a class="button" href="#profile-review">내 소개 확인하기</a>
+          <a class="button quiet" href="#first-chat">갈피와 대화 이어가기</a>
+        </footer>
+      </section>
+
+      <section class="screen" data-screen="profile-basics" hidden>
+        <a class="back" href="#profile">‹ 내 소개</a>
+        <h1 tabindex="-1">어디서, 어떻게 지내세요?</h1>
+        <form class="edit-form" id="basicsForm">
+          <label for="area">만나기 편한 지역</label>
+          <input id="area" placeholder="예) 성수, 잠실" autocomplete="off">
+          <p class="field-help">편하게 만날 수 있는 곳을 여러 곳 적어도 좋아요.</p>
+          <label for="work">요즘 하는 일·활동</label>
+          <input id="work" placeholder="예) 디자인 일을 해요, 공부 중이에요" autocomplete="off">
+          <footer class="screen-actions"><button>내용 반영하기</button></footer>
+        </form>
+      </section>
+
+      <section class="screen" data-screen="profile-photo" hidden>
+        <a class="back" href="#profile">‹ 내 소개</a>
+        <h1 tabindex="-1">대표 사진을 골라주세요</h1>
+        <p>지금 내 얼굴을 알아볼 수 있는 사진 한 장을 골라주세요. 소개 편지에 프로필 사진으로 담겨요.</p>
+        <div class="portrait"><img id="coverImage" alt="선택한 대표 사진" hidden><button id="pickCover">대표 사진 선택</button></div>
+        <input type="file" accept="image/*" id="coverFile" hidden>
+        <h2 class="section-heading">추가 사진 <small>선택</small></h2>
+        <div id="gallery" class="gallery"></div>
+        <button class="quiet" id="pickExtra">＋ 사진 추가</button>
+        <input type="file" accept="image/*" id="extraFiles" multiple hidden>
+        <p id="photoStatus" role="status"></p>
+        <footer class="screen-actions"><button id="photoNext" disabled>사진 반영하기</button></footer>
+      </section>
+
+      <section class="screen" data-screen="profile-review" hidden>
+        <a class="back" href="#profile">‹ 내 소개</a>
+        <h1 tabindex="-1">내 소개 확인</h1>
+        <p>상대에게 전할 내용은 보내기 전에 확인해요.</p>
+        <article class="profile-paper">
+          <img id="reviewPhoto" class="review-photo" alt="내 대표 사진" hidden>
+          <h2>내 소개</h2>
+          <dl><dt>만나기 편한 지역</dt><dd data-area>선택 전</dd><dt>하는 일·활동</dt><dd data-work>입력 전</dd><dt>편지에 쓸 이름</dt><dd>첫 편지를 준비할 때 정해요</dd></dl>
+          <div class="review-extras" id="reviewExtras"></div>
+        </article>
+        <footer class="screen-actions"><a class="button" href="#home">홈으로</a><a class="button quiet" href="#profile">다시 수정하기</a></footer>
+      </section>
+
+      <section class="screen" data-screen="story" hidden>
+        <h1 tabindex="-1">내 이야기</h1>
+        <p>갈피와 함께 정리해 가는 나의 이야기예요.</p>
+        <div class="empty-state"><img src="intro-3.png" alt="" width="130" height="130"><h2>아직 정리한 이야기가 없어요</h2><a class="text-link" href="#first-chat">갈피와 이야기하기 →</a></div>
+        <a class="list-row" href="#profile"><span><strong>내 소개 확인</strong><small>사진과 소개 정보를 살펴봐요</small></span><span aria-hidden="true">›</span></a>
+      </section>
+
+      <section class="screen" data-screen="settings" hidden>
+        <h1 tabindex="-1">설정</h1>
+        <div class="settings-list">
+          <details><summary>계정</summary><p>로그인과 본인인증 정보를 관리하는 자리예요.</p></details>
+          <details><summary>알림</summary><p>소개 편지와 대화 알림을 관리하는 자리예요.</p></details>
+          <details><summary>개인정보와 동의</summary><p>내가 동의한 내용과 정보 공개 범위를 확인하는 자리예요.</p></details>
+          <details><summary>도움말</summary><p>이용 안내와 문의를 확인하는 자리예요.</p></details>
+        </div>
+      </section>
+
+      <section class="screen" data-screen="login" hidden>
+        <a class="back" href="#">‹ 소개로 돌아가기</a>
+        <h1 tabindex="-1">다시 만나 반가워요</h1>
+        <p>기존 계정으로 대화를 이어가요.</p>
+        <footer class="screen-actions"><button id="loginPreview">로그인 완료 미리보기</button></footer>
+      </section>
+    </div>
+
+    <nav class="tabbar" id="tabbar" aria-label="주 메뉴" hidden>
+      <a href="#home">친구</a><a href="#conversations">대화</a><a href="#story">내 이야기</a><a href="#settings">설정</a>
+    </nav>
+  </main>
+
+  <dialog id="providerPreview" aria-labelledby="providerTitle">
+    <h2 id="providerTitle">인증기관 이동 미리보기</h2>
+    <p>실제 가입에서는 여기서 인증기관의 안내를 따라요.</p>
+    <form method="dialog"><button value="success">인증 성공 미리보기</button><button class="quiet" value="cancel">취소하고 돌아가기</button></form>
+  </dialog>
+</body>
+</html>
