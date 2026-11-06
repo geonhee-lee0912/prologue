@@ -2,9 +2,17 @@
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>프롤로그 · 첫 화면 시안</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f5f5f5;color:#191919;font-family:-apple-system,BlinkMacSystemFont,"Malgun Gothic",sans-serif;word-break:keep-all}main{background:white;max-width:430px;margin:auto;min-height:100svh;padding:32px 28px 20px;display:flex;flex-direction:column}header{font-family:Georgia,"Batang",serif;font-weight:700;font-size:21px;letter-spacing:-1px}.hello{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:36px 0}.hello img{width:clamp(135px,24vh,204px);height:auto}h1{font-size:30px;letter-spacing:-1.6px;margin:20px 0 12px}p{font-size:16px;color:#555;line-height:1.7;margin:0}.privacy{color:#656565;text-align:center;font-size:13px;margin:0 0 16px}button{width:100%;padding:16px;border:0;border-radius:14px;background:#191919;color:white;font:inherit;font-weight:650;cursor:pointer}button:focus-visible{outline:3px solid #ac5132;outline-offset:3px}.quiet{background:white;color:#626262;font-size:14px}.next{margin:auto 0}.next h1{margin-bottom:16px}.next p{margin-bottom:32px}[hidden]{display:none!important}@media(min-width:600px){body{padding:24px}main{min-height:min(830px,calc(100svh - 48px));border:1px solid #ebebeb;border-radius:24px}}
+.hello h1{text-wrap:balance}
 </style></head><body><main>
 <header>프롤로그</header>
-<section class="hello" id="hello"><img src="../../../apps/mobile/assets/galpi/expr-wave.png" alt="손을 흔드는 갈피"><h1>안녕하세요, 갈피예요.</h1><p>이야기를 나누며 잘 맞는 사람을<br>소개해 드리는 AI 친구예요.</p></section>
+<section class="hello" id="hello">
+  <svg width="196" height="196" viewBox="0 0 256 256" role="img" aria-label="손을 흔드는 갈피">
+    <defs><clipPath id="galpi-outline"><path d="M108 140 C77 134 63 114 64 84 C64 47 92 20 130 19 C168 17 197 41 198 80 C200 109 183 133 151 140 L155 142 L160 150 Q172 152 180 157 Q186 157 187 163 Q201 158 207 176 L208 185 Q211 185 213 193 L227 241 L228 249 L185 250 L73 250 Q69 247 73 221 Q68 228 58 231 Q34 242 22 217 Q17 206 18 187 Q17 178 22 172 L22 162 L25 155 Q16 143 17 122 Q16 103 28 98 Q38 91 46 101 Q50 107 51 124 Q56 110 62 116 Q67 120 62 135 Q60 149 54 154 L56 163 L56 174 Q65 156 76 159 L81 157 Q85 153 93 154 L101 150 Z"/></clipPath></defs>
+    <image href="../../../apps/mobile/assets/galpi/expr-wave.png" width="256" height="256" clip-path="url(#galpi-outline)"/>
+  </svg>
+  <h1>한 사람씩, 편지로 만나는 소개팅</h1>
+  <p>AI 친구 갈피가 나와 이야기를 나누고,<br>잘 맞을 만한 사람을 편지로 소개해요.</p>
+</section>
 <footer id="actions"><p class="privacy">내 프로필은 소개 편지를 받는 상대에게만 보여요.</p><button data-next="가입하기">시작하기</button><button class="quiet" data-next="로그인">이미 계정이 있어요</button></footer>
 <section class="next" id="next" hidden><h1 id="heading" tabindex="-1"></h1><p>다음 화면의 구성은 함께 정할 예정이에요.</p><button id="back">첫 화면으로</button></section>
 </main><script>
