@@ -10,6 +10,12 @@
     body{margin:0;background:#f5f5f5;color:#191919;font:600 16px Pretendard,sans-serif}
     main{max-width:852px;margin:auto;padding:24px}
     h1{font-size:22px;margin:0 0 22px}
+    fieldset{position:sticky;top:0;z-index:1;display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px;padding:8px 0;border:0;background:#f5f5f5}
+    legend{padding:0;font-size:14px}
+    label{display:inline-flex;align-items:center;gap:5px;padding:7px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px;background:white;cursor:pointer}
+    label:has(:checked){border-color:#555}
+    input{margin:0;accent-color:#323232}
+    .modern,.friendly{filter:brightness(var(--ink-factor,2))}
     section{display:grid;grid-template-columns:repeat(2,minmax(0,390px));gap:24px;justify-content:center}
     figure{margin:0}
     figcaption{margin-bottom:10px}
@@ -23,6 +29,12 @@
 <body>
   <main>
     <h1>스플래시 로고 비교 · 색연필 결 30%</h1>
+    <fieldset>
+      <legend>로고 글자색</legend>
+      <label><input type="radio" name="ink" value="1">기존 #191919</label>
+      <label><input type="radio" name="ink" value="2" checked>차콜 #323232</label>
+      <label><input type="radio" name="ink" value="3">그레이 #4B4B4B</label>
+    </fieldset>
     <section aria-label="로고 두 가지">
       <figure>
         <figcaption>3번 · 모던형 (현재 앱)</figcaption>
@@ -38,5 +50,13 @@
       </figure>
     </section>
   </main>
+  <script>
+    const colors = document.querySelector('fieldset');
+    function previewInk() {
+      document.documentElement.style.setProperty('--ink-factor', colors.querySelector(':checked').value);
+    }
+    colors.addEventListener('change', previewInk);
+    previewInk();
+  </script>
 </body>
 </html>
