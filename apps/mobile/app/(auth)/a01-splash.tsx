@@ -35,6 +35,19 @@ export default function A01Splash() {
 
   return (
     <View style={[styles.container, { backgroundColor: t.bg }]}>
+      <View
+        pointerEvents="none"
+        accessible={false}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={styles.pencilBackground}
+      >
+        <Image
+          source={require('../../assets/brand/splash-pencil-peach.png')}
+          contentFit="contain"
+          style={styles.texture}
+        />
+      </View>
       <Image
         source={require('../../assets/brand/prologue-wordmark.png')}
         accessibilityLabel="Prologue"
@@ -51,9 +64,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
+    overflow: 'hidden',
   },
+  pencilBackground: {
+    position: 'absolute',
+    left: -24,
+    bottom: -20,
+    width: 360,
+    height: 360,
+  },
+  texture: { width: '100%', height: '100%' },
   brand: {
-    width: 224,
-    height: 61,
+    width: 196,
+    height: 54,
   },
 });
