@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prologue C안의 색상과 형태 테스트</title>
+<style>
+@font-face{font-family:Pretendard;src:url('../../../apps/mobile/assets/fonts/Pretendard-Regular.otf')}
+@font-face{font-family:Pretendard;src:url('../../../apps/mobile/assets/fonts/Pretendard-SemiBold.otf');font-weight:600}
+*{box-sizing:border-box}body{margin:0;color:#191919;background:#f5f5f5;font-family:Pretendard,sans-serif}
+main{max-width:1724px;margin:auto;padding:38px 40px 32px}header{margin-bottom:26px}
+h1{font-size:27px;font-weight:600;letter-spacing:-.7px;margin:0 0 10px}header p{font-size:14px;line-height:1.6;color:#666;margin:0}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}button{border:1px solid #dedede;border-radius:7px;background:white;color:#555;padding:9px 13px;font:inherit;font-size:13px;cursor:pointer}button[aria-pressed="true"]{background:#191919;border-color:#191919;color:white}button:focus-visible{outline:2px solid #777;outline-offset:3px}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:28px}article{min-width:0}article[hidden]{display:none}
+h2{font-size:16px;margin:0 0 8px;font-weight:600;letter-spacing:-.3px}.reason{font-size:13px;line-height:1.5;color:#777;margin:0 0 16px;min-height:39px}
+.screen{position:relative;width:100%;aspect-ratio:390/844;background:white;overflow:hidden;border-radius:14px;box-shadow:0 0 0 1px #e5e5e5}
+.texture{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
+.lower{clip-path:inset(50% 0 0 0)}.upper{clip-path:inset(0 0 50% 0)}
+.logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:50.2564103%;height:6.3981043%;object-fit:contain}
+footer{font-size:12px;line-height:1.7;color:#777;margin-top:24px}
+body[data-mode]:not([data-mode="all"]) main{max-width:888px}body[data-mode]:not([data-mode="all"]) .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:1250px){main{max-width:888px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:850px){main{padding:28px 22px}.cards,body[data-mode]:not([data-mode="all"]) .cards{display:flex;gap:22px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 1px 16px}article{flex:0 0 min(390px,calc(100vw - 46px));scroll-snap-align:start}h1{font-size:24px}button{padding:8px 10px}}
+</style></head>
+<body data-mode="all"><main><header><h1>C안의 색상과 형태 테스트</h1><p>우상단 하늘색과 더 둥근 번짐을 각각 비교합니다.<br>좌하단 피치·코랄과 작은 먹색 로고는 유지했습니다.</p>
+<nav aria-label="비교 방법"><button data-mode="all" aria-pressed="true">모두 보기</button><button data-mode="color" aria-pressed="false">색상 비교</button><button data-mode="shape" aria-pressed="false">형태 비교</button><button data-mode="skyShape" aria-pressed="false">하늘색에서 형태 비교</button></nav></header>
+<section class="cards" aria-label="C안의 네 비교 화면">
+<article id="a"><h2>기준 · 기존 C</h2><p class="reason">기존 윤곽 · 피치·코랄 + 라벤더</p><div class="screen"><img class="texture lower" alt="" src="../../../apps/mobile/assets/brand/splash-studies/04-dual-corner-peach.png"><img class="texture upper" style="filter:hue-rotate(285deg) saturate(.55)" alt="" src="../../../apps/mobile/assets/brand/splash-studies/04-dual-corner-peach.png"><img class="logo" alt="Prologue" src="../../../apps/mobile/assets/brand/prologue-wordmark.png"></div></article>
+<article id="b"><h2>① 하늘색만</h2><p class="reason">기존 윤곽 · 피치·코랄 + 하늘색</p><div class="screen"><img class="texture lower" alt="" src="../../../apps/mobile/assets/brand/splash-studies/04-dual-corner-peach.png"><img class="texture upper" style="filter:hue-rotate(190deg) saturate(.55)" alt="" src="../../../apps/mobile/assets/brand/splash-studies/04-dual-corner-peach.png"><img class="logo" alt="Prologue" src="../../../apps/mobile/assets/brand/prologue-wordmark.png"></div></article>
+<article id="c"><h2>② 원형만</h2><p class="reason">원형 윤곽 · 피치·코랄 + 라벤더</p><div class="screen"><img class="texture lower" alt="" src="../../../apps/mobile/assets/brand/splash-studies/05-dual-corner-round.png"><img class="texture upper" style="filter:hue-rotate(285deg) saturate(.55)" alt="" src="../../../apps/mobile/assets/brand/splash-studies/05-dual-corner-round.png"><img class="logo" alt="Prologue" src="../../../apps/mobile/assets/brand/prologue-wordmark.png"></div></article>
+<article id="d"><h2>③ 하늘색 + 원형</h2><p class="reason">원형 윤곽 · 피치·코랄 + 하늘색</p><div class="screen"><img class="texture lower" alt="" src="../../../apps/mobile/assets/brand/splash-studies/05-dual-corner-round.png"><img class="texture upper" style="filter:hue-rotate(190deg) saturate(.55)" alt="" src="../../../apps/mobile/assets/brand/splash-studies/05-dual-corner-round.png"><img class="logo" alt="Prologue" src="../../../apps/mobile/assets/brand/prologue-wordmark.png"></div></article>
+</section><footer>디자인 비교 시안 · 기존 앱 적용 전 검토 자료입니다.<br>색상은 같은 원본에서 표시 색만 변경했습니다. 원형은 참조 편집 결과이며 번짐 면적과 결에도 일부 차이가 있습니다.</footer></main>
+<script>
+const pairs={all:['a','b','c','d'],color:['a','b'],shape:['a','c'],skyShape:['b','d']};
+document.querySelectorAll('button[data-mode]').forEach(button=>button.addEventListener('click',()=>{
+const mode=button.dataset.mode;document.body.dataset.mode=mode;
+document.querySelectorAll('article').forEach(article=>article.hidden=!pairs[mode].includes(article.id));
+document.querySelectorAll('button[data-mode]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));
+document.querySelector('.cards').scrollLeft=0;
+}));
+</script></body></html>
+
