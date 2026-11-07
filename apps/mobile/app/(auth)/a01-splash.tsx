@@ -1,7 +1,7 @@
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Text } from '../../components/AppText';
 import { authStorage } from '../../lib/auth-storage';
 import { useTheme } from '../../theme/use-theme';
 
@@ -35,7 +35,12 @@ export default function A01Splash() {
 
   return (
     <View style={[styles.container, { backgroundColor: t.bg }]}>
-      <Text style={[styles.brand, { color: t.ink }]}>프롤로그</Text>
+      <Image
+        source={require('../../assets/brand/prologue-wordmark.png')}
+        accessibilityLabel="Prologue"
+        contentFit="contain"
+        style={styles.brand}
+      />
     </View>
   );
 }
@@ -48,7 +53,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   brand: {
-    fontSize: 40,
-    fontWeight: '600',
+    width: 224,
+    height: 61,
   },
 });
