@@ -54,7 +54,7 @@ const html = `<!DOCTYPE html>
     <span class="btn volup"></span>
     <span class="btn voldn"></span>
     <span class="btn power"></span>
-    <iframe class="screen" src="${APP_URL}" title="프롤로그 앱"></iframe>
+    <iframe class="screen" name="prologue-device-frame" src="${APP_URL}" title="프롤로그 앱"></iframe>
   </div>
   <script>
     var NAT_W = 402, NAT_H = 858, MARGIN = 24;

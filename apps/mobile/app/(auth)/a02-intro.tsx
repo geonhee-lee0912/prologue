@@ -77,7 +77,12 @@ export default function A02Intro() {
     <Screen edges={['top', 'bottom']}>
       <View style={styles.container} onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>
         <View style={styles.header}>
-          <Text style={[styles.brand, { color: t.ink }]}>프롤로그</Text>
+          <Image
+            source={require('../../assets/brand/prologue-wordmark-friendly.png')}
+            accessibilityLabel="Prologue"
+            contentFit="contain"
+            style={styles.brand}
+          />
           <Pressable
             accessibilityRole="button"
             onPress={() => router.push({ pathname: '/a03-login', params: { mode: 'login' } })}
@@ -154,7 +159,7 @@ export default function A02Intro() {
 const styles = StyleSheet.create({
   container: { flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACE.xl, paddingTop: SPACE.s },
-  brand: { fontSize: 21, fontWeight: '700' },
+  brand: { width: 96, height: 26 },
   login: { minHeight: 44, justifyContent: 'center', paddingLeft: SPACE.m },
   loginText: { fontSize: 14 },
   pager: { flex: 1 },
