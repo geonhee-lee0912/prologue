@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../components/AppText';
@@ -20,6 +20,7 @@ import { routeForStep } from '../../lib/onboarding-route';
  */
 export default function A03Login() {
   const router = useRouter();
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
 
   // === 가입 폼 ===
   const [phoneNumber, setPhoneNumber] = useState('+821012345678');
@@ -156,11 +157,11 @@ export default function A03Login() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>프롤로그 시작하기</Text>
+      <Text style={styles.title}>{mode === 'login' ? '프롤로그 로그인' : '프롤로그 시작하기'}</Text>
       <Text style={styles.subtitle}>본인 인증으로 시작하세요</Text>
 
       {/* 1. 가입 폼 (mock 본인 인증 입력) */}
-      <View style={styles.section}>
+      {mode !== 'login' ? <View style={styles.section}>
         <Text style={styles.sectionTitle}>본인 인증 (mock 입력)</Text>
 
         <Text style={styles.label}>휴대폰 번호 (+821012345678 형식)</Text>
@@ -228,10 +229,10 @@ export default function A03Login() {
             <Text style={styles.kakaoButtonText}>카카오로 가입 (mock)</Text>
           )}
         </Pressable>
-      </View>
+      </View> : null}
 
       {/* 2. 로그인 - OTP */}
-      <View style={styles.section}>
+      {mode !== 'signup' ? <View style={styles.section}>
         <Text style={styles.sectionTitle}>이미 회원이신가요?</Text>
         <Text style={styles.label}>휴대폰 번호</Text>
         <TextInput
@@ -279,7 +280,7 @@ export default function A03Login() {
         <Pressable style={[styles.kakaoButton, { marginTop: 12 }]} onPress={onLoginKakao}>
           <Text style={styles.kakaoButtonText}>카카오로 로그인 (mock)</Text>
         </Pressable>
-      </View>
+      </View> : null}
 
       <Text style={styles.footer}>
         ※ 이 화면은 MVP 모의(mock) 모드입니다. PASS/NICE 계약 후엔 외부 본인 인증 페이지로 대체됩니다.

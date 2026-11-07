@@ -3,29 +3,39 @@ import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '../../components/AppText';
 import { authStorage } from '../../lib/auth-storage';
+import { useTheme } from '../../theme/use-theme';
 
 /**
  * A01 — Splash
  *
  * 1.2초 후 토큰 보유 여부에 따라 분기.
  * - 토큰 있음 → /friends
- * - 없음 → /a03-login
+ * - 없음 → /a02-intro (서비스 소개 네 장)
  */
 export default function A01Splash() {
   const router = useRouter();
+  const t = useTheme();
 
   useEffect(() => {
-    const timer = setTimeout(async () => {
-      const token = await authStorage.getAccessToken();
-      router.replace(token ? '/friends' : '/a03-login');
+    let active = true;
+    const timer = setTimeout(() => {
+      void authStorage.getAccessToken()
+        .then((token) => {
+          if (active) router.replace(token ? '/friends' : '/a02-intro');
+        })
+        .catch(() => {
+          if (active) router.replace('/a02-intro');
+        });
     }, 1200);
-    return () => clearTimeout(timer);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [router]);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.brand}>프롤로그</Text>
-      <Text style={styles.tagline}>좋은 만남은, 좋은 첫문장에서 시작됩니다.</Text>
+    <View style={[styles.container, { backgroundColor: t.bg }]}>
+      <Text style={[styles.brand, { color: t.ink }]}>프롤로그</Text>
     </View>
   );
 }
@@ -35,20 +45,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     padding: 24,
   },
   brand: {
     fontSize: 40,
     fontWeight: '600',
-    color: '#1A1A1A',
-    marginBottom: 20,
-    letterSpacing: 1,
-  },
-  tagline: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 24,
   },
 });
