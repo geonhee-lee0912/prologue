@@ -3,52 +3,49 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Prologue · 선택한 2번의 범위 조절</title>
+  <title>Prologue · 스플래시 질감 비교</title>
   <style>
     @font-face{font-family:Pretendard;src:url('../../../apps/mobile/assets/fonts/Pretendard-Regular.otf')}
     @font-face{font-family:Pretendard;src:url('../../../apps/mobile/assets/fonts/Pretendard-SemiBold.otf');font-weight:600}
     *{box-sizing:border-box}
     body{margin:0;background:#F5F5F5;color:#191919;font-family:Pretendard,sans-serif}
-    main{max-width:640px;margin:auto;padding:38px 40px 30px}
+    main{max-width:896px;margin:auto;padding:28px 40px}
     header{margin-bottom:28px}h1{margin:0 0 10px;font-size:27px;font-weight:600;letter-spacing:-.6px}
     header p{margin:0;color:#666;font-size:14px;line-height:1.6}
-    .controls{display:flex;align-items:center;gap:18px 24px;flex-wrap:wrap;margin-top:22px}
-    .range{display:flex;align-items:center;gap:10px;color:#666;font-size:13px}
-    input[type=range]{width:125px;accent-color:#777;cursor:pointer}
-    output{width:35px;font-size:12px;color:#888;text-align:right}
-    input:focus-visible{outline:2px solid #777;outline-offset:3px}
-    .cards{width:390px;max-width:100%;margin:auto}
+    .cards{display:grid;grid-template-columns:repeat(2,minmax(0,390px));gap:24px;justify-content:center}
+    h2{font-size:16px;font-weight:600;margin:0 0 12px}
     article{min-width:0}
     .screen{position:relative;width:100%;aspect-ratio:390/844;overflow:hidden;isolation:isolate;background:white;border-radius:14px;box-shadow:0 0 0 1px #E5E5E5}
     .wash,.grain{position:absolute;inset:0;pointer-events:none}
     .wash{background-image:var(--field)}
     .grain{background-image:var(--grain-image);background-size:160px 160px;opacity:.18;mix-blend-mode:soft-light;mask-image:var(--field);mask-mode:alpha;-webkit-mask-image:var(--field)}
+    .pencil{position:absolute;inset:0;background:url('wash-pencil-grain.png') repeat;background-size:58% auto;mix-blend-mode:overlay;pointer-events:none}
     .logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:50.2564103%;height:6.3981043%;object-fit:contain}
     footer{margin-top:24px;color:#777;font-size:12px;line-height:1.7}
-    @media(max-width:850px){
-      main{padding:28px 22px}h1{font-size:24px}.controls{gap:12px 16px}
-      .cards{max-width:100%}
+    @media(max-width:650px){
+      main{padding:24px 18px}h1{font-size:24px}
+      .cards{grid-template-columns:minmax(0,390px)}
     }
   </style>
 </head>
 <body data-grain="on">
 <main>
   <header>
-    <h1>②번의 번짐 범위 조절</h1>
-    <p>전체 범위 100%에서 시작합니다.<br>직전 농도 125%와 미세한 결은 유지했습니다.</p>
-    <div class="controls" aria-label="선택한 2번의 범위 조절">
-      <label class="range">전체 범위 <input id="spread" type="range" min="85" max="115" value="100" aria-label="전체 번짐 범위"><output id="spread-value" for="spread">100%</output></label>
-    </div>
+    <h1>스플래시 질감 비교</h1>
+    <p>번짐 범위 100% · 농도 125%</p>
   </header>
-  <section class="cards" aria-label="선택한 2번 미리보기">
-    <article id="b" data-spread="1.17" data-density="1">
+  <section class="cards" aria-label="시안 비교">
+    <article id="a">
+      <h2>A · 기존 번짐</h2>
       <div class="screen"><div class="wash" aria-hidden="true"></div><div class="grain" aria-hidden="true"></div><img class="logo" alt="Prologue" src="../../../apps/mobile/assets/brand/prologue-wordmark.png"></div>
     </article>
+    <article id="b">
+      <h2>B · 색연필 결</h2>
+      <div class="screen"><div class="wash" aria-hidden="true"></div><div class="pencil" aria-hidden="true"></div><img class="logo" alt="Prologue" src="../../../apps/mobile/assets/brand/prologue-wordmark.png"></div>
+    </article>
   </section>
-  <footer>선택한 ②번의 범위만 조절하는 스케치입니다.<br>실제 앱 적용 전 검토 자료이며 이미지 생성 비용은 없습니다.</footer>
 </main>
 <script>
-  const spread=document.getElementById('spread');
   const fixedDensity=1.25;
   const grainSvg='<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".16 .82" numOctaves="2" seed="8" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>';
   document.documentElement.style.setProperty('--grain-image','url("data:image/svg+xml,'+encodeURIComponent(grainSvg)+'")');
@@ -56,22 +53,15 @@
     const alpha=value=>Math.min(.94,peak*value).toFixed(4);
     return 'radial-gradient(ellipse '+rx.toFixed(2)+'% '+ry.toFixed(2)+'% at '+cx+'% '+cy+'%,rgba('+rgb+','+alpha(1)+') 0%,rgba('+rgb+','+alpha(.76)+') 28%,rgba('+rgb+','+alpha(.37)+') 52%,rgba('+rgb+','+alpha(.10)+') 75%,rgba('+rgb+',0) 100%)';
   }
-  function update(){
-    document.getElementById('spread-value').value=spread.value+'%';
-    document.querySelectorAll('article').forEach(article=>{
-      const range=Number(article.dataset.spread)*Number(spread.value)/100;
-      const strength=Number(article.dataset.density)*fixedDensity;
+  const range=1.17;
+  const strength=fixedDensity;
       const layers=[
         field(90*range,55*range,-8,110,'231,156,133',.47*strength),
         field(73*range,45*range,8,105,'231,156,133',.09*strength),
         field(86*range,53*range,110,-10,'122,181,215',.38*strength),
         field(65*range,45*range,102,0,'122,181,215',.06*strength)
       ];
-      article.style.setProperty('--field',layers.join(','));
-    });
-  }
-  spread.addEventListener('input',update);
-  update();
+  document.querySelector('.cards').style.setProperty('--field',layers.join(','));
 </script>
 </body>
 </html>
