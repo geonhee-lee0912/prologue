@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prologue · 여백과 형태 스케치</title>
+  <style>
+    @font-face{font-family:Pretendard;src:url('../../../apps/mobile/assets/fonts/Pretendard-Regular.otf')}
+    @font-face{font-family:Pretendard;src:url('../../../apps/mobile/assets/fonts/Pretendard-SemiBold.otf');font-weight:600}
+    *{box-sizing:border-box}
+    :root{--softness:6px;--ink:#191919;--coral:#F1C9BD;--sky:#D0E4F0}
+    body{margin:0;background:#F5F5F5;color:var(--ink);font-family:Pretendard,sans-serif}
+    main{max-width:1306px;margin:auto;padding:38px 40px 30px}
+    header{margin-bottom:28px}
+    h1{margin:0 0 10px;font-size:27px;font-weight:600;letter-spacing:-.6px}
+    header p{margin:0;color:#666;font-size:14px;line-height:1.6}
+    .controls{display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-top:22px}
+    .modes{display:flex;gap:6px}
+    button{font:inherit;font-size:13px;padding:10px 15px;border:1px solid #DEDEDE;border-radius:7px;background:white;color:#666;cursor:pointer}
+    button[aria-pressed="true"]{background:var(--ink);color:white;border-color:var(--ink)}
+    button:focus-visible,input:focus-visible{outline:2px solid #777;outline-offset:4px}
+    .softness{display:flex;align-items:center;gap:12px;color:#666;font-size:13px}
+    input[type="range"]{width:126px;accent-color:#777;cursor:pointer}
+    output{font-size:12px;color:#888;min-width:86px}
+    .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}
+    article{min-width:0}
+    h2{margin:0 0 8px;font-size:17px;font-weight:600;letter-spacing:-.3px}
+    .reason{min-height:40px;margin:0 0 16px;color:#777;font-size:13px;line-height:1.5}
+    .screen{position:relative;width:100%;aspect-ratio:390/844;overflow:hidden;background:white;border-radius:14px;box-shadow:0 0 0 1px #E5E5E5}
+    .art{position:absolute;inset:0;width:100%;height:100%;filter:blur(var(--softness));pointer-events:none}
+    .logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:50.2564103%;height:6.3981043%;object-fit:contain}
+    body[data-mode="shape"] .art{filter:none}
+    body[data-mode="shape"] .plane{fill:#B9BEC1;opacity:1}
+    footer{margin-top:24px;color:#777;font-size:12px;line-height:1.7}
+    .mobile-nav{display:none}
+    @media(max-width:850px){
+      main{padding:28px 22px}.controls{gap:14px}.softness{flex-wrap:wrap;gap:10px}h1{font-size:24px}
+      .cards{display:flex;gap:22px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 1px 16px}
+      article{flex:0 0 min(390px,calc(100vw - 46px));scroll-snap-align:start}
+      .mobile-nav{display:flex;gap:14px;margin-top:18px}.mobile-nav a{font-size:13px;color:#555;text-decoration:none;padding:4px 0}
+    }
+  </style>
+</head>
+<body data-mode="color">
+<main>
+  <header>
+    <h1>여백과 형태를 먼저 그려봤어요</h1>
+    <p>같은 로고와 두 색을 사용한 구도 스케치입니다.<br>색연필 질감은 생략하고 큰 방향과 흰 공간만 비교합니다.</p>
+    <div class="controls">
+      <div class="modes" role="group" aria-label="표시 방법">
+        <button data-mode="color" aria-pressed="true">색감 포함</button>
+        <button data-mode="shape" aria-pressed="false">형태만</button>
+      </div>
+      <label class="softness">경계 부드러움 <input id="softness" type="range" min="0" max="18" value="6" aria-label="경계 부드러움"><output id="softness-value" for="softness">조금 부드럽게</output></label>
+    </div>
+    <nav class="mobile-nav" aria-label="구도 선택"><a href="#a">① 사선 면</a><a href="#b">② 긴 획</a><a href="#c">③ 이어지는 흐름</a></nav>
+  </header>
+  <section class="cards" aria-label="세 가지 형태 스케치">
+    <article id="a">
+      <h2>① 완만한 사선 면</h2>
+      <p class="reason">양쪽 색 면 사이로 흰 공간이 넓게 열립니다.<br>큰 방향을 단순하게 잡은 안입니다.</p>
+      <div class="screen">
+        <svg class="art" viewBox="0 0 390 844" aria-hidden="true">
+          <defs>
+            <linearGradient id="aSky" x1="390" y1="0" x2="170" y2="230" gradientUnits="userSpaceOnUse"><stop stop-color="#D0E4F0"/><stop offset="1" stop-color="#E5EFF5"/></linearGradient>
+            <linearGradient id="aCoral" x1="0" y1="844" x2="220" y2="600" gradientUnits="userSpaceOnUse"><stop stop-color="#F1C9BD"/><stop offset="1" stop-color="#F8E7E0"/></linearGradient>
+          </defs>
+          <path class="plane" fill="url(#aSky)" d="M125-40H430V300C350 255 290 220 230 160C180 110 145 45 125-40Z"/>
+          <path class="plane" fill="url(#aCoral)" d="M-40 550C60 610 145 675 220 745C280 795 345 845 430 884H-40Z"/>
+        </svg>
+        <img class="logo" alt="Prologue" src="../../../apps/mobile/assets/brand/prologue-wordmark.png">
+      </div>
+    </article>
+    <article id="b">
+      <h2>② 길게 번진 획</h2>
+      <p class="reason">손으로 길게 문지른 듯한 두 획입니다.<br>얇아지는 끝으로 움직임을 줍니다.</p>
+      <div class="screen">
+        <svg class="art" viewBox="0 0 390 844" aria-hidden="true">
+          <defs>
+            <linearGradient id="bSky" x1="390" y1="0" x2="260" y2="255" gradientUnits="userSpaceOnUse"><stop stop-color="#D0E4F0"/><stop offset="1" stop-color="#E5EFF5"/></linearGradient>
+            <linearGradient id="bCoral" x1="0" y1="844" x2="285" y2="620" gradientUnits="userSpaceOnUse"><stop stop-color="#F1C9BD"/><stop offset="1" stop-color="#F8E7E0"/></linearGradient>
+          </defs>
+          <path class="plane" fill="url(#bSky)" d="M432-45C328 39 278 118 260 257C310 172 350 116 402 80L452 43V-45Z"/>
+          <path class="plane" fill="url(#bCoral)" d="M-55 815C35 705 150 634 285 620C201 656 144 699 103 753C66 802 15 852-55 887Z"/>
+        </svg>
+        <img class="logo" alt="Prologue" src="../../../apps/mobile/assets/brand/prologue-wordmark.png">
+      </div>
+    </article>
+    <article id="c">
+      <h2>③ 하나로 이어지는 흐름</h2>
+      <p class="reason">두 색이 가장자리를 따라 하나로 이어집니다.<br>로고 옆을 지나 아래쪽으로 흐릅니다.</p>
+      <div class="screen">
+        <svg class="art" viewBox="0 0 390 844" aria-hidden="true">
+          <defs><linearGradient id="cFlow" x1="0" y1="0" x2="0" y2="844" gradientUnits="userSpaceOnUse"><stop stop-color="#D0E4F0"/><stop offset=".48" stop-color="#E6E6E7"/><stop offset="1" stop-color="#F1C9BD"/></linearGradient></defs>
+          <path class="plane" fill="url(#cFlow)" d="M395-50C265 40 280 155 330 250C355 300 345 340 337 390C325 465 336 520 270 575C200 635 80 657-50 770V902C125 765 262 739 350 658C445 571 415 478 430 399C449 306 409 230 378 156C352 94 364 40 447-50Z"/>
+        </svg>
+        <img class="logo" alt="Prologue" src="../../../apps/mobile/assets/brand/prologue-wordmark.png">
+      </div>
+    </article>
+  </section>
+  <footer>코드로 그린 구도 스케치 · 이미지 생성과 비용은 없습니다.<br>형태를 의논하기 위한 자료이며, 실제 앱 반영과 색연필 질감 작업은 이후 선택에 맞춰 진행합니다.</footer>
+</main>
+<script>
+  const softness=document.getElementById('softness');
+  const softnessValue=document.getElementById('softness-value');
+  document.querySelectorAll('button[data-mode]').forEach(button=>button.addEventListener('click',()=>{
+    const shape=button.dataset.mode==='shape';
+    document.body.dataset.mode=button.dataset.mode;
+    document.querySelectorAll('button[data-mode]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));
+    softness.disabled=shape;
+    softnessValue.textContent=shape?'경계 그대로':softness.value<4?'또렷하게':softness.value<11?'조금 부드럽게':'더 부드럽게';
+  }));
+  softness.addEventListener('input',()=>{
+    document.documentElement.style.setProperty('--softness',softness.value+'px');
+    softnessValue.textContent=softness.value<4?'또렷하게':softness.value<11?'조금 부드럽게':'더 부드럽게';
+  });
+</script>
+</body>
+</html>
