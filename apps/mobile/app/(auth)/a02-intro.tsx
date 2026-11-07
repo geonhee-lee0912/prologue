@@ -11,25 +11,25 @@ import { useTheme } from '../../theme/use-theme';
 const PAGES = [
   {
     title: '프롤로그는 프로필을\n진열하지 않아요',
-    body: '프롤로그에서는 소개받는 한 사람에게만 내 프로필이 편지로 전해져요.',
+    body: '프롤로그에서는 소개받는 한 사람에게만\n내 프로필이 편지로 전해져요.',
     image: require('../../../../docs/previews/onboarding/intro-envelope.png'),
     imageLabel: '살짝 열린 봉투 속 크림색 편지 한 장',
   },
   {
     title: '갈피는 대화 속에서\n나를 알아가요',
-    body: '나를 잘 아는 친구에게 소개팅을 받듯이, AI 친구 갈피가 내 이야기를 듣고 잘 맞을 만한 사람을 소개해요.',
+    body: '나를 잘 아는 친구에게 소개팅을 받듯이,\nAI 친구 갈피가 내 이야기를 듣고\n잘 맞을 만한 사람을 소개해요.',
     image: require('../../../../docs/previews/onboarding/intro-2.png'),
     imageLabel: '고개를 기울여 이야기를 듣는 갈피',
   },
   {
     title: '잘 맞을 사람이 떠오르면\n편지가 도착해요',
-    body: '갈피가 두 사람을 소개하고 싶은 이유를 적어요. 프로필과 편지는 소개 상대에게만 전해지고, 두 사람 모두 수락하면 대화가 열려요.',
+    body: '갈피가 두 사람을\n소개하고 싶은 이유를 적어요.\n프로필과 편지는 소개 상대에게만 전해지고,\n두 사람 모두 수락하면 대화가 열려요.',
     image: require('../../../../docs/previews/onboarding/intro-3.png'),
     imageLabel: '봉투에서 꺼내 펼친 크림색 편지',
   },
   {
     title: '만나고 난 뒤에도\n갈피와 이야기해요',
-    body: '편했던 순간도, 아쉬웠던 점도 갈피에게만 들려줄 수 있어요. 다음 소개에는 내가 반영하고 싶은 점만 담아요.',
+    body: '편했던 순간도, 아쉬웠던 점도\n갈피에게만 들려줄 수 있어요.\n다음 소개에는 내가\n반영하고 싶은 점만 담아요.',
     image: require('../../../../docs/previews/onboarding/intro-4.png'),
     imageLabel: '외투가 걸린 의자 옆에 앉아 있는 갈피',
   },
@@ -45,7 +45,7 @@ export default function A02Intro() {
   const [width, setWidth] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
   const last = page === PAGES.length - 1;
-  const imageSize = Math.max(110, Math.min(208, height * 0.24));
+  const imageSize = height < 700 ? 120 : 152;
 
   useEffect(() => {
     let active = true;
@@ -116,32 +116,32 @@ export default function A02Intro() {
               contentContainerStyle={styles.page}
               showsVerticalScrollIndicator={false}
               accessibilityElementsHidden={index !== page}
+              aria-hidden={index !== page}
               importantForAccessibility={index === page ? 'auto' : 'no-hide-descendants'}
             >
               <Image source={item.image} accessibilityLabel={item.imageLabel} contentFit="contain" style={{ width: imageSize, height: imageSize }} />
               <Text accessibilityRole="header" style={[styles.title, { color: t.ink }]}>{item.title}</Text>
               <Text style={[styles.body, { color: t.sub }]}>{item.body}</Text>
+              <Text style={[styles.privacy, { color: t.sub }]}>내 프로필은 소개 편지를 받는 상대에게만 보여요.</Text>
+              <View
+                accessible
+                accessibilityRole="progressbar"
+                accessibilityLabel="서비스 소개"
+                aria-valuemin={1}
+                aria-valuemax={PAGES.length}
+                aria-valuenow={index + 1}
+                aria-valuetext={`전체 ${PAGES.length}장 중 ${index + 1}번째`}
+                style={styles.indicator}
+              >
+                {PAGES.map((step, stepIndex) => (
+                  <View key={step.title} style={[styles.dot, { borderColor: t.sub }, stepIndex === index && { backgroundColor: t.sub }]} />
+                ))}
+              </View>
             </ScrollView>
           ))}
         </ScrollView>
 
         <View style={styles.footer}>
-          <View
-            accessible
-            accessibilityRole="progressbar"
-            accessibilityLabel="서비스 소개"
-            aria-valuemin={1}
-            aria-valuemax={PAGES.length}
-            aria-valuenow={page + 1}
-            aria-valuetext={`전체 ${PAGES.length}장 중 ${page + 1}번째`}
-            accessibilityLiveRegion="polite"
-            style={styles.indicator}
-          >
-            {PAGES.map((item, index) => (
-              <View key={item.title} style={[styles.dot, { borderColor: t.sub }, index === page && { backgroundColor: t.sub }]} />
-            ))}
-          </View>
-          <Text style={[styles.privacy, { color: t.sub }]}>내 프로필은 소개 편지를 받는 상대에게만 보여요.</Text>
           <View style={styles.buttonRow}><Button label={last ? '시작하기' : '다음'} onPress={next} /></View>
           <View style={styles.skipSlot}>
             {!last ? (
@@ -169,9 +169,9 @@ const styles = StyleSheet.create({
   title: { marginTop: SPACE.l, marginBottom: SPACE.m, fontSize: 26, fontWeight: '700', lineHeight: 35, textAlign: 'center', letterSpacing: -1 },
   body: { fontSize: 15, lineHeight: 25, textAlign: 'center', maxWidth: 350 },
   footer: { paddingHorizontal: SPACE.xl, paddingBottom: SPACE.s },
-  indicator: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: SPACE.s, minHeight: 16, marginBottom: SPACE.m },
+  indicator: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: SPACE.s, minHeight: 16, marginTop: SPACE.l },
   dot: { width: 8, height: 8, borderRadius: 4, borderWidth: 1 },
-  privacy: { textAlign: 'center', fontSize: 12, lineHeight: 18, marginBottom: SPACE.m },
+  privacy: { textAlign: 'center', fontSize: 12, lineHeight: 18, marginTop: SPACE.m },
   buttonRow: { flexDirection: 'row' },
   skipSlot: { height: 44 },
   skip: { flex: 1, alignItems: 'center', justifyContent: 'center' },
