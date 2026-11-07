@@ -139,13 +139,29 @@
 
       <section class="screen" data-screen="home" hidden>
         <h1 tabindex="-1">친구</h1>
-        <a class="galpi-card" href="#first-chat">
-          <div><span class="muted">소개를 도와줄 친구</span><h2>갈피</h2><span class="text-link">대화 이어가기 →</span></div>
-          <img src="intro-2.png" alt="갈피" width="148" height="148">
+        <a class="self-profile" id="selfProfileLink" href="#profile-review">
+          <span class="self-avatar"><img id="selfProfilePhoto" alt="내 대표 사진" hidden><span id="selfProfilePlaceholder">내</span></span>
+          <span class="self-profile-text"><strong id="selfProfileName">내 프로필</strong><small id="homeProfileStatus">소개 준비하기</small></span>
+          <span class="row-arrow" aria-hidden="true">›</span>
         </a>
-        <h2 class="section-heading">내 소개</h2>
-        <a class="list-row" href="#profile"><span><strong>소개 준비하기</strong><small id="homeProfileStatus">편지에 담을 나를 준비해요</small></span><span aria-hidden="true">›</span></a>
-        <p class="home-note">소개하고 싶은 사람이 생기면<br>갈피가 편지로 알려드려요.</p>
+
+        <section class="home-section" id="homeImportant" aria-labelledby="importantTitle" hidden>
+          <h2 id="importantTitle">중요한 일</h2>
+          <div id="homeEvent" class="event-card"></div>
+        </section>
+
+        <section class="home-section" id="homeFriends" aria-labelledby="friendsTitle">
+          <h2 id="friendsTitle">친구</h2>
+          <div class="friend-row">
+            <a class="friend-photo" id="galpiRoomLink" href="#galpi-room" aria-label="갈피의 방 열기"><img src="intro-2.png" alt="" width="54" height="54"></a>
+            <a class="friend-conversation" id="galpiConversationLink" href="#first-chat"><span><strong>갈피</strong><small id="galpiStatus">소개를 도와주는 친구</small></span></a>
+          </div>
+        </section>
+
+        <section class="home-section" id="homeNews" aria-labelledby="newsTitle" hidden>
+          <h2 id="newsTitle">소식</h2>
+          <div id="homeNewsList"></div>
+        </section>
       </section>
 
       <section class="screen" data-screen="conversations" hidden>

@@ -278,6 +278,7 @@ function syncSelectedInformation() {
   const name = journey.drafts.name?.name;
   const label = document.querySelector('#displayLetterName');
   label.textContent = name || '첫 편지를 준비할 때 정해요';
+  document.querySelector('#selfProfileName').textContent = name || '내 프로필';
   const box = document.querySelector('#optionalSummary');
   box.replaceChildren();
   const fields = journey.drafts.visibility?.fields || [];
@@ -320,13 +321,13 @@ function renderJourney(route) {
     eventTitle = '갈피가 편지를 썼어요'; eventText = '소개하고 싶은 이야기가 있어요'; eventRoute = journey.scene === 'stories' ? 'story-choice' : 'letter';
   } else if (journey.letter === 'pending') {
     eventTitle = '마음을 전한 편지'; eventText = '서로 수락하면 대화가 열려요'; eventRoute = 'letter-pending';
-  } else if (journey.scene === 'waiting' || journey.paused) {
-    eventTitle = journey.paused ? '새 편지를 쉬고 있어요' : '소개할 사람을 찾고 있어요';
-    eventText = journey.paused ? '원할 때 다시 받을 수 있어요' : '소개하고 싶은 분이 생기면 알려드려요';
-    eventRoute = journey.paused ? 'exposure' : 'profile';
   }
   event.hidden = !eventTitle;
+  document.querySelector('#homeImportant').hidden = event.hidden;
   if (eventTitle) event.innerHTML = row(eventTitle, eventText, eventRoute);
+  document.querySelector('#galpiStatus').textContent = eventTitle || (journey.paused ? '새 편지를 쉬고 있어요' : journey.scene === 'waiting' ? '소개할 분을 찾고 있어요' : '소개를 도와주는 친구');
+  document.querySelector('#homeNews').hidden = !journey.reportReady;
+  document.querySelector('#homeNewsList').innerHTML = journey.reportReady ? row('나에 대한 리포트가 도착했어요','제가 읽은 당신','self-report') : '';
   document.querySelector('#peerConversationRow').hidden = !journey.connected || journey.ended;
   document.querySelector('#endedConversationLink').hidden = !journey.ended;
   const active = journey.letter === 'arrived';
@@ -374,8 +375,6 @@ function renderJourney(route) {
 }
 
 function initJourney() {
-  document.querySelector('[data-screen=home] h1').insertAdjacentHTML('afterend', '<div id="homeEvent" class="event-card" hidden></div>');
-  document.querySelector('[data-screen=home] .home-note').insertAdjacentHTML('beforebegin', row('갈피의 방','친구 갈피를 만나러 가요','galpi-room') + row('가벼운 소개','내가 동의한 방식으로','light-intro'));
   document.querySelector('[data-screen=conversations]').insertAdjacentHTML('beforeend', '<a id="peerConversationRow" class="conversation-row" href="#person-chat" hidden><span class="peer-avatar">보리</span><span><strong>보리</strong><small>두 분의 대화</small></span><span>›</span></a><a id="endedConversationLink" class="small-link" href="#ended-connections" hidden>끝난 연결의 안전 문의</a>');
   document.querySelector('[data-screen=profile] .row-list').insertAdjacentHTML('beforeend', row('생활과 관계','흡연·음주·관계에 대한 생각','profile-life') + row('결혼·혼인과 자녀','해당하는 내용만 확인해요','profile-relations') + row('소개받을 상대','연령·지역·생활 선호','preferences') + row('더 들려주고 싶은 나','학력·회사·소득·취미 등 선택 정보','profile-optional') + row('추가 인증','원하는 항목만 확인해요','verification-options') + row('편지에 담을 정보','선택 등록한 정보의 공개 관리','visibility'));
   document.querySelector('[data-screen=profile] .row-list').insertAdjacentHTML('beforeend', row('외형과 분위기','키·체형의 선택 입력과 공개','profile-appearance') + row('생활과 관계 이야기','반려동물·연락·소비·갈등·애정','profile-values') + row('종교에 대한 생각','별도 동의 후 선택 제공','profile-religion'));

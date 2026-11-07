@@ -108,7 +108,11 @@ function refreshProfile() {
     node.textContent = profile.area || '선택 전';
   });
   document.querySelectorAll('[data-work]').forEach(node => { node.textContent = profile.work || '입력 전'; });
-  document.querySelector('#homeProfileStatus').textContent = profile.area || '편지에 담을 나를 준비해요';
+  document.querySelector('#homeProfileStatus').textContent = profile.area || '소개 준비하기';
+  const selfPhoto = document.querySelector('#selfProfilePhoto');
+  selfPhoto.hidden = !profile.coverUrl;
+  document.querySelector('#selfProfilePlaceholder').hidden = !!profile.coverUrl;
+  if (profile.coverUrl) selfPhoto.src = profile.coverUrl;
   document.querySelector('[data-photo-count]').textContent = profile.coverUrl
     ? '대표 사진 등록 · 추가 사진 ' + profile.extras.length + '장'
     : '대표 사진 선택 전';
