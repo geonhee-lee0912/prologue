@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps, ReactNode } from 'react';
 import { Pressable, type StyleProp, StyleSheet, type TextStyle, View, type ViewStyle } from 'react-native';
 import { type Edge, SafeAreaView } from 'react-native-safe-area-context';
-import { RADIUS, SPACE } from '../theme/tokens';
+import { PRIMARY_BUTTON_LABEL, RADIUS, SPACE } from '../theme/tokens';
 import { useTheme } from '../theme/use-theme';
 import { Text } from './AppText';
 
@@ -94,14 +94,13 @@ export function Button({
 }: {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'coral';
+  variant?: 'primary' | 'secondary';
   disabled?: boolean;
 }) {
   const t = useTheme();
   const colors = {
-    primary: { backgroundColor: t.ink, borderColor: t.ink, text: t.onInk },
+    primary: { backgroundColor: t.mark, borderColor: t.mark, text: t.onMark },
     secondary: { backgroundColor: t.bg, borderColor: t.line, text: t.ink },
-    coral: { backgroundColor: t.mark, borderColor: t.mark, text: t.onMark },
   }[variant];
   return (
     <Pressable
@@ -117,7 +116,7 @@ export function Button({
         },
       ]}
     >
-      <Text style={[styles.buttonText, { color: colors.text }]}>{label}</Text>
+      <Text style={[variant === 'primary' ? PRIMARY_BUTTON_LABEL : styles.buttonText, { color: colors.text }]}>{label}</Text>
     </Pressable>
   );
 }

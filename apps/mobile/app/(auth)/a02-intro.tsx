@@ -144,7 +144,7 @@ export default function A02Intro() {
         </ScrollView>
 
         <View style={styles.footer}>
-          <View style={styles.buttonRow}><Button label={last ? '시작하기' : '다음'} onPress={next} variant="coral" /></View>
+          <View style={styles.buttonRow}><Button label={last ? '시작하기' : '다음'} onPress={next} /></View>
           <View style={styles.skipSlot}>
             {!last ? (
               <Pressable accessibilityRole="button" onPress={start} style={styles.skip}>

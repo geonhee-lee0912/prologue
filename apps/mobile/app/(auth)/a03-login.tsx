@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../components/AppText';
+import { COLORS, PRIMARY_BUTTON_LABEL } from '../../theme/tokens';
 import { ApiError, api, type IdentityInput } from '../../lib/api';
 import { authStorage } from '../../lib/auth-storage';
 import { routeForStep } from '../../lib/onboarding-route';
@@ -362,13 +363,13 @@ const styles = StyleSheet.create({
   checkboxOn: { backgroundColor: '#1A1A1A', borderColor: '#1A1A1A' },
   checkboxLabel: { fontSize: 13, color: '#333' },
   primaryButton: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: COLORS.mark,
     borderRadius: 8,
     paddingVertical: 12,
     marginTop: 16,
     alignItems: 'center',
   },
-  primaryButtonText: { color: '#FFF', fontSize: 15, fontWeight: '600' },
+  primaryButtonText: { ...PRIMARY_BUTTON_LABEL, color: COLORS.onMark },
   secondaryButton: {
     backgroundColor: '#F0F0F0',
     borderRadius: 8,

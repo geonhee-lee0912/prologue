@@ -9,15 +9,15 @@ export const COLORS = {
   fill: '#F5F5F5',
   /** 선·테두리, 사진·아바타 자리 */
   line: '#EBEBEB',
-  /** 글자, 주 버튼, 내 말풍선 */
+  /** 글자, 내 말풍선 */
   ink: '#191919',
   /** 먹 위의 글자 */
   onInk: '#FFFFFF',
   /** 콘텐츠 설명과 보조 문구에 쓰는 공통 그레이 */
   sub: '#5A5A5A',
-  /** 갈피의 코랄 책갈피 — 새 말 점, 편지 리본, 고정 표시와 온보딩 주 버튼 */
+  /** 갈피의 코랄 책갈피와 앱 주 버튼 */
   mark: '#C8603C',
-  onMark: '#101010',
+  onMark: '#FFFFFF',
   /** 되돌릴 수 없는 동작의 글자 */
   danger: '#C8372D',
   /** 대화방 바탕. 배경 바꾸기(테마)는 갈피 대화방 고도화 때 (BACKLOG 8) */
@@ -36,5 +36,8 @@ export const COLORS = {
 } as const;
 
 export const RADIUS = { card: 16, bubble: 16, chip: 12 } as const;
+
+/** 흰색과 코랄의 대비는 4.04:1이므로 큰 볼드 글자로 표시한다. */
+export const PRIMARY_BUTTON_LABEL = { fontSize: 19, fontWeight: '700', textAlign: 'center' } as const;
 
 export const SPACE = { xs: 4, s: 8, m: 12, l: 16, xl: 24 } as const;
