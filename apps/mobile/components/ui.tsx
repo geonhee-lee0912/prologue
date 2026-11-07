@@ -94,11 +94,15 @@ export function Button({
 }: {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'coral';
   disabled?: boolean;
 }) {
   const t = useTheme();
-  const primary = variant === 'primary';
+  const colors = {
+    primary: { backgroundColor: t.ink, borderColor: t.ink, text: t.onInk },
+    secondary: { backgroundColor: t.bg, borderColor: t.line, text: t.ink },
+    coral: { backgroundColor: t.mark, borderColor: t.mark, text: t.onMark },
+  }[variant];
   return (
     <Pressable
       accessibilityRole="button"
@@ -107,13 +111,13 @@ export function Button({
       style={[
         styles.button,
         {
-          backgroundColor: primary ? t.ink : t.bg,
-          borderColor: primary ? t.ink : t.line,
+          backgroundColor: colors.backgroundColor,
+          borderColor: colors.borderColor,
           opacity: disabled ? 0.4 : 1,
         },
       ]}
     >
-      <Text style={[styles.buttonText, { color: primary ? t.onInk : t.ink }]}>{label}</Text>
+      <Text style={[styles.buttonText, { color: colors.text }]}>{label}</Text>
     </Pressable>
   );
 }

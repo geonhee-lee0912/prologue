@@ -38,4 +38,8 @@ describe('색 토큰 — 흰 바탕 모노톤 (앱 IA 10.6)', () => {
     expect(contrast(COLORS.mark, COLORS.bg)).toBeGreaterThanOrEqual(3);
     expect(contrast(COLORS.mark, COLORS.fill)).toBeGreaterThanOrEqual(3);
   });
+
+  it('온보딩 코랄 버튼의 글자는 4.5:1 이상', () => {
+    expect(contrast(COLORS.onMark, COLORS.mark)).toBeGreaterThanOrEqual(4.5);
+  });
 });

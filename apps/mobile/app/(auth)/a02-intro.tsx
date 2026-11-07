@@ -122,7 +122,9 @@ export default function A02Intro() {
               <Image source={item.image} accessibilityLabel={item.imageLabel} contentFit="contain" style={{ width: imageSize, height: imageSize }} />
               <Text accessibilityRole="header" style={[styles.title, { color: t.ink }]}>{item.title}</Text>
               <Text style={[styles.body, { color: t.sub }]}>{item.body}</Text>
-              <Text style={[styles.privacy, { color: t.sub }]}>내 프로필은 소개 편지를 받는 상대에게만 보여요.</Text>
+              {index > 0 && (
+                <Text style={[styles.privacy, { color: t.sub }]}>내 프로필은 소개 편지를 받는 상대에게만 보여요.</Text>
+              )}
               <View
                 accessible
                 accessibilityRole="progressbar"
@@ -142,7 +144,7 @@ export default function A02Intro() {
         </ScrollView>
 
         <View style={styles.footer}>
-          <View style={styles.buttonRow}><Button label={last ? '시작하기' : '다음'} onPress={next} /></View>
+          <View style={styles.buttonRow}><Button label={last ? '시작하기' : '다음'} onPress={next} variant="coral" /></View>
           <View style={styles.skipSlot}>
             {!last ? (
               <Pressable accessibilityRole="button" onPress={start} style={styles.skip}>
