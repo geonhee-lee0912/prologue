@@ -19,7 +19,7 @@
     .wash,.grain{position:absolute;inset:0;pointer-events:none}
     .wash{background-image:var(--field)}
     .grain{background-image:var(--grain-image);background-size:160px 160px;opacity:.18;mix-blend-mode:soft-light;mask-image:var(--field);mask-mode:alpha;-webkit-mask-image:var(--field)}
-    .pencil{position:absolute;inset:0;background:url('wash-pencil-grain.png') repeat;background-size:58% auto;mix-blend-mode:overlay;pointer-events:none}
+    .pencil{position:absolute;inset:0;background:url('wash-pencil-grain.png') repeat;background-size:58% auto;mix-blend-mode:overlay;opacity:.8;pointer-events:none}
     .logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:50.2564103%;height:6.3981043%;object-fit:contain}
     footer{margin-top:24px;color:#777;font-size:12px;line-height:1.7}
     @media(max-width:650px){
@@ -32,7 +32,7 @@
 <main>
   <header>
     <h1>스플래시 질감 비교</h1>
-    <p>번짐 범위 100% · 농도 125%</p>
+    <p>번짐 범위 100% · 색 농도 125%</p>
   </header>
   <section class="cards" aria-label="시안 비교">
     <article id="a">
@@ -40,7 +40,7 @@
       <div class="screen"><div class="wash" aria-hidden="true"></div><div class="grain" aria-hidden="true"></div><img class="logo" alt="Prologue" src="../../../apps/mobile/assets/brand/prologue-wordmark.png"></div>
     </article>
     <article id="b">
-      <h2>B · 색연필 결</h2>
+      <h2>B · 색연필 결 100%</h2>
       <div class="screen"><div class="wash" aria-hidden="true"></div><div class="pencil" aria-hidden="true"></div><img class="logo" alt="Prologue" src="../../../apps/mobile/assets/brand/prologue-wordmark.png"></div>
     </article>
   </section>
