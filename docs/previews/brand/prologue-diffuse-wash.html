@@ -15,6 +15,11 @@
     .cards{display:grid;grid-template-columns:repeat(2,minmax(0,390px));gap:24px;justify-content:center}
     h2{font-size:16px;font-weight:600;margin:0 0 12px}
     article{min-width:0}
+    .card-heading{min-height:48px;display:flex;align-items:center;gap:10px;margin-bottom:8px;background:#F5F5F5}
+    .card-heading h2{margin:0;white-space:nowrap}
+    .card-heading input[type=range]{flex:1;min-width:48px;accent-color:#525252}
+    .percentage{display:flex;align-items:center;gap:3px;font-size:14px}
+    .percentage input{width:62px;padding:6px;border:1px solid #bbb;border-radius:6px;font:inherit;background:white;color:inherit}
     .screen{position:relative;width:100%;aspect-ratio:390/844;overflow:hidden;isolation:isolate;background:white;border-radius:14px;box-shadow:0 0 0 1px #E5E5E5}
     .wash,.grain{position:absolute;inset:0;pointer-events:none}
     .wash{background-image:var(--field)}
@@ -25,6 +30,7 @@
     @media(max-width:650px){
       main{padding:24px 18px}h1{font-size:24px}
       .cards{grid-template-columns:minmax(0,390px)}
+      #b .card-heading{position:sticky;top:0;z-index:1}
     }
   </style>
 </head>
@@ -36,11 +42,15 @@
   </header>
   <section class="cards" aria-label="시안 비교">
     <article id="a">
-      <h2>A · 기존 번짐</h2>
+      <div class="card-heading"><h2>A · 기존 번짐</h2></div>
       <div class="screen"><div class="wash" aria-hidden="true"></div><div class="grain" aria-hidden="true"></div><img class="logo" alt="Prologue" src="../../../apps/mobile/assets/brand/prologue-wordmark.png"></div>
     </article>
     <article id="b">
-      <h2>B · 색연필 결 100%</h2>
+      <div class="card-heading">
+        <h2><label for="grain-slider">B · 색연필 결</label></h2>
+        <input id="grain-slider" type="range" min="0" max="125" step="1" value="100">
+        <label class="percentage"><input id="grain-number" type="number" inputmode="numeric" aria-label="B 색연필 결 농도 퍼센트" min="0" max="125" step="1" value="100">%</label>
+      </div>
       <div class="screen"><div class="wash" aria-hidden="true"></div><div class="pencil" aria-hidden="true"></div><img class="logo" alt="Prologue" src="../../../apps/mobile/assets/brand/prologue-wordmark.png"></div>
     </article>
   </section>
@@ -62,6 +72,29 @@
         field(65*range,45*range,102,0,'122,181,215',.06*strength)
       ];
   document.querySelector('.cards').style.setProperty('--field',layers.join(','));
+
+  const slider = document.getElementById('grain-slider');
+  const number = document.getElementById('grain-number');
+  const pencil = document.querySelector('#b .pencil');
+  function previewGrain() {
+    pencil.style.opacity = slider.valueAsNumber / Number(slider.max);
+    slider.setAttribute('aria-valuetext', slider.value + '%');
+  }
+  slider.addEventListener('input', () => {
+    number.value = slider.value;
+    previewGrain();
+  });
+  number.addEventListener('input', () => {
+    if (Number.isFinite(number.valueAsNumber)) {
+      slider.value = number.value;
+      previewGrain();
+    }
+  });
+  number.addEventListener('blur', () => { number.value = slider.value; });
+  number.addEventListener('keydown', event => {
+    if (event.key === 'Enter') number.blur();
+  });
+  previewGrain();
 </script>
 </body>
 </html>
