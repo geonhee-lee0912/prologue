@@ -1,0 +1,50 @@
+[
+  {
+    "id": "2A",
+    "base": "2",
+    "baseName": "친근형",
+    "motif": "날아가는 편지",
+    "note": "작은 봉투와 짧은 물결 궤적",
+    "file": "2a-letter.svg"
+  },
+  {
+    "id": "2B",
+    "base": "2",
+    "baseName": "친근형",
+    "motif": "종이비행기",
+    "note": "가볍게 올라가는 비행기와 짧은 궤적",
+    "file": "2b-plane.svg"
+  },
+  {
+    "id": "2C",
+    "base": "2",
+    "baseName": "친근형",
+    "motif": "바람에 뜬 종이",
+    "note": "접힌 모서리와 살짝 휜 종이 한 장",
+    "file": "2c-page.svg"
+  },
+  {
+    "id": "3A",
+    "base": "3",
+    "baseName": "모던형",
+    "motif": "날아가는 편지",
+    "note": "작은 봉투와 짧은 물결 궤적",
+    "file": "3a-letter.svg"
+  },
+  {
+    "id": "3B",
+    "base": "3",
+    "baseName": "모던형",
+    "motif": "종이비행기",
+    "note": "가볍게 올라가는 비행기와 짧은 궤적",
+    "file": "3b-plane.svg"
+  },
+  {
+    "id": "3C",
+    "base": "3",
+    "baseName": "모던형",
+    "motif": "바람에 뜬 종이",
+    "note": "접힌 모서리와 살짝 휜 종이 한 장",
+    "file": "3c-page.svg"
+  }
+]
