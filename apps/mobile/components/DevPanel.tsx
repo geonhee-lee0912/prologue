@@ -4,7 +4,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { SCENARIO_LABELS, type ScenarioKey } from '../mock/scenarios';
 import { useAppStore } from '../state/app-store';
-import { RADIUS, SPACE } from '../theme/tokens';
+import { TYPE, RADIUS, SPACE } from '../theme/tokens';
 import { useTheme } from '../theme/use-theme';
 import { Text } from './AppText';
 import { SectionLabel } from './ui';
@@ -43,5 +43,5 @@ export function DevPanel() {
 const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.s, paddingHorizontal: SPACE.l },
   chip: { borderWidth: 1, borderRadius: RADIUS.chip, paddingVertical: 6, paddingHorizontal: SPACE.m },
-  chipText: { fontSize: 12 },
+  chipText: TYPE.caption,
 });

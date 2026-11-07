@@ -1,3 +1,4 @@
+import { COLORS, TYPE } from '../theme/tokens';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -175,13 +176,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#EAEAEA',
   },
-  back: { color: '#666', fontSize: 14 },
-  headerTitle: { fontSize: 15, fontWeight: '600', color: '#1A1A1A' },
+  back: { ...TYPE.action, color: '#666' },
+  headerTitle: { ...TYPE.heading, color: '#1A1A1A' },
   body: { padding: 16, paddingBottom: 32 },
-  intro: { fontSize: 13, color: '#555', lineHeight: 20, marginBottom: 20 },
+  intro: { ...TYPE.supporting, color: '#555', marginBottom: 20 },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
+    ...TYPE.label,
     color: '#1A1A1A',
     marginTop: 12,
     marginBottom: 8,
@@ -207,18 +207,18 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   radioSelected: { borderColor: '#1A1A1A', backgroundColor: '#1A1A1A' },
-  reasonText: { fontSize: 13, color: '#555' },
+  reasonText: { ...TYPE.supporting, color: '#555' },
   reasonTextSelected: { color: '#1A1A1A', fontWeight: '600' },
   descInput: {
+    ...TYPE.body,
     borderWidth: 1,
     borderColor: '#DDD',
     borderRadius: 8,
     padding: 12,
-    fontSize: 13,
     minHeight: 100,
     backgroundColor: '#FFF',
   },
-  charCount: { textAlign: 'right', fontSize: 11, color: '#999', marginTop: 4 },
+  charCount: { ...TYPE.caption, textAlign: 'right', color: COLORS.sub, marginTop: 4 },
   submitBtn: {
     backgroundColor: '#1A1A1A',
     paddingVertical: 14,
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 24,
   },
-  submitText: { color: '#FFF', fontSize: 14, fontWeight: '600' },
+  submitText: { ...TYPE.action, color: '#FFF' },
   disabled: { opacity: 0.5 },
-  footer: { fontSize: 11, color: '#999', textAlign: 'center', marginTop: 16, lineHeight: 16 },
+  footer: { ...TYPE.caption, color: COLORS.sub, textAlign: 'center', marginTop: 16 },
 });

@@ -9,7 +9,7 @@ import { LetterView } from '../../components/LetterView';
 import { Header, Screen } from '../../components/ui';
 import type { LetterProfile } from '../../domain/types';
 import { useAppStore } from '../../state/app-store';
-import { SPACE } from '../../theme/tokens';
+import { TYPE, SPACE } from '../../theme/tokens';
 import { useTheme } from '../../theme/use-theme';
 
 export default function LetterPreviewScreen() {
@@ -39,5 +39,5 @@ export default function LetterPreviewScreen() {
 
 const styles = StyleSheet.create({
   pad: { padding: SPACE.l, gap: SPACE.m },
-  note: { fontSize: 13, lineHeight: 19 },
+  note: TYPE.supporting,
 });

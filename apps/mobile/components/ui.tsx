@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps, ReactNode } from 'react';
 import { Pressable, type StyleProp, StyleSheet, type TextStyle, View, type ViewStyle } from 'react-native';
 import { type Edge, SafeAreaView } from 'react-native-safe-area-context';
-import { PRIMARY_BUTTON_LABEL, RADIUS, SPACE } from '../theme/tokens';
+import { TYPE, RADIUS, SPACE } from '../theme/tokens';
 import { useTheme } from '../theme/use-theme';
 import { Text } from './AppText';
 
@@ -116,7 +116,7 @@ export function Button({
         },
       ]}
     >
-      <Text style={[variant === 'primary' ? PRIMARY_BUTTON_LABEL : styles.buttonText, { color: colors.text }]}>{label}</Text>
+      <Text style={[variant === 'primary' ? styles.primaryButtonText : styles.buttonText, { color: colors.text }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -154,19 +154,19 @@ const styles = StyleSheet.create({
     paddingTop: SPACE.m,
     paddingBottom: SPACE.s,
   },
-  tabTitleText: { fontSize: 22, fontWeight: '700' },
+  tabTitleText: TYPE.title,
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: SPACE.s,
-    height: 48,
+    minHeight: 48,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerSide: { width: 64, flexDirection: 'row', alignItems: 'center' },
   headerRight: { justifyContent: 'flex-end' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '600' },
+  headerTitle: { ...TYPE.heading, flex: 1, textAlign: 'center' },
   iconButton: { padding: SPACE.xs },
-  section: { fontSize: 12, marginTop: SPACE.l, marginBottom: SPACE.s, paddingHorizontal: SPACE.l },
+  section: { ...TYPE.caption, marginTop: SPACE.l, marginBottom: SPACE.s, paddingHorizontal: SPACE.l },
   card: {
     borderRadius: RADIUS.card,
     padding: SPACE.m,
@@ -181,7 +181,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingVertical: SPACE.m,
   },
-  buttonText: { fontSize: 14, fontWeight: '600' },
-  galpiText: { fontSize: 15, lineHeight: 23 },
-  empty: { fontSize: 13, lineHeight: 20, paddingHorizontal: SPACE.l, paddingVertical: SPACE.m },
+  primaryButtonText: { ...TYPE.primaryButton, textAlign: 'center' },
+  buttonText: TYPE.action,
+  galpiText: TYPE.body,
+  empty: { ...TYPE.supporting, paddingHorizontal: SPACE.l, paddingVertical: SPACE.m },
 });

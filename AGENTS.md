@@ -261,6 +261,8 @@ supabase/     → 현재 RLS 정책 SQL·적용 스크립트 (Prisma 마이그�
 
 ## 더 읽을 것 (그 영역을 만지기 전에)
 
+- 앱 화면의 글자 크기·줄높이·굵기와 버튼 문구: [프롤로그 앱 글꼴 사용서](docs/agent/typography.md)
+
 - 데이터 흐름·DB/RLS·화면 ID·외부 호출(4·6·7·8·11장): [구현 상세](docs/agent/implementation.md)
 - 사용자 문구·금지 표현·용어(9장): [카피 상세](docs/agent/copy.md)
 - 작업 패턴·추가 명령(15·17장): [작업 패턴](docs/agent/work-patterns.md)

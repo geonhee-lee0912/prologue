@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { GALPI_EXPRESSIONS } from '../assets/galpi';
 import { letterCardView } from '../domain/letters';
 import type { GalpiMessage, Letter } from '../domain/types';
-import { COLORS, RADIUS, SPACE } from '../theme/tokens';
+import { TYPE, COLORS, RADIUS, SPACE } from '../theme/tokens';
 import { useTheme } from '../theme/use-theme';
 import { Text } from './AppText';
 import { GalpiAvatar } from './GalpiAvatar';
@@ -92,19 +92,18 @@ const styles = StyleSheet.create({
   galpiBubble: { borderRadius: RADIUS.bubble, paddingVertical: SPACE.s, paddingHorizontal: SPACE.m, flexShrink: 1 },
   mineRow: { alignItems: 'flex-end' },
   mine: {
+    ...TYPE.body,
     maxWidth: '80%',
     borderRadius: RADIUS.bubble,
     paddingVertical: SPACE.s,
     paddingHorizontal: SPACE.m,
-    fontSize: 15,
-    lineHeight: 22,
     overflow: 'hidden',
   },
   emoticon: { width: 96, height: 96 },
   letterCard: { borderRadius: RADIUS.card, borderWidth: 1, padding: SPACE.m, minWidth: 200, gap: SPACE.xs },
-  letterTitle: { fontSize: 15, fontWeight: '600' },
-  letterStatus: { fontSize: 13 },
+  letterTitle: TYPE.label,
+  letterStatus: TYPE.supporting,
   invite: { borderRadius: RADIUS.chip, paddingVertical: SPACE.s, paddingHorizontal: SPACE.m },
-  inviteText: { color: COLORS.onInk, fontSize: 14, fontWeight: '600' },
-  system: { alignSelf: 'center', fontSize: 12, paddingVertical: SPACE.xs },
+  inviteText: { ...TYPE.action, color: COLORS.onInk },
+  system: { ...TYPE.caption, alignSelf: 'center', paddingVertical: SPACE.xs },
 });

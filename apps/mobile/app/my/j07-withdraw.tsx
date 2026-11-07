@@ -1,3 +1,4 @@
+import { TYPE } from '../../theme/tokens';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -124,8 +125,8 @@ function Bullet({ children }: { children: string }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   scroll: { padding: 24, paddingTop: 72 },
-  header: { fontSize: 24, fontWeight: '700', color: '#1a1a1a', marginBottom: 8 },
-  subHeader: { fontSize: 14, color: '#555', marginBottom: 20 },
+  header: { ...TYPE.title, color: '#1a1a1a', marginBottom: 8 },
+  subHeader: { ...TYPE.supporting, color: '#555', marginBottom: 20 },
   card: {
     borderWidth: 1,
     borderColor: '#e0e0e0',
@@ -134,10 +135,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafaf8',
     marginBottom: 20,
   },
-  cardTitle: { fontSize: 14, fontWeight: '600', color: '#1a1a1a', marginBottom: 12 },
+  cardTitle: { ...TYPE.label, color: '#1a1a1a', marginBottom: 12 },
   bulletRow: { flexDirection: 'row', marginBottom: 8, alignItems: 'flex-start' },
   bullet: { fontSize: 18, color: '#666', width: 16, lineHeight: 20 },
-  bulletText: { flex: 1, fontSize: 13, color: '#444', lineHeight: 20 },
+  bulletText: { ...TYPE.supporting, flex: 1, color: '#444' },
   checkboxRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
   checkbox: {
     width: 20,
@@ -148,7 +149,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   checkboxOn: { backgroundColor: '#1a1a1a', borderColor: '#1a1a1a' },
-  checkboxLabel: { fontSize: 14, color: '#333', flex: 1 },
+  checkboxLabel: { ...TYPE.supporting, color: '#333', flex: 1 },
   footerRow: { flexDirection: 'row', padding: 24, gap: 12 },
   cancelBtn: {
     flex: 1,
@@ -158,7 +159,7 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     alignItems: 'center',
   },
-  cancelText: { color: '#333', fontSize: 16, fontWeight: '500' },
+  cancelText: { ...TYPE.label, color: '#333' },
   withdrawBtn: {
     flex: 1,
     paddingVertical: 16,
@@ -167,5 +168,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   withdrawBtnDisabled: { backgroundColor: '#e0c0c0' },
-  withdrawText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  withdrawText: { ...TYPE.label, color: '#fff' },
 });

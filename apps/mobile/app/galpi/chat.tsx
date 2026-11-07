@@ -13,7 +13,7 @@ import { GalpiMessageView } from '../../components/GalpiMessageView';
 import { Header, Screen } from '../../components/ui';
 import { expiryLabel, pinnedLetter } from '../../domain/letters';
 import { useAppStore } from '../../state/app-store';
-import { SPACE } from '../../theme/tokens';
+import { TYPE, SPACE } from '../../theme/tokens';
 import { useTheme } from '../../theme/use-theme';
 
 export default function GalpiChatScreen() {
@@ -132,11 +132,11 @@ export default function GalpiChatScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   notice: { flexDirection: 'row', alignItems: 'center', gap: SPACE.xs, paddingVertical: SPACE.s, paddingHorizontal: SPACE.l },
-  noticeText: { fontSize: 13 },
+  noticeText: TYPE.supporting,
   list: { padding: SPACE.m, gap: SPACE.s },
-  disclosure: { fontSize: 12, textAlign: 'center', lineHeight: 18, paddingHorizontal: SPACE.l, paddingBottom: SPACE.s },
+  disclosure: { ...TYPE.caption, textAlign: 'center', paddingHorizontal: SPACE.l, paddingBottom: SPACE.s },
   skip: { alignSelf: 'center', paddingVertical: SPACE.xs },
-  skipText: { fontSize: 13, textDecorationLine: 'underline' },
+  skipText: { ...TYPE.supporting, textDecorationLine: 'underline' },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -144,6 +144,6 @@ const styles = StyleSheet.create({
     padding: SPACE.s,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  input: { flex: 1, minHeight: 40, maxHeight: 120, fontSize: 15, borderRadius: 20, paddingHorizontal: SPACE.m, paddingVertical: SPACE.s },
+  input: { ...TYPE.body, flex: 1, minHeight: 40, maxHeight: 120, borderRadius: 20, paddingHorizontal: SPACE.m, paddingVertical: SPACE.s },
   send: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
 });

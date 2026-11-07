@@ -5,7 +5,7 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { LetterProfile } from '../domain/types';
-import { RADIUS, SPACE } from '../theme/tokens';
+import { TYPE, RADIUS, SPACE } from '../theme/tokens';
 import { useTheme } from '../theme/use-theme';
 import { Text } from './AppText';
 import { Photo } from './Photo';
@@ -34,7 +34,7 @@ export function LetterView({
           </Text>
         ))}
       </View>
-      <GalpiText style={styles.why}>{profile.why}</GalpiText>
+      <GalpiText>{profile.why}</GalpiText>
       <GalpiText style={[styles.sign, { color: t.sub }]}>갈피 드림</GalpiText>
       {/* AI가 만든 글임을 알린다 (CLAUDE.md 13장, AI 기본법 투명성) */}
       <Text style={[styles.aiNote, { color: t.sub }]}>이 편지는 AI가 썼어요</Text>
@@ -45,10 +45,9 @@ export function LetterView({
 
 const styles = StyleSheet.create({
   paper: { borderRadius: RADIUS.card, padding: SPACE.l, gap: SPACE.m },
-  name: { fontSize: 18, fontWeight: '700' },
+  name: TYPE.heading,
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.xs },
-  chip: { fontSize: 12, borderRadius: 10, paddingVertical: 3, paddingHorizontal: SPACE.s, overflow: 'hidden' },
-  why: { fontSize: 16, lineHeight: 26 },
+  chip: { ...TYPE.caption, borderRadius: 10, paddingVertical: 3, paddingHorizontal: SPACE.s, overflow: 'hidden' },
   sign: { textAlign: 'right' },
-  aiNote: { fontSize: 11, textAlign: 'right', marginTop: -SPACE.s },
+  aiNote: { ...TYPE.caption, textAlign: 'right', marginTop: -SPACE.s },
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COLORS, PRIMARY_BUTTON_LABEL } from './tokens';
+import { COLORS, TYPE } from './tokens';
 
 /** WCAG 2.x 상대 휘도 대비 */
 function contrast(a: string, b: string): number {
@@ -40,8 +40,8 @@ describe('색 토큰 — 흰 바탕 모노톤 (앱 IA 10.6)', () => {
   });
 
   it('코랄 주 버튼은 큰 볼드 글자와 3:1 이상의 대비를 함께 사용한다', () => {
-    expect(PRIMARY_BUTTON_LABEL.fontSize).toBeGreaterThanOrEqual(19);
-    expect(PRIMARY_BUTTON_LABEL.fontWeight).toBe('700');
+    expect(TYPE.primaryButton.fontSize).toBeGreaterThanOrEqual(19);
+    expect(TYPE.primaryButton.fontWeight).toBe('700');
     expect(contrast(COLORS.onMark, COLORS.mark)).toBeGreaterThanOrEqual(3);
   });
 });

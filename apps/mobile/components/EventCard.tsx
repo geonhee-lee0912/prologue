@@ -1,7 +1,7 @@
 /** 친구 탭 중요한 일 카드 — 크게 하나 + 작게 하나 (앱 IA 3.2) */
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { HomeCard } from '../domain/home';
-import { RADIUS, SPACE } from '../theme/tokens';
+import { TYPE, RADIUS, SPACE } from '../theme/tokens';
 import { useTheme } from '../theme/use-theme';
 import { Text } from './AppText';
 
@@ -37,9 +37,9 @@ const styles = StyleSheet.create({
     marginHorizontal: SPACE.l,
     marginBottom: SPACE.s,
   },
-  titleLarge: { fontSize: 15, fontWeight: '700' },
-  titleSmall: { fontSize: 13, fontWeight: '600' },
-  subtitle: { fontSize: 12, marginTop: 2 },
+  titleLarge: TYPE.label,
+  titleSmall: TYPE.action,
+  subtitle: { ...TYPE.caption, marginTop: 2 },
   action: { borderRadius: 10, paddingVertical: 6, paddingHorizontal: SPACE.m },
-  actionText: { fontSize: 12, fontWeight: '600' },
+  actionText: TYPE.action,
 });

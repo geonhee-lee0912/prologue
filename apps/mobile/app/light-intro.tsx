@@ -11,7 +11,7 @@ import { Photo } from '../components/Photo';
 import { Button, GalpiText, Header, Screen } from '../components/ui';
 import { currentLightIntro } from '../domain/light-intros';
 import { useAppStore } from '../state/app-store';
-import { RADIUS, SPACE } from '../theme/tokens';
+import { TYPE, RADIUS, SPACE } from '../theme/tokens';
 import { useTheme } from '../theme/use-theme';
 
 const REASONS = ['분위기가 달라요', '사진만으론 모르겠어요', '생활권이 멀어요'] as const;
@@ -99,8 +99,8 @@ const styles = StyleSheet.create({
   pad: { padding: SPACE.l, gap: SPACE.m },
   gap: { gap: SPACE.s },
   row: { flexDirection: 'row', gap: SPACE.s },
-  caption: { fontSize: 13, lineHeight: 19 },
-  meta: { fontSize: 16, fontWeight: '600' },
+  caption: TYPE.supporting,
+  meta: TYPE.label,
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.s },
   chip: { borderWidth: 1, borderRadius: RADIUS.chip, paddingVertical: SPACE.s, paddingHorizontal: SPACE.m },
 });

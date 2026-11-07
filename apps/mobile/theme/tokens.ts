@@ -37,7 +37,17 @@ export const COLORS = {
 
 export const RADIUS = { card: 16, bubble: 16, chip: 12 } as const;
 
-/** 흰색과 코랄의 대비는 4.04:1이므로 큰 볼드 글자로 표시한다. */
-export const PRIMARY_BUTTON_LABEL = { fontSize: 19, fontWeight: '700', textAlign: 'center' } as const;
+/** 역할별 크기·줄높이·굵기. 사용 예시는 docs/agent/typography.md를 따른다. */
+export const TYPE = {
+  hero: { fontSize: 26, lineHeight: 36, fontWeight: '700' },
+  title: { fontSize: 22, lineHeight: 30, fontWeight: '700' },
+  heading: { fontSize: 18, lineHeight: 26, fontWeight: '600' },
+  body: { fontSize: 16, lineHeight: 24, fontWeight: '400' },
+  label: { fontSize: 16, lineHeight: 24, fontWeight: '600' },
+  supporting: { fontSize: 14, lineHeight: 20, fontWeight: '400' },
+  action: { fontSize: 14, lineHeight: 20, fontWeight: '600' },
+  caption: { fontSize: 12, lineHeight: 18, fontWeight: '400' },
+  primaryButton: { fontSize: 19, lineHeight: 26, fontWeight: '700' },
+} as const;
 
 export const SPACE = { xs: 4, s: 8, m: 12, l: 16, xl: 24 } as const;

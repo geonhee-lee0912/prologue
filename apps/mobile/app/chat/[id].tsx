@@ -11,14 +11,14 @@ import { Text, TextInput } from '../../components/AppText';
 import { Empty, GalpiText, Header, IconButton, Screen } from '../../components/ui';
 import { revealedProfile } from '../../domain/letters';
 import { useAppStore } from '../../state/app-store';
-import { RADIUS, SPACE } from '../../theme/tokens';
+import { TYPE, RADIUS, SPACE } from '../../theme/tokens';
 import { useTheme } from '../../theme/use-theme';
 
 function MenuItem({ label, onPress, disabled }: { label: string; onPress?: () => void; disabled?: boolean }) {
   const t = useTheme();
   return (
     <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={styles.menuItem}>
-      <Text style={{ color: disabled ? t.sub : t.ink, fontSize: 14 }}>{label}</Text>
+      <Text style={{ ...TYPE.action, color: disabled ? t.sub : t.ink }}>{label}</Text>
     </Pressable>
   );
 }
@@ -161,13 +161,13 @@ const styles = StyleSheet.create({
   menuItem: { paddingVertical: SPACE.s, paddingHorizontal: SPACE.m },
   list: { padding: SPACE.m, gap: SPACE.s },
   firstPage: { borderRadius: RADIUS.card, padding: SPACE.m, gap: SPACE.xs },
-  kicker: { fontSize: 11 },
-  notice: { fontSize: 12, textAlign: 'center', paddingVertical: SPACE.s },
+  kicker: TYPE.caption,
+  notice: { ...TYPE.caption, textAlign: 'center', paddingVertical: SPACE.s },
   mineRow: { alignItems: 'flex-end' },
   theirRow: { alignItems: 'flex-start' },
-  bubble: { maxWidth: '80%', borderRadius: RADIUS.bubble, paddingVertical: SPACE.s, paddingHorizontal: SPACE.m, fontSize: 15, lineHeight: 22, overflow: 'hidden' },
-  ended: { textAlign: 'center', padding: SPACE.m, fontSize: 13 },
+  bubble: { ...TYPE.body, maxWidth: '80%', borderRadius: RADIUS.bubble, paddingVertical: SPACE.s, paddingHorizontal: SPACE.m, overflow: 'hidden' },
+  ended: { ...TYPE.supporting, textAlign: 'center', padding: SPACE.m },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: SPACE.s, padding: SPACE.s, borderTopWidth: StyleSheet.hairlineWidth },
-  input: { flex: 1, minHeight: 40, maxHeight: 120, fontSize: 15, borderRadius: 20, paddingHorizontal: SPACE.m, paddingVertical: SPACE.s },
+  input: { ...TYPE.body, flex: 1, minHeight: 40, maxHeight: 120, borderRadius: 20, paddingHorizontal: SPACE.m, paddingVertical: SPACE.s },
   send: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
 });

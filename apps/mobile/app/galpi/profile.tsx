@@ -14,7 +14,7 @@ import { GalpiText, IconButton, type IconName } from '../../components/ui';
 import { selectHome } from '../../domain/home';
 import { isNight } from '../../domain/time';
 import { useAppStore } from '../../state/app-store';
-import { SPACE } from '../../theme/tokens';
+import { TYPE, SPACE } from '../../theme/tokens';
 import { useTheme } from '../../theme/use-theme';
 
 const WIND_REACTIONS = [
@@ -86,11 +86,11 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   closeWrap: { position: 'absolute', left: SPACE.s, top: 0 },
   panel: { paddingHorizontal: SPACE.l, paddingTop: SPACE.m, paddingBottom: SPACE.m, alignItems: 'center', gap: SPACE.s },
-  name: { fontSize: 17, fontWeight: '700' },
+  name: TYPE.heading,
   line: { textAlign: 'center' },
   actions: { flexDirection: 'row', gap: SPACE.xl, marginTop: SPACE.s },
   action: { alignItems: 'center', gap: SPACE.xs },
   actionIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   floating: { boxShadow: '0 2px 8px rgba(0,0,0,0.07)' },
-  actionLabel: { fontSize: 11 },
+  actionLabel: TYPE.caption,
 });

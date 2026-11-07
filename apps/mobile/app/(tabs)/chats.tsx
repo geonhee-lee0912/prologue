@@ -11,7 +11,7 @@ import { Photo } from '../../components/Photo';
 import { Empty, Screen, SectionLabel, TabTitle } from '../../components/ui';
 import { buildChatList } from '../../domain/chat-list';
 import { useAppStore } from '../../state/app-store';
-import { RADIUS, SPACE } from '../../theme/tokens';
+import { TYPE, RADIUS, SPACE } from '../../theme/tokens';
 import { useTheme } from '../../theme/use-theme';
 
 export default function ChatsTab() {
@@ -79,9 +79,9 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: SPACE.xl },
   row: { flexDirection: 'row', alignItems: 'center', gap: SPACE.m, paddingHorizontal: SPACE.l, paddingVertical: SPACE.s },
   galpiRow: { marginHorizontal: SPACE.s, borderRadius: RADIUS.card, paddingHorizontal: SPACE.s },
-  name: { fontSize: 15, fontWeight: '600' },
-  preview: { fontSize: 13, marginTop: 2 },
+  name: TYPE.label,
+  preview: { ...TYPE.supporting, marginTop: 2 },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  badge: { fontSize: 11, fontWeight: '700', borderRadius: 9, minWidth: 18, textAlign: 'center', paddingHorizontal: 5, paddingVertical: 1, overflow: 'hidden' },
-  pastName: { fontSize: 14 },
+  badge: { ...TYPE.caption, borderRadius: 9, minWidth: 18, textAlign: 'center', paddingHorizontal: 5, paddingVertical: 1, overflow: 'hidden' },
+  pastName: TYPE.supporting,
 });

@@ -1,4 +1,5 @@
 /** 친구 탭 소식 카드 — 갈피·서고·나에 대한 것만 (앱 IA 3.3) */
+import { TYPE } from '../theme/tokens';
 import { useRouter } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import type { FeedItem } from '../domain/feed';
@@ -66,6 +67,6 @@ export function FeedCard({ item }: { item: FeedItem }) {
 }
 
 const styles = StyleSheet.create({
-  kicker: { fontSize: 11, marginBottom: 4 },
-  body: { fontSize: 14, lineHeight: 20 },
+  kicker: { ...TYPE.caption, marginBottom: 4 },
+  body: TYPE.body,
 });

@@ -8,7 +8,7 @@ import { Text } from '../../components/AppText';
 import { DevPanel } from '../../components/DevPanel';
 import { Screen, TabTitle } from '../../components/ui';
 import { useAppStore } from '../../state/app-store';
-import { SPACE } from '../../theme/tokens';
+import { TYPE, SPACE } from '../../theme/tokens';
 import { useTheme } from '../../theme/use-theme';
 
 function Row({ label, detail }: { label: string; detail?: string }) {
@@ -88,8 +88,8 @@ const styles = StyleSheet.create({
     paddingVertical: SPACE.m,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  rowLabel: { flex: 1, fontSize: 15 },
-  toggleLabel: { fontSize: 15 },
-  detail: { fontSize: 13 },
-  caption: { fontSize: 12, lineHeight: 17, marginTop: 2 },
+  rowLabel: { ...TYPE.body, flex: 1 },
+  toggleLabel: TYPE.body,
+  detail: TYPE.supporting,
+  caption: { ...TYPE.caption, marginTop: 2 },
 });

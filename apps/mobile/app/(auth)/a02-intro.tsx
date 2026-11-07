@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Text } from '../../components/AppText';
 import { Button, Screen } from '../../components/ui';
-import { SPACE } from '../../theme/tokens';
+import { TYPE, SPACE } from '../../theme/tokens';
 import { useTheme } from '../../theme/use-theme';
 
 // Approved copy and artwork from the reviewed onboarding screens.
@@ -163,19 +163,19 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACE.xl, paddingTop: SPACE.s },
   brand: { width: 96, height: 26 },
   login: { minHeight: 44, justifyContent: 'center', paddingLeft: SPACE.m },
-  loginText: { fontSize: 14 },
+  loginText: TYPE.action,
   pager: { flex: 1 },
   pages: { flexGrow: 1 },
   slide: { flexGrow: 0, flexShrink: 0, height: '100%' },
   page: { flexGrow: 1, paddingHorizontal: SPACE.xl, paddingVertical: SPACE.m, alignItems: 'center', justifyContent: 'center' },
-  title: { marginTop: SPACE.l, marginBottom: SPACE.m, fontSize: 26, fontWeight: '700', lineHeight: 35, textAlign: 'center', letterSpacing: -1 },
-  body: { fontSize: 15, lineHeight: 25, textAlign: 'center', maxWidth: 350 },
+  title: { ...TYPE.hero, marginTop: SPACE.l, marginBottom: SPACE.m, textAlign: 'center', letterSpacing: -1 },
+  body: { ...TYPE.body, textAlign: 'center', maxWidth: 350 },
   footer: { paddingHorizontal: SPACE.xl, paddingBottom: SPACE.s },
   indicator: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: SPACE.s, minHeight: 16, marginTop: SPACE.l },
   dot: { width: 8, height: 8, borderRadius: 4, borderWidth: 1 },
-  privacy: { textAlign: 'center', fontSize: 12, lineHeight: 18, marginTop: SPACE.m },
+  privacy: { ...TYPE.caption, textAlign: 'center', marginTop: SPACE.m },
   buttonRow: { flexDirection: 'row' },
   skipSlot: { height: 44 },
   skip: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  skipText: { fontSize: 13 },
+  skipText: TYPE.supporting,
 });

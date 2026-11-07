@@ -5,6 +5,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { FONT } from '../../theme/fonts';
+import { TYPE } from '../../theme/tokens';
 import { useTheme } from '../../theme/use-theme';
 
 export default function TabsLayout() {
@@ -17,7 +18,7 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: t.sub,
         tabBarStyle: { backgroundColor: t.bg, borderTopColor: t.line },
         // 탭 이름은 react-navigation 이 그려서 AppText 를 거치지 않는다
-        tabBarLabelStyle: { fontFamily: FONT.medium },
+        tabBarLabelStyle: { ...TYPE.caption, fontFamily: FONT.medium },
       }}
     >
       <Tabs.Screen

@@ -11,7 +11,7 @@ import { LetterView } from '../../components/LetterView';
 import { Button, Empty, GalpiText, Header, Screen } from '../../components/ui';
 import { expiryLabel, isLetterClosed, revealedProfile } from '../../domain/letters';
 import { useAppStore } from '../../state/app-store';
-import { RADIUS, SPACE } from '../../theme/tokens';
+import { TYPE, RADIUS, SPACE } from '../../theme/tokens';
 import { useTheme } from '../../theme/use-theme';
 
 export default function LetterScreen() {
@@ -139,9 +139,9 @@ export default function LetterScreen() {
 
 const styles = StyleSheet.create({
   pad: { padding: SPACE.l, gap: SPACE.m },
-  note: { fontSize: 12, lineHeight: 18 },
+  note: TYPE.caption,
   row: { flexDirection: 'row', gap: SPACE.s },
   story: { borderWidth: 1, borderRadius: RADIUS.card, padding: SPACE.l },
-  link: { fontSize: 13, textDecorationLine: 'underline', textAlign: 'center' },
-  reason: { minHeight: 120, borderWidth: 1, borderRadius: RADIUS.card, padding: SPACE.m, fontSize: 15, textAlignVertical: 'top' },
+  link: { ...TYPE.supporting, textDecorationLine: 'underline', textAlign: 'center' },
+  reason: { ...TYPE.body, minHeight: 120, borderWidth: 1, borderRadius: RADIUS.card, padding: SPACE.m, textAlignVertical: 'top' },
 });

@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../components/AppText';
-import { COLORS, PRIMARY_BUTTON_LABEL } from '../../theme/tokens';
+import { TYPE, COLORS } from '../../theme/tokens';
 import { ApiError, api, type IdentityInput } from '../../lib/api';
 import { authStorage } from '../../lib/auth-storage';
 import { routeForStep } from '../../lib/onboarding-route';
@@ -313,8 +313,8 @@ function GenderButton({
 
 const styles = StyleSheet.create({
   container: { padding: 20, paddingTop: 60, paddingBottom: 40, backgroundColor: '#FAFAFA' },
-  title: { fontSize: 28, fontWeight: '700', color: '#1A1A1A', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: '#666', marginBottom: 24 },
+  title: { ...TYPE.hero, color: '#1A1A1A', marginBottom: 4 },
+  subtitle: { ...TYPE.supporting, color: '#666', marginBottom: 24 },
   section: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -323,15 +323,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#EAEAEA',
   },
-  sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 12, color: '#1A1A1A' },
-  label: { fontSize: 13, color: '#555', marginTop: 8, marginBottom: 4 },
+  sectionTitle: { ...TYPE.heading, marginBottom: 12, color: '#1A1A1A' },
+  label: { ...TYPE.supporting, color: '#555', marginTop: 8, marginBottom: 4 },
   input: {
+    ...TYPE.body,
     borderWidth: 1,
     borderColor: '#DDD',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 14,
     backgroundColor: '#FFF',
   },
   row: { flexDirection: 'row' },
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
   },
   genderButtonActive: { borderColor: '#1A1A1A', backgroundColor: '#1A1A1A' },
-  genderButtonText: { color: '#555', fontSize: 14 },
+  genderButtonText: { ...TYPE.supporting, color: '#555' },
   genderButtonTextActive: { color: '#FFF', fontWeight: '600' },
   checkboxRow: {
     flexDirection: 'row',
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   checkboxOn: { backgroundColor: '#1A1A1A', borderColor: '#1A1A1A' },
-  checkboxLabel: { fontSize: 13, color: '#333' },
+  checkboxLabel: { ...TYPE.supporting, color: '#333' },
   primaryButton: {
     backgroundColor: COLORS.mark,
     borderRadius: 8,
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     alignItems: 'center',
   },
-  primaryButtonText: { ...PRIMARY_BUTTON_LABEL, color: COLORS.onMark },
+  primaryButtonText: { ...TYPE.primaryButton, textAlign: 'center', color: COLORS.onMark },
   secondaryButton: {
     backgroundColor: '#F0F0F0',
     borderRadius: 8,
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     alignItems: 'center',
   },
-  secondaryButtonText: { color: '#1A1A1A', fontSize: 15, fontWeight: '600' },
+  secondaryButtonText: { ...TYPE.action, color: '#1A1A1A' },
   kakaoButton: {
     backgroundColor: '#FEE500',
     borderRadius: 8,
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     alignItems: 'center',
   },
-  kakaoButtonText: { color: '#3C1E1E', fontSize: 15, fontWeight: '600' },
+  kakaoButtonText: { ...TYPE.action, color: '#3C1E1E' },
   disabled: { opacity: 0.5 },
-  footer: { fontSize: 11, color: '#999', textAlign: 'center', marginTop: 8 },
+  footer: { ...TYPE.caption, color: COLORS.sub, textAlign: 'center', marginTop: 8 },
 });

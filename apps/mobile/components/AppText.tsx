@@ -13,6 +13,7 @@ import {
   type TextStyle,
 } from 'react-native';
 import { fontFamilyFor } from '../theme/fonts';
+import { TYPE } from '../theme/tokens';
 
 const InheritedWeight = createContext<TextStyle['fontWeight']>(undefined);
 
@@ -22,14 +23,16 @@ function fontStyle(weight: TextStyle['fontWeight']): TextStyle {
 
 export function Text({ style, children, ...rest }: TextProps) {
   const inherited = useContext(InheritedWeight);
-  const weight = StyleSheet.flatten(style)?.fontWeight ?? inherited;
+  const flat = StyleSheet.flatten(style);
+  const weight = flat?.fontWeight ?? inherited ?? TYPE.body.fontWeight;
+  const defaultStyle = inherited === undefined && flat?.fontSize === undefined ? TYPE.body : undefined;
   return (
-    <RNText {...rest} style={[style, fontStyle(weight)]}>
+    <RNText {...rest} style={[defaultStyle, style, fontStyle(weight)]}>
       <InheritedWeight.Provider value={weight}>{children}</InheritedWeight.Provider>
     </RNText>
   );
 }
 
 export function TextInput({ style, ...rest }: TextInputProps) {
-  return <RNTextInput {...rest} style={[style, fontStyle(StyleSheet.flatten(style)?.fontWeight)]} />;
+  return <RNTextInput {...rest} style={[TYPE.body, style, fontStyle(StyleSheet.flatten(style)?.fontWeight)]} />;
 }

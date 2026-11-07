@@ -10,7 +10,7 @@ import { TasteCardView } from '../../components/TasteCardView';
 import { Card, Empty, GalpiText, Screen, SectionLabel, TabTitle } from '../../components/ui';
 import { localDateKey } from '../../domain/time';
 import { useAppStore } from '../../state/app-store';
-import { SPACE } from '../../theme/tokens';
+import { TYPE, SPACE } from '../../theme/tokens';
 import { useTheme } from '../../theme/use-theme';
 
 export default function StoryTab() {
@@ -100,12 +100,12 @@ export default function StoryTab() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   scroll: { paddingBottom: SPACE.xl },
-  archiveTitle: { fontSize: 18, paddingHorizontal: SPACE.l },
-  body: { fontSize: 14, lineHeight: 20 },
-  collected: { fontSize: 12, paddingHorizontal: SPACE.l, lineHeight: 18 },
+  archiveTitle: { ...TYPE.heading, paddingHorizontal: SPACE.l },
+  body: TYPE.body,
+  collected: { ...TYPE.caption, paddingHorizontal: SPACE.l },
   sign: { textAlign: 'right', marginTop: SPACE.s },
-  aiNote: { fontSize: 11, textAlign: 'right', marginTop: SPACE.xs },
+  aiNote: { ...TYPE.caption, textAlign: 'right', marginTop: SPACE.xs },
   memoryRow: { flexDirection: 'row', alignItems: 'center', gap: SPACE.s },
-  link: { fontSize: 12, textDecorationLine: 'underline' },
-  danger: { fontSize: 12, fontWeight: '700' },
+  link: { ...TYPE.supporting, textDecorationLine: 'underline' },
+  danger: TYPE.action,
 });

@@ -1,3 +1,4 @@
+import { COLORS, TYPE } from '../../theme/tokens';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -170,8 +171,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   scroll: { padding: 24, paddingTop: 72 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { fontSize: 22, fontWeight: '700', color: '#1a1a1a' },
-  subHeader: { fontSize: 14, color: '#555', marginTop: 6, marginBottom: 24 },
+  header: { ...TYPE.title, color: '#1a1a1a' },
+  subHeader: { ...TYPE.supporting, color: '#555', marginTop: 6, marginBottom: 24 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -179,9 +180,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
-  rowLabel: { fontSize: 15, color: '#1a1a1a', fontWeight: '500' },
-  rowSub: { fontSize: 12, color: '#888', marginTop: 2 },
-  rowStatus: { fontSize: 13, marginTop: 6 },
+  rowLabel: { ...TYPE.body, color: '#1a1a1a' },
+  rowSub: { ...TYPE.caption, color: COLORS.sub, marginTop: 2 },
+  rowStatus: { ...TYPE.supporting, marginTop: 6 },
   statusOk: { color: '#3a7a4d' },
   statusBad: { color: '#c44' },
   statusRequired: { color: '#c44' },
@@ -192,6 +193,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#1a1a1a',
   },
-  ctaText: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  note: { fontSize: 12, color: '#999', lineHeight: 18, marginTop: 16 },
+  ctaText: { ...TYPE.action, color: '#fff' },
+  note: { ...TYPE.caption, color: COLORS.sub, marginTop: 16 },
 });

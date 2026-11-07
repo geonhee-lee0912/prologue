@@ -14,7 +14,7 @@ import { Screen, SectionLabel, TabTitle } from '../../components/ui';
 import { buildFeed } from '../../domain/feed';
 import { type HomeEvent, selectHome } from '../../domain/home';
 import { useAppStore } from '../../state/app-store';
-import { SPACE } from '../../theme/tokens';
+import { TYPE, SPACE } from '../../theme/tokens';
 import { useTheme } from '../../theme/use-theme';
 
 export default function FriendsTab() {
@@ -77,10 +77,10 @@ const styles = StyleSheet.create({
   me: { flexDirection: 'row', alignItems: 'center', gap: SPACE.m, paddingHorizontal: SPACE.l, paddingVertical: SPACE.m },
   meAvatar: { width: 46, height: 46, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   meInitial: { fontSize: 18, fontWeight: '700' },
-  meName: { fontSize: 15, fontWeight: '700' },
-  meSub: { fontSize: 12, marginTop: 2 },
+  meName: TYPE.label,
+  meSub: { ...TYPE.caption, marginTop: 2 },
   friend: { flexDirection: 'row', alignItems: 'center', gap: SPACE.m, paddingHorizontal: SPACE.l, paddingVertical: SPACE.s },
   friendContent: { flex: 1, minHeight: 46, justifyContent: 'center' },
-  friendName: { fontSize: 15, fontWeight: '600' },
-  friendStatus: { fontSize: 13, marginTop: 2 },
+  friendName: TYPE.label,
+  friendStatus: { ...TYPE.supporting, marginTop: 2 },
 });
