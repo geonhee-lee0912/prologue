@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prologue 양쪽 번짐의 색 조합</title>
+<style>
+@font-face{font-family:Pretendard;src:url('../../../apps/mobile/assets/fonts/Pretendard-Regular.otf')}
+@font-face{font-family:Pretendard;src:url('../../../apps/mobile/assets/fonts/Pretendard-SemiBold.otf');font-weight:600}
+*{box-sizing:border-box}body{margin:0;color:#191919;background:#f5f5f5;font-family:Pretendard,sans-serif}
+main{max-width:1306px;margin:auto;padding:38px 40px 32px}header{margin-bottom:26px}
+h1{font-size:27px;font-weight:600;letter-spacing:-.7px;margin:0 0 10px}header p{font-size:14px;line-height:1.6;color:#666;margin:0}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}article{min-width:0}
+h2{font-size:16px;margin:0 0 8px;font-weight:600;letter-spacing:-.3px}.reason{font-size:13px;line-height:1.5;color:#777;margin:0 0 16px;min-height:39px}
+.screen{position:relative;width:100%;aspect-ratio:390/844;background:white;overflow:hidden;border-radius:14px;box-shadow:0 0 0 1px #e5e5e5}
+.texture{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
+.lower{clip-path:inset(50% 0 0 0)}.upper{clip-path:inset(0 0 50% 0)}
+.logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:50.2564103%;height:6.3981043%;object-fit:contain}
+footer{font-size:12px;line-height:1.7;color:#777;margin-top:24px}.mobile-nav{display:none}
+@media(max-width:850px){main{padding:28px 22px}.cards{display:flex;gap:22px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 1px 16px}article{flex:0 0 min(390px,calc(100vw - 46px));scroll-snap-align:start}.mobile-nav{display:flex;gap:10px;margin-top:18px}.mobile-nav a{padding:7px 14px;border-radius:6px;background:white;color:#191919;text-decoration:none;font-size:13px}h1{font-size:24px}}
+</style></head>
+<body><main><header><h1>두 모서리의 색 조합</h1><p>같은 번짐 · 같은 농도와 크기 · 같은 먹색 로고<br>우상단의 표시 색만 바꾸어 비교합니다.</p>
+<nav class="mobile-nav" aria-label="비교할 안"><a href="#a">A</a><a href="#b">B</a><a href="#c">C</a></nav></header>
+<section class="cards" aria-label="양쪽 번짐의 세 색 조합">
+<article id="a"><h2>A · 피치·코랄 + 피치·코랄</h2><p class="reason">한 색의 농도 차이로 차분하게 연결합니다.</p><div class="screen"><img class="texture lower" alt="" src="../../../apps/mobile/assets/brand/splash-studies/04-dual-corner-peach.png"><img class="texture upper" style="filter:none" alt="" src="../../../apps/mobile/assets/brand/splash-studies/04-dual-corner-peach.png"><img class="logo" alt="Prologue" src="../../../apps/mobile/assets/brand/prologue-wordmark.png"></div></article>
+<article id="b"><h2>B · 피치·코랄 + 연한 살구</h2><p class="reason">따뜻한 분위기 안에서 두 번짐을 구분합니다.</p><div class="screen"><img class="texture lower" alt="" src="../../../apps/mobile/assets/brand/splash-studies/04-dual-corner-peach.png"><img class="texture upper" style="filter:hue-rotate(22deg)" alt="" src="../../../apps/mobile/assets/brand/splash-studies/04-dual-corner-peach.png"><img class="logo" alt="Prologue" src="../../../apps/mobile/assets/brand/prologue-wordmark.png"></div></article>
+<article id="c"><h2>C · 피치·코랄 + 연한 라벤더</h2><p class="reason">서로 다른 두 색으로 대각선의 흐름을 드러냅니다.</p><div class="screen"><img class="texture lower" alt="" src="../../../apps/mobile/assets/brand/splash-studies/04-dual-corner-peach.png"><img class="texture upper" style="filter:hue-rotate(285deg) saturate(.55)" alt="" src="../../../apps/mobile/assets/brand/splash-studies/04-dual-corner-peach.png"><img class="logo" alt="Prologue" src="../../../apps/mobile/assets/brand/prologue-wordmark.png"></div></article>
+</section><footer>디자인 비교 시안 · 선택 후 기존 앱 A01에 반영합니다.<br>힉스필드에서 생성한 원본 한 장을 재사용하고, 색 변형은 미리보기 코드로 처리했습니다.</footer></main></body></html>
+
