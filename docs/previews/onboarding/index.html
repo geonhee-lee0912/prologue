@@ -5,11 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>프롤로그 · 화면 구성 시안</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="journey.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
   <aside class="preview-tools" aria-label="시안 탐색">
-    <span>화면 시안 · 인증과 AI 연결 전</span>
+    <span>전체 앱 시안 · 예시 데이터</span>
+    <a href="#screen-map">전체 흐름</a>
+    <a href="#decisions">결정 필요</a>
     <details>
       <summary>화면 이동</summary>
       <nav aria-label="검토할 화면">
@@ -25,6 +28,10 @@
         <a href="#settings">설정</a>
       </nav>
     </details>
+    <label class="scenario-control">미리볼 상태
+      <select id="previewScene"><option value="first">첫 방문</option><option value="waiting">소개 준비 후</option><option value="stories">이야기 둘 중 선택</option><option value="letter">편지 도착</option><option value="pending">내 수락 후 대기</option><option value="connected">서로 수락</option><option value="established">대화 성립</option><option value="meeting">만남 약속 확정</option><option value="feedback">만남 다음 날</option><option value="expired">편지 닫힘</option></select>
+    </label>
+    <output id="previewNotice" aria-live="polite"></output>
   </aside>
 
   <main class="app">

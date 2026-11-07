@@ -122,6 +122,7 @@ function refreshProfile() {
     image.alt = '추가 프로필 사진';
     return image;
   }));
+  if (typeof renderJourney === 'function') renderJourney(currentScreen);
 }
 
 document.querySelector('#basicsForm').onsubmit = event => {
@@ -212,16 +213,18 @@ function render() {
     if (link.hash === '#' + currentScreen) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
   });
-  goHome.hidden = !['first-chat', 'profile', 'profile-basics', 'profile-photo', 'profile-review'].includes(currentScreen);
+  goHome.hidden = ['intro', 'signup', 'verify', 'chat-consent', 'login', ...tabRoutes].includes(currentScreen);
   login.hidden = currentScreen !== 'intro';
   previewMenu.open = false;
   if (provider.open && currentScreen !== 'verify') provider.close();
   viewport.scrollTop = 0;
   document.querySelector('.app').dataset.route = currentScreen;
+  renderJourney(currentScreen);
   if (currentScreen === 'intro') syncIntro();
   else target.querySelector('h1').focus({ preventScroll: true });
 }
 
 addEventListener('hashchange', render);
+initJourney();
 refreshProfile();
 render();

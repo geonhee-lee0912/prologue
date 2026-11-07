@@ -176,3 +176,71 @@ dd { margin: 0; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
 @media (min-width: 600px) {
   .app { height: min(840px, calc(100svh - 78px)); border: 1px solid #ebebeb; border-radius: 22px; box-shadow: 0 15px 60px #31261608; }
 }
+
+/* Whole-app review controls live outside the app frame. */
+.preview-tools { height: 86px; flex-wrap: wrap; gap: 0 10px; }
+.preview-tools > a { font-size: 11px; text-decoration: none; padding: 7px 0; }
+.preview-tools > span { flex: 1; font-size: 10px; }
+.preview-tools details { font-size: 10px; }
+.preview-tools nav { max-height: 65svh; overflow: auto; }
+.scenario-control { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; padding-bottom: 8px; }
+.scenario-control select { flex: 1; padding: 5px 8px; font: inherit; background: white; border: 1px solid #ddd; border-radius: 5px; color: #333; }
+#previewNotice { position: fixed; z-index: 8; left: 50%; bottom: 15px; transform: translateX(-50%); width: min(90vw, 390px); padding: 10px 14px; border-radius: 10px; color: white; background: #333; font-size: 12px; pointer-events: none; }
+#previewNotice:empty { display: none; }
+.app { height: calc(100svh - 86px); }
+.edit-form select, .edit-form textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 10px; background: white; color: #191919; font: inherit; font-size: 14px; }
+.edit-form textarea { min-height: 100px; resize: vertical; }
+.edit-form input:not([type=checkbox]) + label, .edit-form select + label, .edit-form textarea + label { margin-top: 22px; }
+.edit-form fieldset { margin: 0; padding: 0; border: 0; }
+.edit-form fieldset label, .edit-form fieldset input:not([type=checkbox]) { display: block; }
+.check-line { display: flex; align-items: center; gap: 12px; padding: 12px 0; line-height: 1.6; }
+.edit-form .check-line input { width: 20px; height: 20px; margin: 0; accent-color: #191919; flex-shrink: 0; }
+.two-fields { display: flex; gap: 14px; margin-top: 18px; }
+.two-fields > div { flex: 1; min-width: 0; }
+.two-fields label { display: block; }
+.neutral-panel, .decision-card { margin: 20px 0; padding: 18px; border: 1px solid #ebebeb; border-radius: 12px; }
+.neutral-panel p + p { margin-top: 10px; }
+.notice { margin-top: 20px; padding: 14px; background: #f5f5f5; border-radius: 10px; font-size: 13px; }
+.eyebrow { display: block; margin-bottom: 10px; color: #777; font-size: 12px; }
+.event-card { margin: 10px 0; padding: 0 17px; background: #f5f5f5; border-radius: 14px; }
+.event-card .list-row { border: 0; }
+.event-card strong { font-size: 16px; }
+.chat-card .edit-form { margin-top: 12px; }
+.chat-card textarea { min-height: 80px; margin-bottom: 12px; }
+.story-choice { display: block; padding: 23px; margin-top: 20px; border: 1px solid #ddd; border-radius: 16px; text-decoration: none; }
+.story-choice > span { font-size: 12px; color: #777; }
+.story-choice h2 { margin-top: 14px; }
+.photo-placeholder { display: grid; place-items: center; min-height: 205px; background: #f0f0f0; color: #888; font-size: 13px; border-radius: 8px; margin-bottom: 20px; }
+.trust-label { display: inline-block; margin-top: 10px; padding: 5px 9px; border: 1px solid #ddd; border-radius: 6px; color: #666; font-size: 11px; }
+.profile-paper h3 { margin-top: 26px; font-size: 15px; }
+.small-link { display: block; padding: 16px 0; text-align: center; color: #777; font-size: 12px; }
+.peer-avatar, .call-avatar { display: grid; place-items: center; width: 58px; height: 58px; border-radius: 16px; background: #f5f5f5; font-size: 14px; }
+.call-avatar { width: 120px; height: 120px; margin: 30px auto; font-size: 26px; border-radius: 50%; }
+.chat-tools { display: flex; justify-content: space-between; gap: 14px; padding: 8px 0 15px; }
+.chat-tools a { color: #666; font-size: 13px; text-decoration: none; }
+.private-note { padding: 12px; text-align: center; font-size: 12px; background: #f5f5f5; border-radius: 8px; }
+[data-screen=person-chat] { height: 100%; }
+#personLive { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.peer-conversation { margin-top: 20px; }
+.meeting-shortcut { padding-top: 12px; font-size: 12px; }
+.reading h2 { margin-top: 26px; font-size: 16px; }
+.room-scene { text-align: center; padding: 24px 0; background: #f5f5f5; border-radius: 18px; margin: 10px 0 22px; }
+.room-scene img { max-width: 90%; height: auto; }
+.taste-option { margin-top: 25px; padding: 35px 20px; background: #f5f5f5; color: #333; border: 1px solid #eee; }
+.balance-card { margin: 18px 0; padding: 28px; background: #f5f5f5; border-radius: 16px; }
+.balance-card span { font-size: 13px; color: #666; }
+.balance-card h2 { font-size: 38px; margin: 15px 0 0; }
+.help-item { border-bottom: 1px solid #ebebeb; }
+.help-item p { padding-bottom: 18px; }
+.danger { color: #b73434; }
+.skeleton-line { width: 60%; height: 22px; margin-top: 12px; background: #eee; border-radius: 5px; }
+.map-link { display: flex; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid #eee; font-size: 14px; text-decoration: none; }
+.map-link span { color: #aaa; }
+.scenario-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px; }
+.scenario-buttons button { font-size: 12px; }
+.decision-card h2 { font-size: 17px; }
+.decision-card p { font-size: 13px; }
+.flow-paths { padding: 18px 0; }
+.flow-paths p { margin: 12px 0; font-size: 12px; line-height: 2; }
+.flow-paths a { text-underline-offset: 3px; }
+@media (min-width: 600px) { .app { height: min(840px, calc(100svh - 108px)); } }
