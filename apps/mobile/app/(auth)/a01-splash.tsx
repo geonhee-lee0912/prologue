@@ -68,10 +68,11 @@ const styles = StyleSheet.create({
   },
   pencilBackground: {
     position: 'absolute',
-    left: -24,
-    bottom: -20,
-    width: 360,
-    height: 360,
+    left: 0,
+    bottom: 0,
+    width: '240%',
+    maxWidth: 1400,
+    aspectRatio: 1,
   },
   texture: { width: '100%', height: '100%' },
   brand: {
