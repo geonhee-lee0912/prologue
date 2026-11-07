@@ -10,7 +10,7 @@ import { useTheme } from '../../theme/use-theme';
 // Approved copy and artwork from the reviewed onboarding screens.
 const PAGES = [
   {
-    title: '내 프로필은 모두에게\n공개되지 않아요.',
+    title: '프롤로그는 프로필을\n진열하지 않아요',
     body: '프롤로그에서는 소개받는 한 사람에게만 내 프로필이 편지로 전해져요.',
     image: require('../../../../docs/previews/onboarding/intro-envelope.png'),
     imageLabel: '살짝 열린 봉투 속 크림색 편지 한 장',
@@ -121,7 +121,21 @@ export default function A02Intro() {
         </ScrollView>
 
         <View style={styles.footer}>
-          <Text accessibilityLiveRegion="polite" style={[styles.position, { color: t.sub }]}>{page + 1} / {PAGES.length}</Text>
+          <View
+            accessible
+            accessibilityRole="progressbar"
+            accessibilityLabel="서비스 소개"
+            aria-valuemin={1}
+            aria-valuemax={PAGES.length}
+            aria-valuenow={page + 1}
+            aria-valuetext={`전체 ${PAGES.length}장 중 ${page + 1}번째`}
+            accessibilityLiveRegion="polite"
+            style={styles.indicator}
+          >
+            {PAGES.map((item, index) => (
+              <View key={item.title} style={[styles.dot, { borderColor: t.sub }, index === page && { backgroundColor: t.sub }]} />
+            ))}
+          </View>
           <Text style={[styles.privacy, { color: t.sub }]}>내 프로필은 소개 편지를 받는 상대에게만 보여요.</Text>
           <View style={styles.buttonRow}><Button label={last ? '시작하기' : '다음'} onPress={next} /></View>
           <View style={styles.skipSlot}>
@@ -150,7 +164,8 @@ const styles = StyleSheet.create({
   title: { marginTop: SPACE.l, marginBottom: SPACE.m, fontSize: 26, fontWeight: '700', lineHeight: 35, textAlign: 'center', letterSpacing: -1 },
   body: { fontSize: 15, lineHeight: 25, textAlign: 'center', maxWidth: 350 },
   footer: { paddingHorizontal: SPACE.xl, paddingBottom: SPACE.s },
-  position: { textAlign: 'center', fontSize: 12, marginBottom: SPACE.m },
+  indicator: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: SPACE.s, minHeight: 16, marginBottom: SPACE.m },
+  dot: { width: 8, height: 8, borderRadius: 4, borderWidth: 1 },
   privacy: { textAlign: 'center', fontSize: 12, lineHeight: 18, marginBottom: SPACE.m },
   buttonRow: { flexDirection: 'row' },
   skipSlot: { height: 44 },
