@@ -3,78 +3,53 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Prologue · 스며드는 색의 범위와 농도</title>
+  <title>Prologue · 선택한 2번의 범위 조절</title>
   <style>
     @font-face{font-family:Pretendard;src:url('../../../apps/mobile/assets/fonts/Pretendard-Regular.otf')}
     @font-face{font-family:Pretendard;src:url('../../../apps/mobile/assets/fonts/Pretendard-SemiBold.otf');font-weight:600}
     *{box-sizing:border-box}
     body{margin:0;background:#F5F5F5;color:#191919;font-family:Pretendard,sans-serif}
-    main{max-width:1306px;margin:auto;padding:38px 40px 30px}
+    main{max-width:640px;margin:auto;padding:38px 40px 30px}
     header{margin-bottom:28px}h1{margin:0 0 10px;font-size:27px;font-weight:600;letter-spacing:-.6px}
     header p{margin:0;color:#666;font-size:14px;line-height:1.6}
     .controls{display:flex;align-items:center;gap:18px 24px;flex-wrap:wrap;margin-top:22px}
     .range{display:flex;align-items:center;gap:10px;color:#666;font-size:13px}
     input[type=range]{width:125px;accent-color:#777;cursor:pointer}
     output{width:35px;font-size:12px;color:#888;text-align:right}
-    .grain-control{display:flex;align-items:center;gap:7px;color:#666;font-size:13px}
-    input[type=checkbox]{accent-color:#777}
-    button{font:inherit;font-size:12px;border:1px solid #DEDEDE;border-radius:6px;background:white;color:#666;padding:8px 12px;cursor:pointer}
-    button:focus-visible,input:focus-visible{outline:2px solid #777;outline-offset:3px}
-    .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}
-    article{min-width:0}h2{margin:0 0 8px;font-size:17px;font-weight:600;letter-spacing:-.3px}
-    .reason{min-height:40px;margin:0 0 16px;color:#777;font-size:13px;line-height:1.5}
+    input:focus-visible{outline:2px solid #777;outline-offset:3px}
+    .cards{width:390px;max-width:100%;margin:auto}
+    article{min-width:0}
     .screen{position:relative;width:100%;aspect-ratio:390/844;overflow:hidden;isolation:isolate;background:white;border-radius:14px;box-shadow:0 0 0 1px #E5E5E5}
     .wash,.grain{position:absolute;inset:0;pointer-events:none}
     .wash{background-image:var(--field)}
     .grain{background-image:var(--grain-image);background-size:160px 160px;opacity:.18;mix-blend-mode:soft-light;mask-image:var(--field);mask-mode:alpha;-webkit-mask-image:var(--field)}
-    body[data-grain=off] .grain{display:none}
     .logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:50.2564103%;height:6.3981043%;object-fit:contain}
     footer{margin-top:24px;color:#777;font-size:12px;line-height:1.7}
-    .mobile-nav{display:none}
     @media(max-width:850px){
       main{padding:28px 22px}h1{font-size:24px}.controls{gap:12px 16px}
-      .cards{display:flex;gap:22px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 1px 16px}
-      article{flex:0 0 min(390px,calc(100vw - 46px));scroll-snap-align:start}
-      .mobile-nav{display:flex;gap:18px;margin-top:18px}.mobile-nav a{color:#555;text-decoration:none;font-size:13px;padding:4px 0}
+      .cards{max-width:100%}
     }
   </style>
 </head>
 <body data-grain="on">
 <main>
   <header>
-    <h1>모양 없이, 넓게 스며드는 색</h1>
-    <p>같은 두 색과 로고에서 번짐의 범위·농도만 비교합니다.<br>색은 모서리 밖에서 들어오고 가운데는 흰 여백으로 남습니다.</p>
-    <div class="controls" aria-label="전체 미세 조절">
+    <h1>②번의 번짐 범위 조절</h1>
+    <p>전체 범위 100%에서 시작합니다.<br>직전 농도 125%와 미세한 결은 유지했습니다.</p>
+    <div class="controls" aria-label="선택한 2번의 범위 조절">
       <label class="range">전체 범위 <input id="spread" type="range" min="85" max="115" value="100" aria-label="전체 번짐 범위"><output id="spread-value" for="spread">100%</output></label>
-      <label class="range">전체 농도 <input id="density" type="range" min="75" max="125" value="100" aria-label="전체 색 농도"><output id="density-value" for="density">100%</output></label>
-      <label class="grain-control"><input id="grain" type="checkbox" checked>미세한 결</label>
-      <button id="reset">초기값</button>
     </div>
-    <nav class="mobile-nav" aria-label="비교할 안"><a href="#a">① 기준</a><a href="#b">② 범위</a><a href="#c">③ 농도</a></nav>
   </header>
-  <section class="cards" aria-label="번짐 범위와 농도 세 안">
-    <article id="a" data-spread="1" data-density="1">
-      <h2>① 기준 · 넓고 은은하게</h2>
-      <p class="reason">색이 충분히 보이면서 흰 여백에 풀립니다.<br>범위와 농도를 비교하는 기준입니다.</p>
-      <div class="screen"><div class="wash" aria-hidden="true"></div><div class="grain" aria-hidden="true"></div><img class="logo" alt="Prologue" src="../../../apps/mobile/assets/brand/prologue-wordmark.png"></div>
-    </article>
+  <section class="cards" aria-label="선택한 2번 미리보기">
     <article id="b" data-spread="1.17" data-density="1">
-      <h2>② 범위만 더 넓게</h2>
-      <p class="reason">기준과 같은 최대 농도로 유지합니다.<br>색이 화면 안쪽까지 더 넓게 들어옵니다.</p>
-      <div class="screen"><div class="wash" aria-hidden="true"></div><div class="grain" aria-hidden="true"></div><img class="logo" alt="Prologue" src="../../../apps/mobile/assets/brand/prologue-wordmark.png"></div>
-    </article>
-    <article id="c" data-spread="1" data-density="1.25">
-      <h2>③ 농도만 조금 더</h2>
-      <p class="reason">기준과 같은 번짐 범위를 유지합니다.<br>색이 모이는 부분을 조금 더 또렷하게 합니다.</p>
       <div class="screen"><div class="wash" aria-hidden="true"></div><div class="grain" aria-hidden="true"></div><img class="logo" alt="Prologue" src="../../../apps/mobile/assets/brand/prologue-wordmark.png"></div>
     </article>
   </section>
-  <footer>코드로 만든 비교 스케치 · 이미지 생성과 비용은 없습니다.<br>미세한 결도 코드로 대략 표현했습니다. 실제 앱 적용 전 검토 자료입니다.</footer>
+  <footer>선택한 ②번의 범위만 조절하는 스케치입니다.<br>실제 앱 적용 전 검토 자료이며 이미지 생성 비용은 없습니다.</footer>
 </main>
 <script>
   const spread=document.getElementById('spread');
-  const density=document.getElementById('density');
-  const grain=document.getElementById('grain');
+  const fixedDensity=1.25;
   const grainSvg='<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".16 .82" numOctaves="2" seed="8" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>';
   document.documentElement.style.setProperty('--grain-image','url("data:image/svg+xml,'+encodeURIComponent(grainSvg)+'")');
   function field(rx,ry,cx,cy,rgb,peak){
@@ -83,11 +58,9 @@
   }
   function update(){
     document.getElementById('spread-value').value=spread.value+'%';
-    document.getElementById('density-value').value=density.value+'%';
-    document.body.dataset.grain=grain.checked?'on':'off';
     document.querySelectorAll('article').forEach(article=>{
       const range=Number(article.dataset.spread)*Number(spread.value)/100;
-      const strength=Number(article.dataset.density)*Number(density.value)/100;
+      const strength=Number(article.dataset.density)*fixedDensity;
       const layers=[
         field(90*range,55*range,-8,110,'231,156,133',.47*strength),
         field(73*range,45*range,8,105,'231,156,133',.09*strength),
@@ -98,9 +71,6 @@
     });
   }
   spread.addEventListener('input',update);
-  density.addEventListener('input',update);
-  grain.addEventListener('change',update);
-  document.getElementById('reset').addEventListener('click',()=>{spread.value=100;density.value=100;grain.checked=true;update();});
   update();
 </script>
 </body>
