@@ -15,7 +15,7 @@
     label{display:inline-flex;align-items:center;gap:5px;padding:7px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px;background:white;cursor:pointer}
     label:has(:checked){border-color:#555}
     input{margin:0;accent-color:#323232}
-    .modern,.friendly{filter:brightness(var(--ink-factor,2))}
+    .modern,.friendly{filter:brightness(var(--ink-factor,3.6))}
     section{display:grid;grid-template-columns:repeat(2,minmax(0,390px));gap:24px;justify-content:center}
     figure{margin:0}
     figcaption{margin-bottom:10px}
@@ -32,17 +32,17 @@
     <fieldset>
       <legend>로고 글자색</legend>
       <label><input type="radio" name="ink" value="1">기존 #191919</label>
-      <label><input type="radio" name="ink" value="2" checked>차콜 #323232</label>
+      <label><input type="radio" name="ink" value="2">차콜 #323232</label>
       <label><input type="radio" name="ink" value="3">그레이 #4B4B4B</label>
-      <label><input type="radio" name="ink" value="3.6">연한 그레이 #5A5A5A</label>
+      <label><input type="radio" name="ink" value="3.6" checked>연한 그레이 #5A5A5A</label>
     </fieldset>
     <section aria-label="로고 두 가지">
       <figure>
-        <figcaption>3번 · 모던형 (현재 앱)</figcaption>
+        <figcaption>3번 · 모던형</figcaption>
         <div class="screen"><img class="modern" src="../../../apps/mobile/assets/brand/prologue-wordmark.png" alt="Prologue"></div>
       </figure>
       <figure>
-        <figcaption>2번 · 친근형</figcaption>
+        <figcaption>2번 · 친근형 (현재 앱)</figcaption>
         <div class="screen">
           <svg class="friendly" viewBox="112 177 1129 262" role="img" aria-label="Prologue">
             <image href="../../../apps/mobile/assets/brand/wordmark-candidates/02-friendly.svg" width="1344" height="576"/>

@@ -49,7 +49,7 @@ export default function A01Splash() {
         />
       </View>
       <Image
-        source={require('../../assets/brand/prologue-wordmark.png')}
+        source={require('../../assets/brand/prologue-wordmark-friendly.png')}
         accessibilityLabel="Prologue"
         contentFit="contain"
         style={styles.brand}
