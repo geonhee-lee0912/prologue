@@ -50,15 +50,17 @@ export default function FriendsTab() {
         {secondary?.card ? <EventCard card={secondary.card} size="small" onPress={() => openEvent(secondary)} /> : null}
 
         <SectionLabel>친구</SectionLabel>
-        <Pressable accessibilityRole="button" onPress={() => router.push('/galpi/profile')} style={styles.friend}>
-          <GalpiAvatar size={46} />
-          <View style={styles.flex}>
+        <View style={styles.friend}>
+          <Pressable accessibilityRole="button" accessibilityLabel="갈피의 방 열기" onPress={() => router.push('/galpi/profile')}>
+            <GalpiAvatar size={46} />
+          </Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="갈피와 대화하기" onPress={() => router.push('/galpi/chat')} style={styles.friendContent}>
             <Text style={[styles.friendName, { color: t.ink }]}>갈피</Text>
             <Text numberOfLines={1} style={[styles.friendStatus, { color: t.sub }]}>
               {primary.galpiLine}
             </Text>
-          </View>
-        </Pressable>
+          </Pressable>
+        </View>
 
         <SectionLabel>소식</SectionLabel>
         {feed.map((item) => (
@@ -78,6 +80,7 @@ const styles = StyleSheet.create({
   meName: { fontSize: 15, fontWeight: '700' },
   meSub: { fontSize: 12, marginTop: 2 },
   friend: { flexDirection: 'row', alignItems: 'center', gap: SPACE.m, paddingHorizontal: SPACE.l, paddingVertical: SPACE.s },
+  friendContent: { flex: 1, minHeight: 46, justifyContent: 'center' },
   friendName: { fontSize: 15, fontWeight: '600' },
   friendStatus: { fontSize: 13, marginTop: 2 },
 });
