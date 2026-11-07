@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="title description">
+  <title id="title">프롤로그 심벌 후보 2 — 첫 장을 닮은 P</title>
+  <desc id="description">첫 장의 접힌 모서리와 프롤로그의 머리글자 P를 합친 심벌이다. 확정 전 디자인 후보다.</desc>
+  <defs>
+    <mask id="page-fold" maskUnits="userSpaceOnUse" x="0" y="0" width="256" height="256">
+      <rect width="256" height="256" fill="#fff"/>
+      <path fill="#000" d="M147 42v40c0 10 7 17 17 17h40l-57-57Z"/>
+    </mask>
+  </defs>
+  <path fill="#191919" fill-rule="evenodd" mask="url(#page-fold)" d="M64 214V42h83l57 57v20c0 35-23 57-59 57h-39v38H64Zm42-96h37c13 0 19-5 19-15V87h-56v31Z"/>
+  <path d="m147 42 57 57" fill="none" stroke="#191919" stroke-width="8" stroke-linecap="round"/>
+</svg>

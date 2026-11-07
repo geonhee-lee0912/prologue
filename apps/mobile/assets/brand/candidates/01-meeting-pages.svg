@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="title description">
+  <title id="title">프롤로그 심벌 후보 1 — 두 장의 만남</title>
+  <desc id="description">살짝 다른 높이에 놓인 두 장이 서로를 향해 열린다. 가운데 여백은 함께 시작할 첫 장을 뜻한다. 확정 전 디자인 후보다.</desc>
+  <g fill="#191919" fill-rule="evenodd">
+    <path d="M57 45 119 64v146l-62-19c-8-2-13-9-13-17V55c0-7 6-12 13-10Zm4 23v105l41 13V81L61 68Z"/>
+    <path d="m199 33-62 19v146l62-19c8-2 13-9 13-17V43c0-7-6-12-13-10Zm-4 23v105l-41 13V69l41-13Z"/>
+  </g>
+</svg>
