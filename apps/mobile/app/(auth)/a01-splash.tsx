@@ -40,11 +40,11 @@ export default function A01Splash() {
         accessible={false}
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
-        style={styles.pencilBackground}
+        style={StyleSheet.absoluteFill}
       >
         <Image
-          source={require('../../assets/brand/splash-pencil-peach.png')}
-          contentFit="contain"
+          source={require('../../assets/brand/splash-pencil-wash.webp')}
+          contentFit="fill"
           style={styles.texture}
         />
       </View>
@@ -65,14 +65,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
     overflow: 'hidden',
-  },
-  pencilBackground: {
-    position: 'absolute',
-    left: 0,
-    bottom: 0,
-    width: '240%',
-    maxWidth: 1400,
-    aspectRatio: 1,
   },
   texture: { width: '100%', height: '100%' },
   brand: {
